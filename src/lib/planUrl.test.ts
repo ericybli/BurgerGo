@@ -7,6 +7,7 @@ import {
   categoryGlyph,
   thumbForPlace,
   cardPhotoUrl,
+  personalPhotoUrl,
   buildDayGroups,
   type PlanParams,
 } from '@/src/lib/planUrl';
@@ -23,7 +24,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     id: 'p1', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: null,
     name: 'A', address: null, lat: 0, lng: 0, category: 'sightseeing',
     scheduledTime: null, durationMin: null, cost: null, notes: null,
-    orderIndex: 0, photoPath: null, ...over,
+    orderIndex: 0, photoPath: null, photos: [], ...over,
   };
 }
 
@@ -89,6 +90,32 @@ describe('planUrl thumbnails', () => {
       kind: 'glyph',
       glyph: '🛏️',
     });
+  });
+});
+
+describe('personalPhotoUrl', () => {
+  it('builds the base-prefixed personal-photo serving URL for a size', () => {
+    expect(personalPhotoUrl('photo-1', 'card')).toBe('/api/photos/p/photo-1/card');
+    expect(personalPhotoUrl('photo-1', 'full')).toBe('/api/photos/p/photo-1/full');
+  });
+});
+
+describe('thumbForPlace precedence (Plan 2)', () => {
+  const base = { id: 'p1', category: 'other' as const, photoPath: null, photos: [] as { id: string; width: number | null; height: number | null }[] };
+
+  it('prefers the first personal photo over a cached Google photo', () => {
+    const t = thumbForPlace({ ...base, photoPath: 'gpid/card.webp', photos: [{ id: 'ph1', width: null, height: null }] });
+    expect(t).toEqual({ kind: 'photo', src: '/api/photos/p/ph1/card' });
+  });
+
+  it('falls back to the cached Google photo when there are no personal photos', () => {
+    const t = thumbForPlace({ ...base, photoPath: 'gpid/card.webp', photos: [] });
+    expect(t).toEqual({ kind: 'photo', src: '/api/photos/p1/card' });
+  });
+
+  it('falls back to the category glyph when neither exists', () => {
+    const t = thumbForPlace({ ...base });
+    expect(t).toEqual({ kind: 'glyph', glyph: '📍' });
   });
 });
 

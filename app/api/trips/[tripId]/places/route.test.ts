@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, travelLegs, placeDetailsCache } from '@/src/db/schema';
+import { trips, places, travelLegs, placeDetailsCache, photos } from '@/src/db/schema';
+
+const SEEDED_PLACE_ID = 'b';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -109,5 +111,22 @@ describe('GET /api/trips/[tripId]/places', () => {
     );
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ places: [], legs: [] });
+  });
+
+  it('attaches ordered personal photos to each PlaceDTO', async () => {
+    testHandle.db.insert(photos).values([
+      { id: 'ph-b', tripId: 'trip-1', ownerType: 'place', ownerId: SEEDED_PLACE_ID, path: `trip-1/ph-b`, width: 800, height: 600, orderIndex: 1, createdAt: TS },
+      { id: 'ph-a', tripId: 'trip-1', ownerType: 'place', ownerId: SEEDED_PLACE_ID, path: `trip-1/ph-a`, width: 800, height: 600, orderIndex: 0, createdAt: TS },
+    ]).run();
+    const res = await GET(new Request('http://x/api/trips/trip-1/places'), ctx('trip-1'));
+    const body = await res.json() as { places: Array<{ id: string; photos: { id: string }[] }> };
+    const target = body.places.find((p) => p.id === SEEDED_PLACE_ID)!;
+    expect(target.photos.map((p) => p.id)).toEqual(['ph-a', 'ph-b']);
+  });
+
+  it('returns an empty photos array for a place with no personal photos', async () => {
+    const res = await GET(new Request('http://x/api/trips/trip-1/places'), ctx('trip-1'));
+    const body = await res.json() as { places: Array<{ photos: unknown[] }> };
+    expect(Array.isArray(body.places[0]!.photos)).toBe(true);
   });
 });

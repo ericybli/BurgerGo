@@ -62,13 +62,22 @@ export function cardPhotoUrl(placeId: string): string {
   return withBase(`/api/photos/${placeId}/card`);
 }
 
+/** URL for a personal photo derivative (Plan-2 serving handler). */
+export function personalPhotoUrl(photoId: string, size: 'thumb' | 'card' | 'full'): string {
+  return withBase(`/api/photos/p/${photoId}/${size}`);
+}
+
 export type Thumb = { kind: 'photo'; src: string } | { kind: 'glyph'; glyph: string };
 
 /**
- * Canonical Place-card thumbnail (spec §5.8). A cached Google photo (`photoPath`
- * present) is served by id via the photos handler; otherwise the category glyph.
+ * Canonical Place-card thumbnail (spec §5.6/§5.8). Precedence: first personal
+ * photo → cached Google photo → category glyph.
  */
-export function thumbForPlace(place: Pick<PlaceDTO, 'id' | 'category' | 'photoPath'>): Thumb {
+export function thumbForPlace(
+  place: Pick<PlaceDTO, 'id' | 'category' | 'photoPath' | 'photos'>,
+): Thumb {
+  const first = place.photos[0];
+  if (first) return { kind: 'photo', src: personalPhotoUrl(first.id, 'card') };
   if (place.photoPath) return { kind: 'photo', src: cardPhotoUrl(place.id) };
   return { kind: 'glyph', glyph: categoryGlyph(place.category) };
 }

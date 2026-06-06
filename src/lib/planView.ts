@@ -30,6 +30,8 @@ export interface PlaceDTO {
   notes: string | null;
   orderIndex: number; // 0-based; pin label = orderIndex + 1
   photoPath: string | null; // place_details_cache.photoLocalPath, else null
+  /** Personal photos for this place, ordered (Plan 2). First wins for the card thumb. */
+  photos: { id: string; width: number | null; height: number | null }[];
 }
 
 /** One cached travel leg as returned by the B1 read handler. */
