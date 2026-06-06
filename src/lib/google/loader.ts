@@ -7,7 +7,6 @@
  * is unit-testable in jsdom with no network. Also exports the Autocomplete
  * session-token lifecycle (one token per search→selection).
  */
-import { env } from '@/src/env';
 
 const MAPS_JS_BASE = 'https://maps.googleapis.com/maps/api/js';
 
@@ -68,7 +67,11 @@ export interface LoadOptions {
 export function loadGoogleMaps(opts: LoadOptions = {}): Promise<GoogleNamespace['maps']> {
   if (loadPromise) return loadPromise;
 
-  const apiKey = opts.apiKey ?? env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  // Read the public browser key as a literal `process.env.NEXT_PUBLIC_*` access
+  // so Next.js inlines it into the client bundle at build time. Reading it via
+  // the `env` module (parseEnv(process.env)) would NOT inline and yields '' in
+  // the browser — leaving the map unable to load even with a valid key set.
+  const apiKey = opts.apiKey ?? process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     return Promise.reject(new Error('Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (browser key)'));
   }

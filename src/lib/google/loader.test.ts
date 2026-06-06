@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('@/src/env', () => ({ env: { NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: 'BROWSER_KEY' } }));
-
 import {
   buildMapsScriptUrl,
   loadGoogleMaps,
@@ -32,8 +30,8 @@ describe('loadGoogleMaps', () => {
       (globalThis as unknown as { google: unknown }).google = fakeGoogle;
     });
 
-    const p1 = loadGoogleMaps({ loadScript });
-    const p2 = loadGoogleMaps({ loadScript });
+    const p1 = loadGoogleMaps({ loadScript, apiKey: 'BROWSER_KEY' });
+    const p2 = loadGoogleMaps({ loadScript, apiKey: 'BROWSER_KEY' });
     const [g1, g2] = await Promise.all([p1, p2]);
 
     expect(g1).toBe(fakeMaps);
