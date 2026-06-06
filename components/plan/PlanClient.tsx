@@ -77,6 +77,10 @@ export function PlanClient({
   const [isPending, startTransition] = useTransition();
   // FIX C1: mounted guard so load() never setState on an unmounted/stale component
   const mountedRef = useRef(true);
+  // Default the map's day-visibility to ALL days once data loads (empty = nothing
+  // shown, which left the map at its {0,0} ocean default). Guarded so it runs once
+  // per trip and never clobbers the user's later toggles or resets on refetch.
+  const visibleInitRef = useRef(false);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -116,6 +120,17 @@ export function PlanClient({
   useEffect(() => {
     void load();
   }, [load]);
+
+  // Once trip data is loaded, seed visibleDates with every day so all pins show
+  // on the map by default. Runs once per trip (ref guard) so user toggles and
+  // post-mutation refetches don't reset it.
+  useEffect(() => {
+    if (state.status === 'loaded' && !visibleInitRef.current) {
+      visibleInitRef.current = true;
+      const dates = deriveDays(state.data.trip, tz).map((d) => d.date);
+      setVisibleDates(new Set(dates));
+    }
+  }, [state, tz]);
 
   const legLookup = useMemo(
     () => indexLegs(state.status === 'loaded' ? state.data.legs : []),
