@@ -1,5 +1,5 @@
 import { defaultCache } from '@serwist/next/worker';
-import type { RouteMatchCallback, SerwistGlobalConfig } from 'serwist';
+import type { RouteMatchCallback, RouteMatchCallbackOptions, SerwistGlobalConfig } from 'serwist';
 import type { PrecacheEntry } from 'serwist';
 import { Serwist, CacheFirst, StaleWhileRevalidate, NetworkOnly, ExpirationPlugin } from 'serwist';
 
@@ -10,14 +10,18 @@ declare global {
   }
 }
 
+/** Minimal matcher options for unit-testable routing (omits the ServiceWorker-only `event`). */
+export type TestableMatcherOptions = Pick<RouteMatchCallbackOptions, 'url' | 'request' | 'sameOrigin'>;
+
 /**
  * Describes a runtime caching entry in a plain, serialisable form so the routing
  * policy is unit-testable without a real ServiceWorker environment.
+ * Using `TestableMatcherOptions` (no `event`) keeps tests free of SW globals.
  */
 export interface CacheEntry {
   name: string;
   handler: string;
-  matcher: RouteMatchCallback;
+  matcher: (opts: TestableMatcherOptions) => boolean;
   options: { cacheName: string; expiration?: { maxEntries?: number; maxAgeSeconds?: number } };
 }
 
@@ -30,7 +34,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
     {
       name: 'google',
       handler: 'NetworkOnly',
-      matcher({ url }) {
+      matcher({ url }: TestableMatcherOptions) {
         return (
           url.pathname.startsWith('/api/google') ||
           /(^|\.)googleapis\.com$/.test(url.hostname) ||
@@ -43,7 +47,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
     {
       name: 'photos',
       handler: 'CacheFirst',
-      matcher({ url }) {
+      matcher({ url }: TestableMatcherOptions) {
         return (
           url.pathname === '/burgergo-logo.png' ||
           url.pathname.startsWith('/icons/') ||
@@ -58,7 +62,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
     {
       name: 'data',
       handler: 'StaleWhileRevalidate',
-      matcher({ url }) {
+      matcher({ url }: TestableMatcherOptions) {
         return url.pathname.startsWith('/api/trips') || url.pathname === '/api/settings';
       },
       options: {
@@ -95,7 +99,8 @@ if (typeof _g.skipWaiting === 'function') {
         break;
     }
 
-    return { matcher: entry.matcher, handler };
+    // Cast to RouteMatchCallback since in the real SW, ExtendableEvent is always present.
+    return { matcher: entry.matcher as RouteMatchCallback, handler };
   });
 
   const serwist = new Serwist({
