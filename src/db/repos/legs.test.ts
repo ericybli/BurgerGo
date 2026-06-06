@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
 import { trips, places } from '@/src/db/schema';
-import { getCachedLeg, upsertLeg } from '@/src/db/repos/legs';
+import {
+  getCachedLeg,
+  upsertLeg,
+  legsForDay,
+} from '@/src/db/repos/legs';
 
 // Deterministic clock so computedAt is assertable.
 vi.mock('@/src/lib/clock', () => ({ now: () => 1_700_000_000_000 }));
@@ -113,5 +117,44 @@ describe('legs repo cache primitives', () => {
     expect(getCachedLeg(db, 'p-a', 'p-b', 'transit')!.durationSeconds).toBe(240);
     const { c } = sqlite.prepare('SELECT count(*) AS c FROM travel_legs').get() as { c: number };
     expect(c).toBe(2);
+  });
+});
+
+describe('legs repo — legsForDay', () => {
+  let db: Db;
+  let sqlite: ReturnType<typeof makeTestDb>['sqlite'];
+
+  beforeEach(() => {
+    const h = makeTestDb();
+    db = h.db;
+    sqlite = h.sqlite;
+    seed(db);
+    // Add a third place so we have three consecutive stops.
+    db.insert(places).values({
+      id: 'p-c', tripId: 'trip-1', dayDate: '2026-06-05', googlePlaceId: null,
+      name: 'C', address: null, lat: 35.2, lng: 139.2, category: 'sightseeing',
+      scheduledTime: null, durationMin: null, cost: null, notes: null,
+      orderIndex: 2, createdAt: TS, updatedAt: TS,
+    }).run();
+  });
+
+  it('returns one entry per consecutive pair in itinerary order', () => {
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-a', toPlaceId: 'p-b', mode: 'walk', durationSeconds: 600, distanceMeters: 750, polyline: 'W1' });
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-b', toPlaceId: 'p-c', mode: 'walk', durationSeconds: 420, distanceMeters: 500, polyline: 'W2' });
+    const legs = legsForDay(db, 'trip-1', '2026-06-05', 'walk');
+    expect(legs).toHaveLength(2);
+    expect(legs[0]).toMatchObject({ fromPlaceId: 'p-a', toPlaceId: 'p-b', durationSeconds: 600 });
+    expect(legs[1]).toMatchObject({ fromPlaceId: 'p-b', toPlaceId: 'p-c', durationSeconds: 420 });
+  });
+
+  it('yields null for a not-yet-computed leg', () => {
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-a', toPlaceId: 'p-b', mode: 'walk', durationSeconds: 600, distanceMeters: 750, polyline: null });
+    const legs = legsForDay(db, 'trip-1', '2026-06-05', 'walk');
+    expect(legs[0]).toMatchObject({ fromPlaceId: 'p-a', toPlaceId: 'p-b' });
+    expect(legs[1]).toBeNull(); // p-b→p-c not yet computed
+  });
+
+  it('returns [] for a day with fewer than two places', () => {
+    expect(legsForDay(db, 'trip-1', '2026-06-07', 'walk')).toEqual([]);
   });
 });

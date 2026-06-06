@@ -4,12 +4,13 @@
  *
  * TravelMode is imported from @/src/lib/googleMapsUrl — never redefined here.
  */
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import type { TestDb } from '@/src/db/testDb';
 import { travelLegs, type TravelLeg } from '@/src/db/schema';
 import { newId } from '@/src/db/ids';
 import { now } from '@/src/lib/clock';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
+import { listByDay } from '@/src/db/repos/places';
 
 export type { TravelLeg };
 
@@ -81,4 +82,43 @@ export function upsertLeg(db: Db, input: UpsertLegInput): TravelLeg {
     })
     .run();
   return getCachedLeg(db, input.fromPlaceId, input.toPlaceId, input.mode) as TravelLeg;
+}
+
+/**
+ * Cached legs for a day in one travel mode, in itinerary order: one entry
+ * per consecutive place pair (place[i] → place[i+1]). A pair with no cached
+ * leg yields `null` so the caller knows which legs need recomputing.
+ */
+export function legsForDay(
+  db: Db,
+  tripId: string,
+  dayDate: string,
+  mode: TravelMode,
+): Array<TravelLeg | null> {
+  const ordered = listByDay(db, tripId, dayDate);
+  const out: Array<TravelLeg | null> = [];
+  for (let i = 0; i < ordered.length - 1; i += 1) {
+    out.push(
+      getCachedLeg(db, ordered[i]!.id, ordered[i + 1]!.id, mode) ?? null,
+    );
+  }
+  return out;
+}
+
+/**
+ * Delete every cached leg referencing `placeId` as its from- OR to-end
+ * (all modes). Called after coords change or place is removed from a day.
+ * Returns the count of legs deleted.
+ */
+export function invalidateLegsTouchingPlace(db: Db, placeId: string): number {
+  const res = db
+    .delete(travelLegs)
+    .where(
+      or(
+        eq(travelLegs.fromPlaceId, placeId),
+        eq(travelLegs.toPlaceId, placeId),
+      ),
+    )
+    .run();
+  return res.changes;
 }
