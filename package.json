@@ -1,0 +1,49 @@
+{
+  "name": "burgergo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run gen:icons && next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "gen:icons": "tsx scripts/gen-icons.ts"
+  },
+  "dependencies": {
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
+    "drizzle-orm": "^0.36",
+    "better-sqlite3": "^11",
+    "next-intl": "^3",
+    "@serwist/next": "^9",
+    "serwist": "^9",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/better-sqlite3": "^7",
+    "drizzle-kit": "^0.28",
+    "vitest": "^2",
+    "@vitejs/plugin-react": "^4",
+    "jsdom": "^25",
+    "@testing-library/react": "^16",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/user-event": "^14",
+    "tailwindcss": "^3",
+    "postcss": "^8",
+    "autoprefixer": "^10",
+    "sharp": "^0.33",
+    "tsx": "^4"
+  }
+}

@@ -1,1 +1,35 @@
 .superpowers/
+
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production / runtime
+build/
+*.db
+*.db-shm
+*.db-wal
+
+# generated service worker
+public/sw.js
+public/sw.js.map
+
+# generated PWA icons & served logo (produced by gen:icons)
+public/icons/
+public/burgergo-logo.png
+
+# env
+.env
+.env.local
+.env.*.local
+
+# testing
+coverage/
+
+# misc
+.DS_Store
+*.log
