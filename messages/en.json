@@ -9,7 +9,10 @@
     "newTrip": "New trip",
     "emptyHeadline": "Where to first?",
     "emptySubtext": "Plan your first trip and BurgerGo will tag along.",
-    "emptyCta": "New trip"
+    "emptyCta": "New trip",
+    "loading": "Fetching your trips…",
+    "errorHeadline": "Couldn't load trips",
+    "errorSubtext": "Connect to the internet and try again."
   },
   "status": {
     "upcoming": "Upcoming",
@@ -47,7 +50,10 @@
   },
   "trip": {
     "back": "Back",
-    "rename": "Rename"
+    "rename": "Rename",
+    "loading": "Loading trip…",
+    "notFoundHeadline": "Trip not found",
+    "notFoundSubtext": "This trip may have been removed."
   },
   "comingSoon": {
     "plan": "Plan is on its way",

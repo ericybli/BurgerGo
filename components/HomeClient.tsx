@@ -1,19 +1,65 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Trip } from '@/src/db/schema';
 import { TripCard } from '@/components/TripCard';
 import { NewTripSheet } from '@/components/NewTripSheet';
 import { EmptyState } from '@/components/EmptyState';
 
-export function HomeClient({ trips, tz }: { trips: Trip[]; tz: string }) {
+type LoadState =
+  | { status: 'loading' }
+  | { status: 'loaded'; trips: Trip[] }
+  | { status: 'error' };
+
+/**
+ * Home data owner. The page is a static shell (no server DB read) so the SW can
+ * cache it; the live trip list comes from `/api/trips`, which the SW SWR-caches.
+ * Offline, the cached JSON is served and the list still renders. (spec §7.3/§8.2)
+ */
+export function HomeClient({ tz }: { tz: string }) {
   const t = useTranslations();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [state, setState] = useState<LoadState>({ status: 'loading' });
+
+  const loadTrips = useCallback(async () => {
+    try {
+      const res = await fetch('/api/trips', { credentials: 'same-origin' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const trips = (await res.json()) as Trip[];
+      setState({ status: 'loaded', trips });
+    } catch {
+      // Fetch failed AND the SW had no cached response → friendly error.
+      setState({ status: 'error' });
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadTrips();
+  }, [loadTrips]);
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
-      {trips.length === 0 ? (
+      {state.status === 'loading' ? (
+        <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+          {/* Bundled mascot → always renders offline. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/burgergo-logo.png"
+            alt={t('mascot.alt')}
+            width={96}
+            height={96}
+            className="mb-4 h-24 w-24 animate-pulse opacity-90"
+          />
+          <p className="text-body text-ink-muted">{t('home.loading')}</p>
+        </div>
+      ) : state.status === 'error' ? (
+        <EmptyState
+          mascotAlt={t('mascot.alt')}
+          headline={t('home.errorHeadline')}
+          subtext={t('home.errorSubtext')}
+        />
+      ) : state.trips.length === 0 ? (
         <EmptyState
           mascotAlt={t('mascot.alt')}
           headline={t('home.emptyHeadline')}
@@ -23,7 +69,7 @@ export function HomeClient({ trips, tz }: { trips: Trip[]; tz: string }) {
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {trips.map((trip) => (
+          {state.trips.map((trip) => (
             <li key={trip.id}>
               <TripCard trip={trip} tz={tz} />
             </li>
@@ -40,7 +86,12 @@ export function HomeClient({ trips, tz }: { trips: Trip[]; tz: string }) {
         +
       </button>
 
-      <NewTripSheet key={sheetOpen ? 'open' : 'closed'} open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <NewTripSheet
+        key={sheetOpen ? 'open' : 'closed'}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onCreated={() => void loadTrips()}
+      />
     </main>
   );
 }

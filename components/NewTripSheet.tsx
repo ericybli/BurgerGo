@@ -7,9 +7,11 @@ import { createTripAction } from '@/app/_actions/trips';
 type NewTripSheetProps = {
   open: boolean;
   onClose: () => void;
+  /** Fired after a successful create (before close) so the owner can refresh its list. */
+  onCreated?: () => void;
 };
 
-export function NewTripSheet({ open, onClose }: NewTripSheetProps) {
+export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
   const t = useTranslations('newTripSheet');
   const [name, setName] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -33,6 +35,7 @@ export function NewTripSheet({ open, onClose }: NewTripSheetProps) {
     startTransition(async () => {
       try {
         await createTripAction({ name: name.trim(), startDate, endDate });
+        onCreated?.();
         onClose();
       } catch {
         setError(t('saveError'));
