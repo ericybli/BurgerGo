@@ -97,20 +97,6 @@ export function deleteRestaurant(db: Db, id: string): void {
   db.delete(restaurants).where(eq(restaurants.id, id)).run();
 }
 
-/** Link a restaurant to a scheduled place (sets linked_place_id). */
-export function scheduleToDay(
-  db: Db,
-  id: string,
-  placeId: string,
-): Restaurant | undefined {
-  return updateRestaurant(db, id, { linkedPlaceId: placeId });
-}
-
-/** Clear the schedule link (sets linked_place_id NULL). */
-export function unschedule(db: Db, id: string): Restaurant | undefined {
-  return updateRestaurant(db, id, { linkedPlaceId: null });
-}
-
 /** Alias for listByTrip (C2 naming convention). */
 export function listRestaurants(db: Db, tripId: string): Restaurant[] {
   return listByTrip(db, tripId);

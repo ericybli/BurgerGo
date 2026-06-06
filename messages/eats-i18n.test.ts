@@ -10,6 +10,7 @@ describe('eats i18n', () => {
     'cuisineUnknown', 'noRating', 'scheduledOn', 'notScheduled',
     'scheduleToDay', 'unschedule', 'dayPickerTitle', 'save', 'cancel', 'delete', 'confirmDelete',
     'loading', 'errorHeadline', 'errorSubtext', 'saveFailed',
+    'ratingClear', 'priceClear',
   ];
 
   function get(obj: Record<string, unknown>, path: string): unknown {

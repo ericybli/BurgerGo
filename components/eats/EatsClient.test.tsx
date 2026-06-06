@@ -92,4 +92,27 @@ describe('EatsClient', () => {
     renderClient();
     expect(await screen.findByText(en.eats.errorHeadline)).toBeInTheDocument();
   });
+
+  it('form resets when edit target changes (key remount)', async () => {
+    vi.stubGlobal('fetch', mockFetch());
+    renderClient();
+    await screen.findByText('Ichiran');
+
+    // Open detail for Ichiran (r1), then click Edit → form shows 'Ichiran'
+    await userEvent.click(screen.getByRole('button', { name: /Ichiran/ }));
+    const detail1 = await screen.findByRole('dialog', { name: 'Ichiran' });
+    await userEvent.click(within(detail1).getByRole('button', { name: en.eats.editRestaurant }));
+    const form1 = await screen.findByRole('dialog', { name: en.eats.editRestaurant });
+    expect((within(form1).getByLabelText(en.eats.nameLabel) as HTMLInputElement).value).toBe('Ichiran');
+
+    // Close the form
+    await userEvent.click(within(form1).getByRole('button', { name: en.eats.cancel }));
+
+    // Open detail for Kani (r2), then click Edit → form should show 'Kani', not 'Ichiran'
+    await userEvent.click(screen.getByRole('button', { name: /Kani/ }));
+    const detail2 = await screen.findByRole('dialog', { name: 'Kani' });
+    await userEvent.click(within(detail2).getByRole('button', { name: en.eats.editRestaurant }));
+    const form2 = await screen.findByRole('dialog', { name: en.eats.editRestaurant });
+    expect((within(form2).getByLabelText(en.eats.nameLabel) as HTMLInputElement).value).toBe('Kani');
+  });
 });

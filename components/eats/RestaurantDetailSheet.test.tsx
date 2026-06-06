@@ -116,6 +116,15 @@ describe('RestaurantDetailSheet', () => {
     expect(screen.getByRole('button', { name: en.eats.markBeen })).toBeDisabled();
   });
 
+  it('surfaces the error alert and keeps the sheet open when an action rejects', async () => {
+    vi.mocked(updateRestaurantAction).mockRejectedValueOnce(new Error('boom'));
+    const { onChanged, onClose } = renderSheet();
+    await userEvent.click(screen.getByRole('button', { name: en.eats.markBeen }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.eats.saveFailed));
+    expect(onChanged).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it('closes when Escape is pressed', async () => {
     const { onClose } = renderSheet();
     await userEvent.type(screen.getByRole('dialog'), '{Escape}');

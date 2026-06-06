@@ -144,6 +144,7 @@ export function EatsClient({
       )}
 
       <RestaurantFormSheet
+        key={editId ?? 'add'}
         open={addOpen || editing !== null}
         tripId={tripId}
         restaurant={editing}

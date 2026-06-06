@@ -9,8 +9,6 @@ import {
   listByStatus,
   updateRestaurant,
   deleteRestaurant,
-  scheduleToDay,
-  unschedule,
 } from '@/src/db/repos/restaurants';
 
 const NOW = new Date('2026-06-08T12:00:00.000Z');
@@ -111,24 +109,6 @@ describe('restaurants repo', () => {
     expect(getRestaurant(db, r.id)).toBeUndefined();
   });
 
-  it('scheduleToDay links a place; unschedule clears it', () => {
-    const { db, tripId } = setup();
-    const place = addPlace(db, {
-      tripId,
-      name: 'Jiro (scheduled)',
-      category: 'other',
-      dayDate: '2026-06-02',
-    });
-    const r = addRestaurant(db, { tripId, name: 'Jiro' });
-
-    const linked = scheduleToDay(db, r.id, place.id);
-    expect(linked?.linkedPlaceId).toBe(place.id);
-    expect(getRestaurant(db, r.id)?.linkedPlaceId).toBe(place.id);
-
-    const cleared = unschedule(db, r.id);
-    expect(cleared?.linkedPlaceId).toBeNull();
-  });
-
   it('deleting the linked place sets linked_place_id NULL (FK set null)', () => {
     const { db, tripId } = setup();
     const place = addPlace(db, {
@@ -138,7 +118,7 @@ describe('restaurants repo', () => {
       dayDate: '2026-06-02',
     });
     const r = addRestaurant(db, { tripId, name: 'R' });
-    scheduleToDay(db, r.id, place.id);
+    updateRestaurant(db, r.id, { linkedPlaceId: place.id });
 
     // Delete the place directly via the places repo path:
     deletePlace(db, place.id);
