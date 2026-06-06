@@ -9,7 +9,9 @@ services:
     image: burgergo:latest
     restart: unless-stopped
     ports:
-      - "3000:3000" # bound behind the user's own TLS reverse proxy
+      # Bind to loopback only: reachable solely via the host's nginx reverse
+      # proxy (which Cloudflare fronts), never directly on the public IP:3000.
+      - "127.0.0.1:3000:3000"
     environment:
       DATABASE_PATH: /data/burgergo.db
       UPLOADS_DIR: /data/uploads
