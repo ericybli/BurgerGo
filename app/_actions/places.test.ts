@@ -15,9 +15,21 @@ vi.mock('next/cache', () => ({
 import {
   addPlaceAction,
   updatePlaceAction,
+  deletePlaceAction,
+  reorderDayAction,
+  promoteToDayAction,
+  moveToSavedAction,
+  recomputeDayLegsAction,
 } from '@/app/_actions/places';
 import { getPlace } from '@/src/db/repos/places';
 import { upsertLeg, getCachedLeg } from '@/src/db/repos/legs';
+import type { TravelLeg } from '@/src/db/schema';
+
+const getOrFetchLegMock = vi.fn();
+vi.mock('@/src/lib/google/getOrFetchLeg', () => ({
+  getOrFetchLeg: (...args: unknown[]) => getOrFetchLegMock(...args),
+}));
+vi.mock('@/src/env', () => ({ env: { GOOGLE_MAPS_SERVER_KEY: 'SERVER_KEY' } }));
 
 const TS = new Date('2026-06-08T12:00:00.000Z');
 
@@ -119,5 +131,128 @@ describe('updatePlaceAction', () => {
 
   it('throws when the place id is unknown', async () => {
     await expect(updatePlaceAction('nope', { name: 'X' })).rejects.toThrow();
+  });
+});
+
+describe('deletePlaceAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('deletes the place, invalidates its legs, and revalidates', async () => {
+    upsertLeg(testHandle.db, {
+      tripId: 'trip-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk',
+      durationSeconds: 600, distanceMeters: 750, polyline: 'P',
+    });
+    await deletePlaceAction('a');
+    expect(getPlace(testHandle.db, 'a')).toBeUndefined();
+    expect(getCachedLeg(testHandle.db, 'a', 'b', 'walk')).toBeUndefined();
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('throws when the id is unknown', async () => {
+    await expect(deletePlaceAction('nope')).rejects.toThrow();
+  });
+});
+
+describe('reorderDayAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('reorders the day, invalidates affected legs, and revalidates', async () => {
+    upsertLeg(testHandle.db, {
+      tripId: 'trip-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk',
+      durationSeconds: 600, distanceMeters: 750, polyline: 'P',
+    });
+    await reorderDayAction('trip-1', '2026-06-05', ['b', 'a']);
+    expect(getPlace(testHandle.db, 'b')?.orderIndex).toBe(0);
+    expect(getPlace(testHandle.db, 'a')?.orderIndex).toBe(1);
+    // Reorder changed adjacency ⇒ old a→b leg invalidated.
+    expect(getCachedLeg(testHandle.db, 'a', 'b', 'walk')).toBeUndefined();
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+});
+
+describe('promoteToDayAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('promotes a Saved place onto a day and revalidates', async () => {
+    const saved = await addPlaceAction({
+      tripId: 'trip-1', name: 'Wish', category: 'other',
+    });
+    revalidatePath.mockClear();
+    const row = await promoteToDayAction(saved.id, '2026-06-05');
+    expect(row.dayDate).toBe('2026-06-05');
+    expect(row.orderIndex).toBe(0);
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('throws when the id is unknown', async () => {
+    await expect(promoteToDayAction('nope', '2026-06-05')).rejects.toThrow();
+  });
+});
+
+describe('moveToSavedAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('moves a place to Saved, invalidates its legs, and revalidates', async () => {
+    upsertLeg(testHandle.db, {
+      tripId: 'trip-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk',
+      durationSeconds: 600, distanceMeters: 750, polyline: 'P',
+    });
+    const row = await moveToSavedAction('a');
+    expect(row.dayDate).toBeNull();
+    expect(getCachedLeg(testHandle.db, 'a', 'b', 'walk')).toBeUndefined();
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('throws when the id is unknown', async () => {
+    await expect(moveToSavedAction('nope')).rejects.toThrow();
+  });
+});
+
+describe('recomputeDayLegsAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+    getOrFetchLegMock.mockClear();
+  });
+
+  it('calls getOrFetchLeg for each consecutive pair and returns the day legs', async () => {
+    const fakeLeg: Partial<TravelLeg> = {
+      id: 'leg-x', tripId: 'trip-1', fromPlaceId: 'a', toPlaceId: 'b',
+      mode: 'walk', durationSeconds: 600, distanceMeters: 800, polyline: 'P',
+      computedAt: new Date(1_700_000_000_000),
+    };
+    getOrFetchLegMock.mockResolvedValue(fakeLeg);
+
+    const legs = await recomputeDayLegsAction('trip-1', '2026-06-05', 'walk');
+    expect(getOrFetchLegMock).toHaveBeenCalledTimes(1); // one pair: a→b
+    expect(legs).toHaveLength(1);
+    expect(legs[0]).toMatchObject({ fromPlaceId: 'a', toPlaceId: 'b' });
+  });
+
+  it('returns [] for a day with fewer than two places', async () => {
+    const legs = await recomputeDayLegsAction('trip-1', '2026-06-07', 'walk');
+    expect(legs).toEqual([]);
+    expect(getOrFetchLegMock).not.toHaveBeenCalled();
   });
 });
