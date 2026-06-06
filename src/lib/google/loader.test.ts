@@ -39,7 +39,7 @@ describe('loadGoogleMaps', () => {
     expect(g2).toBe(fakeGoogle);
     // Memoized: only one injection even with two concurrent callers.
     expect(loadScript).toHaveBeenCalledTimes(1);
-    const calledUrl = loadScript.mock.calls[0]![0] as string;
+    const calledUrl = (loadScript.mock.calls[0] as unknown[])[0] as string;
     expect(calledUrl).toContain('key=BROWSER_KEY');
   });
 
