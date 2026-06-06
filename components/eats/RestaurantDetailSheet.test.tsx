@@ -6,19 +6,21 @@ import en from '@/messages/en.json';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
 import type { DerivedDay } from '@/src/lib/days';
 
-const updateRestaurantAction = vi.fn(async () => ({ id: 'r1' }));
-const deleteRestaurantAction = vi.fn(async () => undefined);
-const scheduleRestaurantToDayAction = vi.fn(async () => ({ restaurant: { id: 'r1' }, place: { id: 'p1' } }));
-const unscheduleRestaurantAction = vi.fn(async () => ({ id: 'r1' }));
 vi.mock('@/app/_actions/restaurants', () => ({
   addRestaurantAction: vi.fn(),
-  updateRestaurantAction: (...a: unknown[]) => updateRestaurantAction(...a),
-  deleteRestaurantAction: (...a: unknown[]) => deleteRestaurantAction(...a),
-  scheduleRestaurantToDayAction: (...a: unknown[]) => scheduleRestaurantToDayAction(...a),
-  unscheduleRestaurantAction: (...a: unknown[]) => unscheduleRestaurantAction(...a),
+  updateRestaurantAction: vi.fn(async () => ({ id: 'r1' })),
+  deleteRestaurantAction: vi.fn(async () => undefined),
+  scheduleRestaurantToDayAction: vi.fn(async () => ({ restaurant: { id: 'r1' }, place: { id: 'p1' } })),
+  unscheduleRestaurantAction: vi.fn(async () => ({ id: 'r1' })),
 }));
 
 import { RestaurantDetailSheet } from './RestaurantDetailSheet';
+import {
+  updateRestaurantAction,
+  deleteRestaurantAction,
+  scheduleRestaurantToDayAction,
+  unscheduleRestaurantAction,
+} from '@/app/_actions/restaurants';
 
 const DAYS: DerivedDay[] = [
   { date: '2026-06-05', dayNumber: 1, weekday: 'Friday', isToday: false },
@@ -49,10 +51,10 @@ function renderSheet(props: Partial<React.ComponentProps<typeof RestaurantDetail
 }
 
 beforeEach(() => {
-  updateRestaurantAction.mockClear();
-  deleteRestaurantAction.mockClear();
-  scheduleRestaurantToDayAction.mockClear();
-  unscheduleRestaurantAction.mockClear();
+  vi.mocked(updateRestaurantAction).mockClear();
+  vi.mocked(deleteRestaurantAction).mockClear();
+  vi.mocked(scheduleRestaurantToDayAction).mockClear();
+  vi.mocked(unscheduleRestaurantAction).mockClear();
 });
 
 describe('RestaurantDetailSheet', () => {
