@@ -1,0 +1,27 @@
+services:
+  app:
+    build: .
+    image: burgergo:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000" # bound behind the user's own TLS reverse proxy
+    environment:
+      DATABASE_PATH: /data/burgergo.db
+      UPLOADS_DIR: /data/uploads
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+      GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - burgergo-db:/data
+      - burgergo-uploads:/data/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  burgergo-db:
+  burgergo-uploads:
