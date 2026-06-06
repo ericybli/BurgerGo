@@ -1,0 +1,24 @@
+node_modules
+.next
+.git
+.gitignore
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+.dockerignore
+.env
+.env.*
+!.env.example
+*.md
+docs
+.superpowers
+coverage
+.vscode
+.idea
+.DS_Store
+# generated artifacts are rebuilt inside the image
+public/sw.js
+public/sw.js.map
+public/swe-worker-*.js
+public/burgergo-logo.png
+public/icons
