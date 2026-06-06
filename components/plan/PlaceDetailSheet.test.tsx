@@ -82,4 +82,21 @@ describe('PlaceDetailSheet', () => {
     expect(screen.getByRole('button', { name: en.plan.save })).toBeDisabled();
     expect(screen.getByRole('link', { name: en.plan.openInGoogleMaps })).toBeInTheDocument();
   });
+
+  it('shows an error and keeps the sheet open when the action rejects', async () => {
+    updatePlaceAction.mockRejectedValueOnce(new Error('server error'));
+    const { onClose, onSaved } = renderSheet();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByRole('alert')).toHaveTextContent(en.plan.saveFailed);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onSaved).not.toHaveBeenCalled();
+  });
+
+  it('closes the sheet when Escape is pressed on the dialog', async () => {
+    const { onClose } = renderSheet();
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(dialog, '{Escape}');
+    expect(onClose).toHaveBeenCalled();
+  });
 });

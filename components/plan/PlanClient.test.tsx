@@ -164,4 +164,16 @@ describe('PlanClient', () => {
     await screen.findByText('Stop A');
     expect(screen.getByRole('button', { name: en.plan.addPlace })).toBeDisabled();
   });
+
+  it('shows a mutation error banner when a Server Action rejects, then re-fetches', async () => {
+    search = 'view=list&bucket=saved&date=2026-05-03';
+    mockFetch();
+    promoteToDayAction.mockRejectedValueOnce(new Error('server error'));
+    renderPlan();
+    await screen.findByText('Saved One');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.addToDay }));
+    await userEvent.click(screen.getByRole('button', { name: /Day 2/ }));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByRole('alert')).toHaveTextContent(en.plan.mutationFailed);
+  });
 });

@@ -104,6 +104,7 @@ export function SavedList({
           aria-label={t('dayPickerTitle')}
           className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
           onClick={() => setPickerFor(null)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setPickerFor(null); }}
         >
           <div
             onClick={(e) => e.stopPropagation()}

@@ -41,6 +41,8 @@ export function PlaceDetailSheet({
   );
   const [notes, setNotes] = useState(place.notes ?? '');
   const [isPending, startTransition] = useTransition();
+  // FIX I1: inline error when the Server Action rejects
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -51,20 +53,31 @@ export function PlaceDetailSheet({
     googlePlaceId: place.googlePlaceId,
   });
 
+  // FIX I3: Escape closes the dialog
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'Escape') onClose();
+  }
+
+  // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function handleSave() {
     const costMinor =
       costMajor.trim() === '' ? null : Math.round(Number(costMajor) * 10 ** exponent);
+    setSaveError(null);
     startTransition(async () => {
-      await updatePlaceAction(place.id, {
-        name: name.trim(),
-        address: address.trim() || null,
-        category,
-        scheduledTime: time || null,
-        cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
-        notes: notes.trim() || null,
-      });
-      onSaved();
-      onClose();
+      try {
+        await updatePlaceAction(place.id, {
+          name: name.trim(),
+          address: address.trim() || null,
+          category,
+          scheduledTime: time || null,
+          cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
+          notes: notes.trim() || null,
+        });
+        onSaved();
+        onClose();
+      } catch {
+        setSaveError(t('saveFailed'));
+      }
     });
   }
 
@@ -75,11 +88,19 @@ export function PlaceDetailSheet({
       aria-label={place.name}
       className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
       onClick={onClose}
+      onKeyDown={handleKeyDown}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
       >
+        {/* FIX I1: inline save error */}
+        {saveError ? (
+          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+            {saveError}
+          </p>
+        ) : null}
+
         <label className="block text-label font-medium text-ink" htmlFor="pd-name">{t('nameLabel')}</label>
         <input
           id="pd-name" type="text" value={name} disabled={disabled}

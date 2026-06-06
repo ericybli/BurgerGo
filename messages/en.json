@@ -126,7 +126,10 @@
     "loading": "Loading your plan…",
     "errorHeadline": "Couldn't load this plan",
     "errorSubtext": "Connect to the internet and try again.",
-    "reorderHint": "Drag to reorder"
+    "reorderHint": "Drag to reorder",
+    "mutationFailed": "Action failed — please try again.",
+    "saveFailed": "Couldn't save — please try again.",
+    "routeError": "Something went wrong loading this plan."
   },
   "placeCategory": {
     "sightseeing": "Sightseeing",

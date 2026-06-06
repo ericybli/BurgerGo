@@ -34,20 +34,33 @@ export function AddPlaceSheet({
   const [dropped, setDropped] = useState<Dropped | null>(null);
   const [dropName, setDropName] = useState('');
   const [isPending, startTransition] = useTransition();
+  // FIX I1: inline error when the Server Action rejects
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { predictions, search, select } = usePlacesAutocomplete();
 
   if (!open) return null;
+
+  // FIX I3: Escape closes the dialog
+  function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (e.key === 'Escape') onClose();
+  }
 
   function handleQueryChange(value: string) {
     setQuery(value);
     void search(value);
   }
 
+  // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function commit(payload: Parameters<typeof addPlaceAction>[0]) {
+    setSaveError(null);
     startTransition(async () => {
-      await addPlaceAction(payload);
-      onAdded();
-      onClose();
+      try {
+        await addPlaceAction(payload);
+        onAdded();
+        onClose();
+      } catch {
+        setSaveError(t('saveFailed'));
+      }
     });
   }
 
@@ -92,16 +105,27 @@ export function AddPlaceSheet({
       aria-label={t('addPlace')}
       className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
       onClick={onClose}
+      onKeyDown={handleKeyDown}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
       >
-        <div role="tablist" className="mb-4 flex rounded-control bg-paper p-0.5 shadow-inset">
+        {/* FIX I1: inline save error */}
+        {saveError ? (
+          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+            {saveError}
+          </p>
+        ) : null}
+
+        {/* FIX M5: tabpanel role on each content wrapper */}
+        <div role="tablist" aria-label={t('addPlace')} className="mb-4 flex rounded-control bg-paper p-0.5 shadow-inset">
           <button
+            id="add-tab-search"
             type="button"
             role="tab"
             aria-selected={tab === 'search'}
+            aria-controls="add-panel-search"
             onClick={() => setTab('search')}
             className={`flex-1 rounded-control py-1.5 text-label font-medium ${
               tab === 'search' ? 'bg-coral text-white' : 'text-ink-muted'
@@ -110,9 +134,11 @@ export function AddPlaceSheet({
             {t('searchSubTab')}
           </button>
           <button
+            id="add-tab-drop"
             type="button"
             role="tab"
             aria-selected={tab === 'drop'}
+            aria-controls="add-panel-drop"
             onClick={() => setTab('drop')}
             className={`flex-1 rounded-control py-1.5 text-label font-medium ${
               tab === 'drop' ? 'bg-coral text-white' : 'text-ink-muted'
@@ -123,7 +149,8 @@ export function AddPlaceSheet({
         </div>
 
         {tab === 'search' ? (
-          <div>
+          // FIX M5: role="tabpanel" + aria-labelledby
+          <div id="add-panel-search" role="tabpanel" aria-labelledby="add-tab-search">
             <input
               type="text"
               value={query}
@@ -148,7 +175,8 @@ export function AddPlaceSheet({
             </ul>
           </div>
         ) : (
-          <div>
+          // FIX M5: role="tabpanel" + aria-labelledby
+          <div id="add-panel-drop" role="tabpanel" aria-labelledby="add-tab-drop">
             <p className="mb-2 text-caption text-ink-muted">{t('longPressHint')}</p>
             {/* B3's mini Google map mounts here; the drop callback is the contract.
                 The test affordance simulates a long-press drop. */}

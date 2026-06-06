@@ -116,4 +116,21 @@ describe('AddPlaceSheet', () => {
     renderSheet({ disabled: true });
     expect(screen.getByPlaceholderText(en.plan.searchPlaceholder)).toBeDisabled();
   });
+
+  it('shows an error and keeps the sheet open when the action rejects', async () => {
+    addPlaceAction.mockRejectedValueOnce(new Error('server error'));
+    const { onClose, onAdded } = renderSheet();
+    await userEvent.click(screen.getByText('Senso-ji, Asakusa'));
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    expect(screen.getByRole('alert')).toHaveTextContent(en.plan.saveFailed);
+    expect(onClose).not.toHaveBeenCalled();
+    expect(onAdded).not.toHaveBeenCalled();
+  });
+
+  it('closes the sheet when Escape is pressed on the dialog', async () => {
+    const { onClose } = renderSheet();
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(dialog, '{Escape}');
+    expect(onClose).toHaveBeenCalled();
+  });
 });

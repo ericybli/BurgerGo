@@ -65,4 +65,15 @@ describe('SavedList', () => {
     renderSaved({ saved: [] });
     expect(screen.getByText(en.plan.emptySavedHeadline)).toBeInTheDocument();
   });
+
+  it('closes the day-picker dialog when Escape is pressed', async () => {
+    renderSaved();
+    // Open the day picker
+    await userEvent.click(screen.getByRole('button', { name: en.plan.addToDay }));
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    // Press Escape on the dialog
+    const dialog = screen.getByRole('dialog');
+    await userEvent.type(dialog, '{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

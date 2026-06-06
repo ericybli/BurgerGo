@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
@@ -72,6 +72,11 @@ export function PlanClient({
   const [addOpen, setAddOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
+  // FIX I2+I5: track in-flight mutations to prevent double-fire
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  // FIX C1: mounted guard so load() never setState on an unmounted/stale component
+  const mountedRef = useRef(true);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -84,6 +89,14 @@ export function PlanClient({
     };
   }, []);
 
+  // FIX C1: flip mountedRef on unmount (also reset on tripId change via cleanup)
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [tripId]);
+
   const load = useCallback(async () => {
     try {
       const [tripRes, placesRes] = await Promise.all([
@@ -93,9 +106,10 @@ export function PlanClient({
       if (!tripRes.ok || !placesRes.ok) throw new Error('load failed');
       const { trip } = (await tripRes.json()) as { trip: TripLite };
       const { places, legs } = (await placesRes.json()) as { places: PlaceDTO[]; legs: LegDTO[] };
-      setState({ status: 'loaded', data: { trip, places, legs } });
+      // FIX C1: only setState if still mounted
+      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs } });
     } catch {
-      setState({ status: 'error' });
+      if (mountedRef.current) setState({ status: 'error' });
     }
   }, [tripId]);
 
@@ -142,22 +156,34 @@ export function PlanClient({
    * Run a mutation, recompute that day's legs (online only; saved bucket / null
    * date skips recompute), then re-fetch. `mode` defaults to the current day
    * mode but is passed explicitly on a mode change (state is stale in-closure).
+   *
+   * FIX I2+I5: wrapped in startTransition so isPending gates action buttons
+   * (prevents double-fire). try/catch surfaces transient error; finally always
+   * re-fetches so stale UI after a failed action is avoided.
    */
-  async function mutateDay(
+  function mutateDay(
     date: string | null,
     fn: () => Promise<unknown>,
     mode: TravelMode = dayMode,
   ) {
-    await fn();
-    if (online && date) await recomputeDayLegsAction(tripId, date, mode);
-    await load();
+    setMutationError(null);
+    startTransition(async () => {
+      try {
+        await fn();
+        if (online && date) await recomputeDayLegsAction(tripId, date, mode);
+      } catch {
+        if (mountedRef.current) setMutationError(t('mutationFailed'));
+      } finally {
+        await load();
+      }
+    });
   }
 
   function onModeChange(m: TravelMode) {
     setDayMode(m);
     // Recompute with the NEW mode explicitly — `dayMode` state is still stale in
     // this closure until the next render.
-    if (online) void mutateDay(params.date, async () => undefined, m);
+    if (online) mutateDay(params.date, async () => undefined, m);
   }
 
   // PlanMap seam (locked): build dayGroups + handlers; pass legs + mode + online.
@@ -180,8 +206,18 @@ export function PlanClient({
     });
   }
 
+  // FIX I2+I5: buttons are disabled both when offline AND when a mutation is in-flight
+  const actionDisabled = !online || isPending;
+
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
+      {/* FIX I2: transient mutation error banner */}
+      {mutationError ? (
+        <p role="alert" className="mb-2 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          {mutationError}
+        </p>
+      ) : null}
+
       {/* List/Map + Days/Saved toggles */}
       <div className="mb-3 flex gap-2">
         <div role="group" className="flex flex-1 rounded-control bg-card p-0.5 shadow-inset">
@@ -261,24 +297,24 @@ export function PlanClient({
             dayColor={color}
             currency={currency}
             locale={locale}
-            disabled={!online}
+            disabled={actionDisabled}
             onAddPlace={() => setAddOpen(true)}
             onAddFromSaved={() => setParams({ bucket: 'saved' })}
-            onReorder={(ids) => void mutateDay(params.date, () => reorderDayAction(tripId, params.date, ids))}
+            onReorder={(ids) => mutateDay(params.date, () => reorderDayAction(tripId, params.date, ids))}
             onTapPlace={(id) => setDetailFor(placeById(id))}
-            onMoveToSaved={(id) => void mutateDay(params.date, () => moveToSavedAction(id))}
+            onMoveToSaved={(id) => mutateDay(params.date, () => moveToSavedAction(id))}
             onMoveToDay={(id) => setDetailFor(placeById(id))}
-            onDelete={(id) => void mutateDay(params.date, () => deletePlaceAction(id))}
+            onDelete={(id) => mutateDay(params.date, () => deletePlaceAction(id))}
             onModeChange={onModeChange}
-            onRecompute={() => void mutateDay(params.date, async () => undefined)}
+            onRecompute={() => mutateDay(params.date, async () => undefined)}
           />
         </>
       ) : (
         <SavedList
           saved={saved}
           days={days}
-          disabled={!online}
-          onPromote={(id, date) => void mutateDay(date, () => promoteToDayAction(id, date))}
+          disabled={actionDisabled}
+          onPromote={(id, date) => mutateDay(date, () => promoteToDayAction(id, date))}
           onTapPlace={(id) => setDetailFor(placeById(id))}
           onAddPlace={() => setAddOpen(true)}
         />
@@ -290,7 +326,7 @@ export function PlanClient({
         dayDate={params.bucket === 'saved' ? null : params.date}
         disabled={!online}
         onClose={() => setAddOpen(false)}
-        onAdded={() => void mutateDay(params.bucket === 'saved' ? null : params.date, async () => undefined)}
+        onAdded={() => mutateDay(params.bucket === 'saved' ? null : params.date, async () => undefined)}
       />
 
       {detailFor ? (
