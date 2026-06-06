@@ -61,4 +61,14 @@ describe('NewTripSheet', () => {
       endDate: '2026-05-09',
     });
   });
+
+  it('shows saveError and does not close when the action rejects', async () => {
+    createTripAction.mockRejectedValueOnce(new Error('server error'));
+    const onClose = vi.fn();
+    renderSheet(onClose);
+    await userEvent.type(screen.getByLabelText(en.newTripSheet.nameLabel), 'Tokyo');
+    await userEvent.click(screen.getByRole('button', { name: en.newTripSheet.create }));
+    expect(await screen.findByText(en.newTripSheet.saveError)).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

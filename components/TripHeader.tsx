@@ -40,6 +40,7 @@ export function TripHeader({ tripId, name, dateSubtitle }: TripHeaderProps) {
       </div>
 
       <RenameSheet
+        key={renameOpen ? tripId : 'closed'}
         open={renameOpen}
         tripId={tripId}
         currentName={name}

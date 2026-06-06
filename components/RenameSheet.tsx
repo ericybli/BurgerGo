@@ -28,14 +28,19 @@ export function RenameSheet({ open, tripId, currentName, onClose }: RenameSheetP
       return;
     }
     startTransition(async () => {
-      await renameTripAction(tripId, trimmed);
-      onClose();
+      try {
+        await renameTripAction(tripId, trimmed);
+        onClose();
+      } catch {
+        setError(t('saveError'));
+      }
     });
   }
 
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label={t('title')}
       className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
       onClick={onClose}
@@ -59,7 +64,7 @@ export function RenameSheet({ open, tripId, currentName, onClose }: RenameSheetP
         />
 
         {error ? (
-          <p role="alert" className="mt-3 text-caption font-medium text-[#C2452E]">
+          <p role="alert" className="mt-3 text-caption font-medium text-danger">
             {error}
           </p>
         ) : null}

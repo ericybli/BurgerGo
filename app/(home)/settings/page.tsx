@@ -47,7 +47,7 @@ export default async function SettingsPage() {
           alt={t('mascot.alt')}
           width={88}
           height={88}
-          className="mx-auto h-22 w-22 opacity-90"
+          className="mx-auto h-[88px] w-[88px] opacity-90"
         />
         <p className="mt-3 text-heading font-semibold text-ink">{t('app.name')}</p>
         <p className="mt-1 text-caption text-ink-muted">{t('settings.aboutTagline')}</p>

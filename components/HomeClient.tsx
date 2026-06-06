@@ -40,7 +40,7 @@ export function HomeClient({ trips, tz }: { trips: Trip[]; tz: string }) {
         +
       </button>
 
-      <NewTripSheet open={sheetOpen} onClose={() => setSheetOpen(false)} />
+      <NewTripSheet key={sheetOpen ? 'open' : 'closed'} open={sheetOpen} onClose={() => setSheetOpen(false)} />
     </main>
   );
 }

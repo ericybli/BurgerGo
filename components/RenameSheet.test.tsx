@@ -49,4 +49,13 @@ describe('RenameSheet', () => {
     await userEvent.click(screen.getByRole('button', { name: en.renameSheet.save }));
     expect(renameTripAction).toHaveBeenCalledWith('t1', 'Kyoto');
   });
+
+  it('shows saveError and does not close when the action rejects', async () => {
+    renameTripAction.mockRejectedValueOnce(new Error('server error'));
+    const onClose = vi.fn();
+    renderSheet(onClose);
+    await userEvent.click(screen.getByRole('button', { name: en.renameSheet.save }));
+    expect(await screen.findByText(en.renameSheet.saveError)).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });
