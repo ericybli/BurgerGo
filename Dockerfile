@@ -14,6 +14,13 @@ RUN npm ci
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+# NEXT_PUBLIC_* are inlined into the client bundle at `next build`, so they must be
+# present as build-time env. Without the Maps key the map breaks; without the base
+# path, assets/fetches 404 under a sub-path deploy. Pass via `--build-arg` / compose.
+ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ARG NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Bake SQL migrations into the image (committed under drizzle/, regenerate to be safe).

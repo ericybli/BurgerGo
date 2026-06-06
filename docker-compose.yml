@@ -1,6 +1,11 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        # NEXT_PUBLIC_* are inlined at build time into the client bundle.
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+        NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
     image: burgergo:latest
     restart: unless-stopped
     ports:
@@ -8,6 +13,8 @@ services:
     environment:
       DATABASE_PATH: /data/burgergo.db
       UPLOADS_DIR: /data/uploads
+      # Runtime copy so the healthcheck can build the <basePath>/api/health probe URL.
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
       GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY:-}
       DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
@@ -17,7 +24,10 @@ services:
       - burgergo-db:/data
       - burgergo-uploads:/data/uploads
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      # Under a sub-path deploy the app serves at <basePath>/api/health, so the probe
+      # URL must include NEXT_PUBLIC_BASE_PATH. `$$` escapes the compose interpolation
+      # so the var is read from the container's runtime environment.
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000'+(process.env.NEXT_PUBLIC_BASE_PATH||'')+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
       interval: 30s
       timeout: 5s
       retries: 3
