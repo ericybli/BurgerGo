@@ -7,6 +7,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends python3 make g++ \
  && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
+# The slim image ships npm 10, which mis-parses an npm-11-generated lockfile
+# ("Invalid Version"). Match the npm that produced package-lock.json.
+RUN npm install -g npm@11.5.2
 RUN npm ci
 
 # 2) builder — compile the app: standalone server, static assets, icons, Serwist sw.js,
@@ -14,6 +17,7 @@ RUN npm ci
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
+RUN npm install -g npm@11.5.2
 # NEXT_PUBLIC_* are inlined into the client bundle at `next build`, so they must be
 # present as build-time env. Without the Maps key the map breaks; without the base
 # path, assets/fetches 404 under a sub-path deploy. Pass via `--build-arg` / compose.
