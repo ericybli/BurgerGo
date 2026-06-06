@@ -1,0 +1,72 @@
+{
+  "app": {
+    "name": "BurgerGo",
+    "tagline": "Your personal travel companion"
+  },
+  "home": {
+    "title": "BurgerGo",
+    "settings": "Settings",
+    "newTrip": "New trip",
+    "emptyHeadline": "Where to first?",
+    "emptySubtext": "Plan your first trip and BurgerGo will tag along.",
+    "emptyCta": "New trip"
+  },
+  "status": {
+    "upcoming": "Upcoming",
+    "active": "Active",
+    "past": "Past"
+  },
+  "tripCard": {
+    "dateRange": "{start} – {end} · {days, plural, one {# day} other {# days}}"
+  },
+  "newTripSheet": {
+    "title": "New trip",
+    "nameLabel": "Trip name",
+    "namePlaceholder": "Tokyo adventure",
+    "startLabel": "Start date",
+    "endLabel": "End date",
+    "endBeforeStart": "End date must be on or after the start date.",
+    "nameRequired": "Please enter a trip name.",
+    "cancel": "Cancel",
+    "create": "Create trip"
+  },
+  "renameSheet": {
+    "title": "Rename trip",
+    "nameLabel": "Trip name",
+    "nameRequired": "Please enter a trip name.",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "tabs": {
+    "plan": "Plan",
+    "eats": "Eats",
+    "budget": "Budget",
+    "journal": "Journal"
+  },
+  "trip": {
+    "back": "Back",
+    "rename": "Rename"
+  },
+  "comingSoon": {
+    "plan": "Plan is on its way",
+    "eats": "Eats is on its way",
+    "budget": "Budget is on its way",
+    "journal": "Journal is on its way",
+    "subtext": "BurgerGo is still unpacking this one. Check back soon."
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "currency": "Currency",
+    "comingSoon": "Settings controls are on their way.",
+    "about": "About",
+    "aboutTagline": "Your personal travel companion"
+  },
+  "offline": {
+    "banner": "Offline — viewing saved data. Editing needs a connection.",
+    "disabledTooltip": "Connect to the internet to make changes."
+  },
+  "mascot": {
+    "alt": "BurgerGo the Siamese cat"
+  }
+}
