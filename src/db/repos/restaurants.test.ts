@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
 import { createTrip } from '@/src/db/repos/trips';
-import { addPlace } from '@/src/db/repos/places';
+import { addPlace, deletePlace } from '@/src/db/repos/places';
 import {
   addRestaurant,
   getRestaurant,
@@ -129,7 +129,7 @@ describe('restaurants repo', () => {
     expect(cleared?.linkedPlaceId).toBeNull();
   });
 
-  it('deleting the linked place sets linked_place_id NULL (FK set null)', async () => {
+  it('deleting the linked place sets linked_place_id NULL (FK set null)', () => {
     const { db, tripId } = setup();
     const place = addPlace(db, {
       tripId,
@@ -141,7 +141,6 @@ describe('restaurants repo', () => {
     scheduleToDay(db, r.id, place.id);
 
     // Delete the place directly via the places repo path:
-    const { deletePlace } = await import('@/src/db/repos/places');
     deletePlace(db, place.id);
 
     expect(getRestaurant(db, r.id)?.linkedPlaceId).toBeNull();

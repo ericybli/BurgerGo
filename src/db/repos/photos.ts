@@ -75,19 +75,23 @@ export interface AddPhotoInput {
  * (upload route, later group) writes the derivative files to this base path.
  */
 export function addPhoto(db: Db, input: AddPhotoInput): Photo {
-  const id = newId();
-  const row: Photo = {
-    id,
-    tripId: input.tripId,
-    ownerType: input.ownerType,
-    ownerId: input.ownerId,
-    path: photoBasePath(input.tripId, id),
-    width: input.width ?? null,
-    height: input.height ?? null,
-    orderIndex: maxOrderIndex(db, input.ownerType, input.ownerId) + 1,
-    createdAt: new Date(now()),
-  };
-  db.insert(photos).values(row).run();
+  let row!: Photo;
+  db.transaction((tx) => {
+    const txDb = tx as unknown as Db;
+    const id = newId();
+    row = {
+      id,
+      tripId: input.tripId,
+      ownerType: input.ownerType,
+      ownerId: input.ownerId,
+      path: photoBasePath(input.tripId, id),
+      width: input.width ?? null,
+      height: input.height ?? null,
+      orderIndex: maxOrderIndex(txDb, input.ownerType, input.ownerId) + 1,
+      createdAt: new Date(now()),
+    };
+    txDb.insert(photos).values(row).run();
+  });
   return row;
 }
 
