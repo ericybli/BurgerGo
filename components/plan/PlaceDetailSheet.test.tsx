@@ -19,10 +19,13 @@ vi.mock('@/app/_actions/places', () => ({
 }));
 
 // Add alongside the existing places action mock:
-const deletePhotoAction = vi.fn(async () => undefined);
-vi.mock('@/app/_actions/photos', () => ({
-  deletePhotoAction: (...a: unknown[]) => deletePhotoAction(...a),
-}));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const deletePhotoAction = vi.fn(async (..._args: any[]) => undefined);
+vi.mock('@/app/_actions/photos', () => {
+  return {
+    deletePhotoAction: (id: string) => deletePhotoAction(id),
+  };
+});
 
 const uploadFn = vi.fn(async () => ({ id: 'new-photo', width: 1600, height: 800 }));
 const uploadState = { uploading: false, error: null as string | null };

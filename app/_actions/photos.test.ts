@@ -10,10 +10,11 @@ vi.mock('@/src/lib/clock', () => ({ now: () => 1_700_000_000_000 }));
 const revalidatePath = vi.fn();
 vi.mock('next/cache', () => ({ revalidatePath: (...a: unknown[]) => revalidatePath(...a) }));
 
-const rmFn = vi.fn(async () => undefined);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const rmFn = vi.fn(async (..._args: any[]) => undefined);
 vi.mock('node:fs/promises', () => ({
-  default: { rm: (...a: unknown[]) => rmFn(...a) },
-  rm: (...a: unknown[]) => rmFn(...a),
+  default: { rm: (path: string, opts?: unknown) => rmFn(path, opts) },
+  rm: (path: string, opts?: unknown) => rmFn(path, opts),
 }));
 
 import { deletePhotoAction } from '@/app/_actions/photos';

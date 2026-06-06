@@ -32,7 +32,7 @@ function place(id: string, orderIndex: number, lat: number, lng: number,
     id, orderIndex, lat, lng, name: id, category: 'other' as const,
     tripId: 't', dayDate: '2026-06-04', googlePlaceId,
     address: null, scheduledTime: null, durationMin: null, cost: null,
-    notes: null, photoPath: googlePlaceId ? `/api/photos/${googlePlaceId}/card` : null,
+    notes: null, photoPath: googlePlaceId ? `/api/photos/${googlePlaceId}/card` : null, photos: [],
   };
 }
 

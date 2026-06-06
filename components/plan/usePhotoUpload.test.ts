@@ -21,7 +21,9 @@ describe('usePhotoUpload', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0]!;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const callArgs = fetchMock.mock.calls[0] as unknown as [string, any];
+    const [url, init] = callArgs;
     expect(url).toBe('/api/photos'); // BASE_PATH='' in tests
     expect(init.method).toBe('POST');
     expect(init.body).toBeInstanceOf(FormData);
