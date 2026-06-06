@@ -91,10 +91,111 @@ export const settings = sqliteTable('settings', {
   currency: text('currency').notNull(), // ISO 4217, single global currency
 });
 
+export const restaurants = sqliteTable(
+  'restaurants',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    cuisine: text('cuisine'), // free text
+    rating: integer('rating'), // 1–5; NULL = unrated
+    status: text('status', { enum: ['want-to-try', 'been'] }).notNull(),
+    priceLevel: integer('price_level'), // 1–4 ($–$$$$); 1 is minimum
+    notes: text('notes'),
+    linkedPlaceId: text('linked_place_id').references(() => places.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTripStatus: index('idx_restaurants_trip').on(t.tripId, t.status),
+  }),
+);
+
+export const expenses = sqliteTable(
+  'expenses',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    amount: integer('amount').notNull(), // minor units, actual spend
+    category: text('category', {
+      enum: ['food', 'lodging', 'transport', 'activities', 'shopping', 'other'],
+    }).notNull(),
+    spentOn: text('spent_on').notNull(), // YYYY-MM-DD
+    note: text('note'),
+    linkedPlaceId: text('linked_place_id').references(() => places.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTripDate: index('idx_expenses_trip_date').on(t.tripId, t.spentOn),
+    byTripCat: index('idx_expenses_trip_cat').on(t.tripId, t.category),
+  }),
+);
+
+// Planned budget (Plan 2 decision: planned-vs-actual). category NULL = overall
+// target; non-null = per-category. Unique per (trip, category) — SQLite treats
+// each NULL as distinct in a UNIQUE index, so the overall row is kept single by
+// the repo's read-before-write upsert (it queries `category IS NULL`).
+export const budgetTargets = sqliteTable(
+  'budget_targets',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    category: text('category', {
+      enum: ['food', 'lodging', 'transport', 'activities', 'shopping', 'other'],
+    }), // NULL = overall target
+    plannedAmount: integer('planned_amount').notNull(), // minor units
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    uniqTripCat: uniqueIndex('uniq_budget_targets_trip_cat').on(
+      t.tripId,
+      t.category,
+    ),
+  }),
+);
+
+// Personal uploaded photos (Plan 2: owner_type 'place' only; 'journal' in Plan 3).
+// path = base path `<tripId>/<photoId>` (no extension); see §5.6.
+export const photos = sqliteTable(
+  'photos',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    ownerType: text('owner_type', { enum: ['place', 'journal'] }).notNull(),
+    ownerId: text('owner_id').notNull(), // places.id (or journal_entries.id later)
+    path: text('path').notNull(), // base path `<tripId>/<photoId>`
+    width: integer('width'), // of the `full` derivative
+    height: integer('height'),
+    orderIndex: integer('order_index').notNull(), // gallery order
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byOwner: index('idx_photos_owner').on(t.ownerType, t.ownerId, t.orderIndex),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
   travelLegs: many(travelLegs),
+  restaurants: many(restaurants),
+  expenses: many(expenses),
+  budgetTargets: many(budgetTargets),
+  photos: many(photos),
 }));
 
 export const placesRelations = relations(places, ({ one, many }) => ({
@@ -117,6 +218,30 @@ export const travelLegsRelations = relations(travelLegs, ({ one }) => ({
   }),
 }));
 
+export const restaurantsRelations = relations(restaurants, ({ one }) => ({
+  trip: one(trips, { fields: [restaurants.tripId], references: [trips.id] }),
+  linkedPlace: one(places, {
+    fields: [restaurants.linkedPlaceId],
+    references: [places.id],
+  }),
+}));
+
+export const expensesRelations = relations(expenses, ({ one }) => ({
+  trip: one(trips, { fields: [expenses.tripId], references: [trips.id] }),
+  linkedPlace: one(places, {
+    fields: [expenses.linkedPlaceId],
+    references: [places.id],
+  }),
+}));
+
+export const budgetTargetsRelations = relations(budgetTargets, ({ one }) => ({
+  trip: one(trips, { fields: [budgetTargets.tripId], references: [trips.id] }),
+}));
+
+export const photosRelations = relations(photos, ({ one }) => ({
+  trip: one(trips, { fields: [photos.tripId], references: [trips.id] }),
+}));
+
 // Inferred row types (used by repos in later tasks).
 export type Trip = typeof trips.$inferSelect;
 export type NewTrip = typeof trips.$inferInsert;
@@ -125,3 +250,11 @@ export type TravelLeg = typeof travelLegs.$inferSelect;
 export type PlaceDetailsCacheRow = typeof placeDetailsCache.$inferSelect;
 export type NewPlaceDetailsCacheRow = typeof placeDetailsCache.$inferInsert;
 export type Settings = typeof settings.$inferSelect;
+export type Restaurant = typeof restaurants.$inferSelect;
+export type NewRestaurant = typeof restaurants.$inferInsert;
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;
+export type BudgetTarget = typeof budgetTargets.$inferSelect;
+export type NewBudgetTarget = typeof budgetTargets.$inferInsert;
+export type Photo = typeof photos.$inferSelect;
+export type NewPhoto = typeof photos.$inferInsert;
