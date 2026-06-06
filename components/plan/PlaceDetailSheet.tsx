@@ -1,0 +1,158 @@
+'use client';
+
+import { useState, useTransition } from 'react';
+import { useTranslations } from 'next-intl';
+import type { PlaceDTO } from '@/src/lib/planView';
+import { placeUrl } from '@/src/lib/googleMapsUrl';
+import { currencyExponent } from '@/src/lib/currency';
+import { updatePlaceAction } from '@/app/_actions/places';
+
+const CATEGORIES: PlaceDTO['category'][] = [
+  'sightseeing', 'lodging', 'transport', 'activity', 'other',
+];
+
+type PlaceDetailSheetProps = {
+  open: boolean;
+  place: PlaceDTO;
+  currency: string;
+  locale: string;
+  disabled: boolean;
+  onClose: () => void;
+  onSaved: (place: PlaceDTO) => void;
+};
+
+export function PlaceDetailSheet({
+  open,
+  place,
+  currency,
+  disabled,
+  onClose,
+  onSaved,
+}: PlaceDetailSheetProps) {
+  const t = useTranslations('plan');
+  const tCat = useTranslations('placeCategory');
+  const exponent = currencyExponent(currency);
+  const [name, setName] = useState(place.name);
+  const [address, setAddress] = useState(place.address ?? '');
+  const [category, setCategory] = useState<PlaceDTO['category']>(place.category);
+  const [time, setTime] = useState(place.scheduledTime ?? '');
+  const [costMajor, setCostMajor] = useState(
+    place.cost != null ? String(place.cost / 10 ** exponent) : '',
+  );
+  const [notes, setNotes] = useState(place.notes ?? '');
+  const [isPending, startTransition] = useTransition();
+
+  if (!open) return null;
+
+  const mapsHref = placeUrl({
+    name: place.name,
+    lat: place.lat ?? 0,
+    lng: place.lng ?? 0,
+    googlePlaceId: place.googlePlaceId,
+  });
+
+  function handleSave() {
+    const costMinor =
+      costMajor.trim() === '' ? null : Math.round(Number(costMajor) * 10 ** exponent);
+    startTransition(async () => {
+      const updated = await updatePlaceAction(place.id, {
+        name: name.trim(),
+        address: address.trim() || null,
+        category,
+        scheduledTime: time || null,
+        cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
+        notes: notes.trim() || null,
+      });
+      onSaved(updated);
+      onClose();
+    });
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={place.name}
+      className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+      >
+        <label className="block text-label font-medium text-ink" htmlFor="pd-name">{t('nameLabel')}</label>
+        <input
+          id="pd-name" type="text" value={name} disabled={disabled}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-address">{t('addressLabel')}</label>
+        <input
+          id="pd-address" type="text" value={address} disabled={disabled}
+          onChange={(e) => setAddress(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-category">{t('categoryLabel')}</label>
+        <select
+          id="pd-category" value={category} disabled={disabled}
+          onChange={(e) => setCategory(e.target.value as PlaceDTO['category'])}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>{tCat(c)}</option>
+          ))}
+        </select>
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-time">{t('timeLabel')}</label>
+        <input
+          id="pd-time" type="time" value={time} disabled={disabled}
+          onChange={(e) => setTime(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-cost">{t('costLabel')}</label>
+        <input
+          id="pd-cost" type="number" inputMode="decimal" value={costMajor} disabled={disabled}
+          onChange={(e) => setCostMajor(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-notes">{t('notesLabel')}</label>
+        <textarea
+          id="pd-notes" value={notes} disabled={disabled}
+          onChange={(e) => setNotes(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <a
+          href={mapsHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 block w-full rounded-control bg-teal px-4 py-3 text-center text-label font-medium text-white shadow-card"
+        >
+          {t('openInGoogleMaps')}
+        </a>
+
+        <div className="mt-3 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            type="button"
+            disabled={disabled || isPending}
+            onClick={handleSave}
+            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          >
+            {t('save')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
