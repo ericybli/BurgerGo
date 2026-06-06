@@ -1,20 +1,11 @@
-import { notFound } from 'next/navigation';
-import { db } from '@/src/db/client';
-import { getTrip } from '@/src/db/repos/trips';
-import { TripHeader } from '@/components/TripHeader';
-import { BottomTabBar } from '@/components/BottomTabBar';
+import { TripShellClient } from '@/components/TripShellClient';
 
-function formatSubtitle(startDate: string, endDate: string): string {
-  const fmt = new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-  const start = fmt.format(new Date(`${startDate}T00:00:00Z`));
-  const end = fmt.format(new Date(`${endDate}T00:00:00Z`));
-  return `${start} – ${end}`;
-}
-
+// Static app shell: no server-side DB read so the SW can cache the page document.
+// `force-static` makes this dynamic-param route emit cacheable headers (not
+// no-store) for any trip id — the per-trip data is client-fetched anyway.
+// TripShellClient owns that data (header + tabs) from `/api/trips/:id`
+// (SWR-cached) on mount. (§7.3/§8.2)
+export const dynamic = 'force-static';
 export default async function TripLayout({
   children,
   params,
@@ -23,18 +14,5 @@ export default async function TripLayout({
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  const trip = getTrip(db, tripId); // getTrip is synchronous
-  if (!trip) notFound();
-
-  return (
-    <div className="min-h-screen pb-20">
-      <TripHeader
-        tripId={trip.id}
-        name={trip.name}
-        dateSubtitle={formatSubtitle(trip.startDate, trip.endDate)}
-      />
-      {children}
-      <BottomTabBar tripId={trip.id} />
-    </div>
-  );
+  return <TripShellClient tripId={tripId}>{children}</TripShellClient>;
 }

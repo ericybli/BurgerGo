@@ -1,28 +1,15 @@
-import { redirect, notFound } from 'next/navigation';
-import { db } from '@/src/db/client';
-import { getTrip } from '@/src/db/repos/trips';
-import { tripStatus } from '@/src/lib/days';
-import { env } from '@/src/env';
+import { redirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-
+// The /trip/:id index unconditionally redirects to the Plan tab. No DB read and
+// no `force-dynamic`; `force-static` keeps it offline-safe + statically cacheable
+// for any id. The active-aware "today landing" belongs to the real Plan tab in a
+// later plan; the 1A Plan tab is a placeholder that ignores date params anyway.
+export const dynamic = 'force-static';
 export default async function TripIndexPage({
   params,
 }: {
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  const trip = getTrip(db, tripId); // getTrip is synchronous
-  if (!trip) notFound();
-
-  // Active → today (container TZ); else explicit Day 1 (start_date). §3.8 / §8.1.
-  const status = tripStatus(trip, env.TZ);
-  const date =
-    status === 'active'
-      ? new Intl.DateTimeFormat('en-CA', { timeZone: env.TZ }).format(new Date())
-      : trip.startDate;
-
-  redirect(
-    `/trip/${tripId}/plan?view=list&bucket=days&date=${date}`,
-  );
+  redirect(`/trip/${tripId}/plan`);
 }
