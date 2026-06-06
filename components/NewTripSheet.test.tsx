@@ -6,7 +6,7 @@ import en from '@/messages/en.json';
 
 const createTripAction = vi.fn(async () => ({ id: 't-new' }));
 vi.mock('@/app/_actions/trips', () => ({
-  createTripAction: (...args: unknown[]) => createTripAction(...args),
+  createTripAction: (...args: Parameters<typeof createTripAction>) => createTripAction(...args),
   renameTripAction: vi.fn(),
 }));
 

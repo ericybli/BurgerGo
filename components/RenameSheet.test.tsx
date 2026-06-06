@@ -7,7 +7,7 @@ import en from '@/messages/en.json';
 const renameTripAction = vi.fn(async () => undefined);
 vi.mock('@/app/_actions/trips', () => ({
   createTripAction: vi.fn(),
-  renameTripAction: (...args: unknown[]) => renameTripAction(...args),
+  renameTripAction: (...args: Parameters<typeof renameTripAction>) => renameTripAction(...args),
 }));
 
 import { RenameSheet } from './RenameSheet';

@@ -23,7 +23,7 @@ describe('i18n/request', () => {
     }>)({});
     expect(config.locale).toBe('en');
     expect(config.messages).toBeTypeOf('object');
-    expect((config.messages as Record<string, Record<string, string>>).home.title).toBe(
+    expect((config.messages as Record<string, Record<string, string>>)['home']?.['title']).toBe(
       'BurgerGo',
     );
   });
