@@ -15,6 +15,13 @@
       "when": 1780754969900,
       "tag": "0001_workable_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1780771100194,
+      "tag": "0002_perpetual_doctor_strange",
+      "breakpoints": true
     }
   ]
 }
