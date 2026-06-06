@@ -13,19 +13,33 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(search),
 }));
 
-const promoteToDayAction = vi.fn(async () => ({ id: 'p' }));
-const reorderDayAction = vi.fn(async () => undefined);
-const recomputeDayLegsAction = vi.fn(async () => []);
-const moveToSavedAction = vi.fn(async () => ({ id: 'p1' }));
-const deletePlaceAction = vi.fn(async () => undefined);
+// Use vi.hoisted so these are available when the vi.mock factory is hoisted.
+const {
+  promoteToDayAction,
+  reorderDayAction,
+  recomputeDayLegsAction,
+  moveToSavedAction,
+  deletePlaceAction,
+} = vi.hoisted(() => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  promoteToDayAction: vi.fn(async (_id?: any, _date?: any) => ({ id: 'p' })),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reorderDayAction: vi.fn(async (_tripId?: any, _day?: any, _ids?: any) => undefined),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  recomputeDayLegsAction: vi.fn(async (_tripId?: any, _day?: any, _mode?: any) => []),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  moveToSavedAction: vi.fn(async (_id?: any) => ({ id: 'p1' })),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deletePlaceAction: vi.fn(async (_id?: any) => undefined),
+}));
 vi.mock('@/app/_actions/places', () => ({
   addPlaceAction: vi.fn(async () => ({ id: 'p-new' })),
   updatePlaceAction: vi.fn(async () => ({ id: 'p1' })),
-  deletePlaceAction: (...a: unknown[]) => deletePlaceAction(...a),
-  reorderDayAction: (...a: unknown[]) => reorderDayAction(...a),
-  promoteToDayAction: (...a: unknown[]) => promoteToDayAction(...a),
-  moveToSavedAction: (...a: unknown[]) => moveToSavedAction(...a),
-  recomputeDayLegsAction: (...a: unknown[]) => recomputeDayLegsAction(...a),
+  deletePlaceAction,
+  reorderDayAction,
+  promoteToDayAction,
+  moveToSavedAction,
+  recomputeDayLegsAction,
 }));
 
 // Stub the Google-dependent sheet + the B3 map so PlanClient is testable

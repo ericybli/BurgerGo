@@ -4,9 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
-const addPlaceAction = vi.fn(async () => ({ id: 'p-new' }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const addPlaceAction = vi.fn(async (..._a: any[]) => ({ id: 'p-new' }));
 vi.mock('@/app/_actions/places', () => ({
-  addPlaceAction: (...a: unknown[]) => addPlaceAction(...a),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addPlaceAction: (...a: any[]) => addPlaceAction(...a),
   updatePlaceAction: vi.fn(),
   deletePlaceAction: vi.fn(),
   reorderDayAction: vi.fn(),
@@ -38,9 +40,11 @@ vi.mock('@/components/plan/useGooglePlaces', () => ({
 }));
 
 // Mock reverseGeocode to return a string (actual B0 API)
-const reverseGeocode = vi.fn(async () => '1 Chome, Asakusa');
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const reverseGeocode = vi.fn(async (..._a: any[]) => '1 Chome, Asakusa');
 vi.mock('@/components/plan/googleClient', () => ({
-  reverseGeocode: (...a: unknown[]) => reverseGeocode(...a),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  reverseGeocode: (...a: any[]) => reverseGeocode(...a),
 }));
 
 import { AddPlaceSheet } from './AddPlaceSheet';

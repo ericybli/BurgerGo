@@ -5,10 +5,12 @@ import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 import type { PlaceDTO } from '@/src/lib/planView';
 
-const updatePlaceAction = vi.fn(async () => ({ id: 'p1' }));
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updatePlaceAction = vi.fn(async (..._a: any[]) => ({ id: 'p1' }));
 vi.mock('@/app/_actions/places', () => ({
   addPlaceAction: vi.fn(),
-  updatePlaceAction: (...a: unknown[]) => updatePlaceAction(...a),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updatePlaceAction: (...a: any[]) => updatePlaceAction(...a),
   deletePlaceAction: vi.fn(),
   reorderDayAction: vi.fn(),
   promoteToDayAction: vi.fn(),

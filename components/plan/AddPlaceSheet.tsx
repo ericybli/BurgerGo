@@ -17,7 +17,7 @@ type AddPlaceSheetProps = {
   dayDate: string | null;
   disabled: boolean;
   onClose: () => void;
-  onAdded: (place: PlaceDTO) => void;
+  onAdded: () => void;
 };
 
 export function AddPlaceSheet({
@@ -45,8 +45,8 @@ export function AddPlaceSheet({
 
   function commit(payload: Parameters<typeof addPlaceAction>[0]) {
     startTransition(async () => {
-      const place = await addPlaceAction(payload);
-      onAdded(place);
+      await addPlaceAction(payload);
+      onAdded();
       onClose();
     });
   }

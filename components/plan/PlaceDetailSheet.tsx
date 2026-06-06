@@ -18,7 +18,7 @@ type PlaceDetailSheetProps = {
   locale: string;
   disabled: boolean;
   onClose: () => void;
-  onSaved: (place: PlaceDTO) => void;
+  onSaved: () => void;
 };
 
 export function PlaceDetailSheet({
@@ -55,7 +55,7 @@ export function PlaceDetailSheet({
     const costMinor =
       costMajor.trim() === '' ? null : Math.round(Number(costMajor) * 10 ** exponent);
     startTransition(async () => {
-      const updated = await updatePlaceAction(place.id, {
+      await updatePlaceAction(place.id, {
         name: name.trim(),
         address: address.trim() || null,
         category,
@@ -63,7 +63,7 @@ export function PlaceDetailSheet({
         cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
         notes: notes.trim() || null,
       });
-      onSaved(updated);
+      onSaved();
       onClose();
     });
   }
