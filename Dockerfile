@@ -33,7 +33,6 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/drizzle ./drizzle
 COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 COPY --chmod=755 docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN mkdir -p /data /data/uploads && chown -R burgergo /data
 USER burgergo

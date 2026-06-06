@@ -32,6 +32,9 @@ public/burgergo-logo.png
 # testing
 coverage/
 
+# TypeScript incremental build artifacts
+*.tsbuildinfo
+
 # misc
 .DS_Store
 *.log

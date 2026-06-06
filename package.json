@@ -40,6 +40,8 @@
     "autoprefixer": "^10",
     "drizzle-kit": "^0.28",
     "esbuild": "^0.28.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^15.5.19",
     "jsdom": "^25",
     "postcss": "^8",
     "sharp": "^0.33",
