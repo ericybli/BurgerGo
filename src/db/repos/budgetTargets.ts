@@ -95,6 +95,9 @@ export function setTarget(
   return row;
 }
 
+/** Alias for listTargets (C3 API compatibility). */
+export const listTargetsForTrip = listTargets;
+
 /** Delete the target for (trip, category). `category = null` deletes overall. */
 export function deleteTarget(
   db: Db,
