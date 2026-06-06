@@ -135,8 +135,6 @@
     "costLabel": "Cost",
     "notesLabel": "Notes",
     "save": "Save",
-    "mapNeedsConnectionHeadline": "The map needs a connection",
-    "mapNeedsConnectionSubtext": "Your saved plan still works offline. Open in Google Maps to navigate.",
     "upNext": "Up next",
     "noTimeSet": "No time set",
     "skip": "Skip",

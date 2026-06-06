@@ -5,6 +5,7 @@
  * polyline is missing (offline / not yet computed).
  */
 import type { DayGroup, LegDTO, DayPath, LatLngLiteral } from '@/src/lib/map/types';
+import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import { colorForGroup } from '@/src/lib/map/colors';
 
 /**
@@ -49,8 +50,8 @@ export function decodePolyline(encoded: string): LatLngLiteral[] {
   return points;
 }
 
-function legKey(fromId: string, toId: string): string {
-  return `${fromId} ${toId}`;
+function legKey(fromId: string, toId: string, mode: TravelMode): string {
+  return `${fromId}|${toId}|${mode}`;
 }
 
 function hasCoords(p: { lat: number | null; lng: number | null }): boolean {
@@ -64,11 +65,13 @@ function hasCoords(p: { lat: number | null; lng: number | null }): boolean {
  *   present; fall back to a straight 2-point segment otherwise.
  * - Days with fewer than two plottable stops produce no path.
  * - The shared vertex between consecutive segments is deduplicated.
+ * - Only legs whose `mode` matches `mode` are used; non-matching pairs fall
+ *   back to the straight line. This mirrors `legView.indexLegs`/`legBetween`.
  */
-export function buildDayPaths(groups: DayGroup[], legs: LegDTO[]): DayPath[] {
+export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], mode: TravelMode): DayPath[] {
   const byPair = new Map<string, LegDTO>();
   for (const leg of legs) {
-    byPair.set(legKey(leg.fromPlaceId, leg.toPlaceId), leg);
+    byPair.set(legKey(leg.fromPlaceId, leg.toPlaceId, leg.mode), leg);
   }
 
   const result: DayPath[] = [];
@@ -87,7 +90,7 @@ export function buildDayPaths(groups: DayGroup[], legs: LegDTO[]): DayPath[] {
     for (let i = 0; i < plottable.length - 1; i += 1) {
       const from = plottable[i]!;
       const to = plottable[i + 1]!;
-      const leg = byPair.get(legKey(from.id, to.id));
+      const leg = byPair.get(legKey(from.id, to.id, mode));
       const decoded = leg?.polyline ? decodePolyline(leg.polyline) : [];
       const segment =
         decoded.length >= 2

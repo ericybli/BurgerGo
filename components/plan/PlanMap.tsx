@@ -68,8 +68,8 @@ export function PlanMap({
   );
 
   const dayPaths = useMemo(
-    () => (bucket === 'days' ? buildDayPaths(visibleDayGroups, legs) : []),
-    [bucket, visibleDayGroups, legs],
+    () => (bucket === 'days' ? buildDayPaths(visibleDayGroups, legs, mode) : []),
+    [bucket, visibleDayGroups, legs, mode],
   );
 
   // --- Saved bucket: flat un-numbered markers. ---

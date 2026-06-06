@@ -18,7 +18,7 @@ function group(colorIndex: number, places: PlaceDTO[]): DayGroup {
 }
 
 describe('buildMarkers', () => {
-  it('returns one marker per plottable place, sorted by orderIndex, labeled 1..n', () => {
+  it('returns one marker per plottable place, sorted by orderIndex, labeled orderIndex+1', () => {
     const g = group(0, [
       p('b', 1, 35.1, 139.1),
       p('a', 0, 35.0, 139.0),
@@ -48,14 +48,18 @@ describe('buildMarkers', () => {
     expect(markers.map((m) => m.id)).toEqual(['has']);
   });
 
-  it('renumbers labels after coord-less stops are dropped', () => {
+  it('uses orderIndex+1 labels so a coord-less stop mid-day keeps list/map numbering consistent', () => {
+    // orderIndex 0 = has coords → label "1"
+    // orderIndex 1 = no coords → dropped from markers
+    // orderIndex 2 = has coords → label "3" (not "2"), matching list PlaceCard
     const g = group(0, [
-      p('skip', 0, null, null),
-      p('first', 1, 35.0, 139.0),
-      p('second', 2, 35.1, 139.1),
+      p('first',  0, 35.0, 139.0),
+      p('skip',   1, null, null),
+      p('third',  2, 35.1, 139.1),
     ]);
     const markers = buildMarkers(g);
-    expect(markers.map((m) => m.label)).toEqual(['1', '2']);
+    expect(markers.map((m) => m.id)).toEqual(['first', 'third']);
+    expect(markers.map((m) => m.label)).toEqual(['1', '3']);
   });
 
   it('carries name, category, googlePlaceId, photoPath for the info card', () => {

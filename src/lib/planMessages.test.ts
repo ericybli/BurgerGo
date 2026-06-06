@@ -11,7 +11,6 @@ describe('en.plan messages', () => {
       'emptyDayHeadline', 'emptyDaySubtext', 'emptySavedHeadline', 'emptySavedSubtext',
       'searchPlaceholder', 'dropPinTab', 'searchSubTab', 'longPressHint', 'confirm', 'cancel',
       'nameLabel', 'addressLabel', 'categoryLabel', 'timeLabel', 'costLabel', 'notesLabel', 'save',
-      'mapNeedsConnectionHeadline', 'mapNeedsConnectionSubtext',
       'upNext', 'noTimeSet', 'skip', 'dayPickerTitle', 'recompute',
       'loading', 'errorHeadline', 'errorSubtext', 'reorderHint',
     ];

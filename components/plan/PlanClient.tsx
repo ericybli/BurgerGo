@@ -265,25 +265,17 @@ export function PlanClient({
       ) : null}
 
       {params.view === 'map' ? (
-        online ? (
-          <PlanMap
-            bucket={params.bucket}
-            dayGroups={dayGroups}
-            legs={legs}
-            mode={dayMode}
-            visibleDates={visibleDates}
-            onToggleDate={onToggleDate}
-            onSelectPlace={(id) => setDetailFor(placeById(id))}
-            onOpenDayRoute={onOpenDayRoute}
-            online={online}
-          />
-        ) : (
-          <EmptyState
-            mascotAlt={t('mapTab')}
-            headline={t('mapNeedsConnectionHeadline')}
-            subtext={t('mapNeedsConnectionSubtext')}
-          />
-        )
+        <PlanMap
+          bucket={params.bucket}
+          dayGroups={dayGroups}
+          legs={legs}
+          mode={dayMode}
+          visibleDates={visibleDates}
+          onToggleDate={onToggleDate}
+          onSelectPlace={(id) => setDetailFor(placeById(id))}
+          onOpenDayRoute={onOpenDayRoute}
+          online={online}
+        />
       ) : params.bucket === 'days' ? (
         <>
           {showTodayHero ? (

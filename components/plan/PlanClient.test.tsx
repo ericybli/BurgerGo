@@ -135,13 +135,14 @@ describe('PlanClient', () => {
     expect(map).toHaveAttribute('data-bucket', 'days');
   });
 
-  it('shows the map offline placeholder when offline + map view', async () => {
+  it('renders PlanMap with online=false when offline + map view (PlanMap owns offline branch)', async () => {
     vi.stubGlobal('navigator', { onLine: false });
     search = 'view=map&bucket=days&date=2026-05-03';
     mockFetch();
     renderPlan();
-    expect(await screen.findByText(en.plan.mapNeedsConnectionHeadline)).toBeInTheDocument();
-    expect(screen.queryByTestId('plan-map')).not.toBeInTheDocument();
+    const map = await screen.findByTestId('plan-map');
+    expect(map).toHaveAttribute('data-online', 'false');
+    expect(map).toHaveAttribute('data-bucket', 'days');
   });
 
   it('promotes a Saved place to a day and recomputes that day legs', async () => {

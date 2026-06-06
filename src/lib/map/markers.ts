@@ -28,7 +28,10 @@ function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {
 /**
  * Build the ordered, numbered, colored markers for one day group.
  * B2 owns the grouping and ordering; this function only drops
- * coord-less places, re-numbers survivors, and attaches the color.
+ * coord-less places and attaches the color. Labels use `orderIndex + 1`
+ * to stay consistent with `planView.pinLabel` used by the list PlaceCard,
+ * so a day containing a coord-less place shows the same stop number on
+ * both the list and the map.
  */
 export function buildMarkers(group: DayGroup): PlaceMarker[] {
   const color = colorForGroup(group);
@@ -36,14 +39,14 @@ export function buildMarkers(group: DayGroup): PlaceMarker[] {
     .slice()
     .sort((a, b) => a.orderIndex - b.orderIndex)
     .filter(hasCoords)
-    .map((p, idx) => ({
+    .map((p) => ({
       id: p.id,
       name: p.name,
       category: p.category,
       googlePlaceId: p.googlePlaceId,
       photoPath: p.photoPath,
       position: { lat: p.lat, lng: p.lng },
-      label: String(idx + 1),
+      label: String(p.orderIndex + 1),
       color,
     }));
 }
