@@ -1,0 +1,70 @@
+/**
+ * Pure marker-set builder for the Plan▸Map view (spec §3.4). Converts a
+ * B2 DayGroup (already grouped + ordered by PlanClient) into a flat list of
+ * PlaceMarker objects the thin map component passes to google.maps.Marker.
+ * Places without coordinates are dropped. Labels are 1-based after dropping.
+ */
+import type { DayGroup, PlaceDTO, LatLngLiteral } from '@/src/lib/map/types';
+import { colorForGroup } from '@/src/lib/map/colors';
+
+/** One plottable pin. */
+export interface PlaceMarker {
+  id: string;
+  name: string;
+  category: PlaceDTO['category'];
+  googlePlaceId: string | null;
+  photoPath: string | null;
+  position: LatLngLiteral;
+  /** "1".."n" for day stops (Coral text, spec §3.4); null for Saved pins. */
+  label: string | null;
+  /** Day palette color for day markers; null for Saved markers. */
+  color: string | null;
+}
+
+function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {
+  return typeof p.lat === 'number' && typeof p.lng === 'number';
+}
+
+/**
+ * Build the ordered, numbered, colored markers for one day group.
+ * B2 owns the grouping and ordering; this function only drops
+ * coord-less places, re-numbers survivors, and attaches the color.
+ */
+export function buildMarkers(group: DayGroup): PlaceMarker[] {
+  const color = colorForGroup(group);
+  return group.places
+    .slice()
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .filter(hasCoords)
+    .map((p, idx) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      googlePlaceId: p.googlePlaceId,
+      photoPath: p.photoPath,
+      position: { lat: p.lat, lng: p.lng },
+      label: String(idx + 1),
+      color,
+    }));
+}
+
+/**
+ * Build un-numbered, un-colored markers for the Saved bucket.
+ * `places` here is the flat list of saved-bucket places from the bucket's
+ * single DayGroup (date=null) that B2 passes in for the Saved view.
+ */
+export function buildSavedMarkers(places: PlaceDTO[]): PlaceMarker[] {
+  return places
+    .filter(hasCoords)
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category,
+      googlePlaceId: p.googlePlaceId,
+      photoPath: p.photoPath,
+      position: { lat: p.lat as number, lng: p.lng as number },
+      label: null,
+      color: null,
+    }));
+}
