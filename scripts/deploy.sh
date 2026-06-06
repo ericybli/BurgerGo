@@ -50,6 +50,15 @@ rsync -az --delete \
 echo "==> Installing nginx site…"
 ssh $SSH_OPTS "$SERVER" bash -se <<EOF
   set -euo pipefail
+  # Self-signed origin cert for :443 so Cloudflare "Full" SSL mode can reach us
+  # (generated once; Cloudflare "Full" doesn't validate it).
+  mkdir -p /etc/nginx/ssl
+  if [ ! -f /etc/nginx/ssl/burgergo-selfsigned.crt ]; then
+    openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+      -keyout /etc/nginx/ssl/burgergo-selfsigned.key \
+      -out /etc/nginx/ssl/burgergo-selfsigned.crt \
+      -subj "/CN=eric.month2month.com" 2>/dev/null
+  fi
   install -m 0644 "$APP_DIR/deploy/nginx-burgergo.conf" /etc/nginx/sites-available/burgergo
   ln -sf /etc/nginx/sites-available/burgergo /etc/nginx/sites-enabled/burgergo
   nginx -t
@@ -76,7 +85,7 @@ echo "==> Verifying origin health…"
 ssh $SSH_OPTS "$SERVER" bash -se <<'EOF'
   set -euo pipefail
   for i in $(seq 1 20); do
-    code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/burgergo/api/health || true)
+    code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: eric.month2month.com' http://127.0.0.1/burgergo/api/health || true)
     if [ "$code" = "200" ]; then echo "origin /burgergo/api/health -> 200 OK"; exit 0; fi
     sleep 3
   done
