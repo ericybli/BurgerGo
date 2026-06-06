@@ -17,6 +17,8 @@ describe('SWRegister', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    // Reset readyState back to 'complete' (jsdom default) after each test.
+    Object.defineProperty(document, 'readyState', { value: 'complete', configurable: true });
   });
 
   it('renders nothing', () => {
@@ -37,5 +39,24 @@ describe('SWRegister', () => {
       render(<SWRegister />);
       window.dispatchEvent(new Event('load'));
     }).not.toThrow();
+  });
+
+  it('registers immediately when document.readyState is already "complete"', async () => {
+    Object.defineProperty(document, 'readyState', { value: 'complete', configurable: true });
+    render(<SWRegister />);
+    // No load event fired — registration must happen synchronously within the effect.
+    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
+    await waitFor(() => expect(persist).toHaveBeenCalled());
+  });
+
+  it('defers registration until the load event when document.readyState is "loading"', async () => {
+    Object.defineProperty(document, 'readyState', { value: 'loading', configurable: true });
+    render(<SWRegister />);
+    // Not yet registered — page is still loading.
+    expect(register).not.toHaveBeenCalled();
+    // Fire the load event to trigger registration.
+    window.dispatchEvent(new Event('load'));
+    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
+    await waitFor(() => expect(persist).toHaveBeenCalled());
   });
 });

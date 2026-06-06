@@ -8,8 +8,8 @@ services:
     environment:
       DATABASE_PATH: /data/burgergo.db
       UPLOADS_DIR: /data/uploads
-      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-      GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY}
+      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+      GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY:-}
       DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
       DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
       TZ: ${TZ:-UTC}
@@ -21,6 +21,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 40s
 
 volumes:
   burgergo-db:

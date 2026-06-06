@@ -1,4 +1,5 @@
 import { mkdir, copyFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
@@ -28,6 +29,9 @@ async function renderIcon(source: string, size: number, inset: number): Promise<
 
 export async function generateIcons(opts: GenerateIconsOptions): Promise<void> {
   const { source, publicDir } = opts;
+  if (!existsSync(source)) {
+    throw new Error(`gen-icons: source logo not found at "${source}". Add assets/burgergo-logo.png before building.`);
+  }
   const iconsDir = join(publicDir, 'icons');
   await mkdir(iconsDir, { recursive: true });
 

@@ -34,8 +34,8 @@ describe('OfflineBanner', () => {
     const banner = screen.getByRole('status');
     expect(banner).toBeInTheDocument();
     expect(banner).toHaveTextContent(messages.offline.banner);
-    // Teal strip (spec §3.7 / §9.2).
-    expect(banner).toHaveStyle({ backgroundColor: '#4F8A86' });
+    // Teal strip (spec §3.7 / §9.2) — applied via the `bg-teal` Tailwind token.
+    expect(banner).toHaveClass('bg-teal');
   });
 
   it('renders offline immediately if the page mounts already offline', () => {

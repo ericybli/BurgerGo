@@ -29,8 +29,7 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      style={{ backgroundColor: '#4F8A86' }}
-      className="w-full px-4 py-2 text-center text-sm font-medium text-white"
+      className="bg-teal w-full px-4 py-2 text-center text-sm font-medium text-white"
     >
       {t('banner')}
     </div>

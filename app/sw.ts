@@ -22,7 +22,7 @@ export interface CacheEntry {
   name: string;
   handler: string;
   matcher: (opts: TestableMatcherOptions) => boolean;
-  options: { cacheName: string; expiration?: { maxEntries?: number; maxAgeSeconds?: number } };
+  options: { cacheName?: string; expiration?: { maxEntries?: number; maxAgeSeconds?: number } };
 }
 
 /**
@@ -42,7 +42,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
           url.hostname === 'maps.google.com'
         );
       },
-      options: { cacheName: 'burgergo-google' },
+      options: {},
     },
     {
       name: 'photos',

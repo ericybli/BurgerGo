@@ -20,6 +20,8 @@ COPY . .
 RUN npm run db:generate
 # build runs gen:icons then next build (output: standalone), which also emits public/sw.js.
 RUN npm run build
+# Bundle the migrator into a self-contained JS file so node can run it in the runner (no tsx).
+RUN npm run build:migrator
 
 # 3) runner — clean glibc slim image. Non-root. Only the runtime artifacts.
 FROM node:22-bookworm-slim AS runner
