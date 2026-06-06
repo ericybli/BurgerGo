@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
 import { dayRouteUrl, type TravelMode } from '@/src/lib/googleMapsUrl';
 import { landingDate } from '@/src/lib/landingDate';
+import { withBase } from '@/src/lib/basePath';
 import {
   parsePlanParams,
   buildPlanQuery,
@@ -104,8 +105,8 @@ export function PlanClient({
   const load = useCallback(async () => {
     try {
       const [tripRes, placesRes] = await Promise.all([
-        fetch(`/api/trips/${tripId}`, { credentials: 'same-origin' }),
-        fetch(`/api/trips/${tripId}/places`, { credentials: 'same-origin' }),
+        fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' }),
+        fetch(withBase(`/api/trips/${tripId}/places`), { credentials: 'same-origin' }),
       ]);
       if (!tripRes.ok || !placesRes.ok) throw new Error('load failed');
       const { trip } = (await tripRes.json()) as { trip: TripLite };

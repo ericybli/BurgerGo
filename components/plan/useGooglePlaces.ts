@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { loadGoogleMaps } from '@/src/lib/google/loader';
+import { withBase } from '@/src/lib/basePath';
 
 export interface Prediction {
   placeId: string;
@@ -88,7 +89,7 @@ export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
     const sessionToken = sessionTokenRef.current;
     try {
       const res = await fetch(
-        `/api/google/details?placeId=${encodeURIComponent(placeId)}&sessionToken=${encodeURIComponent(sessionToken)}`,
+        withBase(`/api/google/details?placeId=${encodeURIComponent(placeId)}&sessionToken=${encodeURIComponent(sessionToken)}`),
       );
       if (!res.ok) return null;
       const data = (await res.json()) as PlaceDetails;

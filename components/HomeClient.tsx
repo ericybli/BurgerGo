@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Trip } from '@/src/db/schema';
+import { withBase } from '@/src/lib/basePath';
 import { TripCard } from '@/components/TripCard';
 import { NewTripSheet } from '@/components/NewTripSheet';
 import { EmptyState } from '@/components/EmptyState';
@@ -27,7 +28,7 @@ export function HomeClient({ tz }: { tz: string }) {
 
   const loadTrips = useCallback(async () => {
     try {
-      const res = await fetch('/api/trips', { credentials: 'same-origin' });
+      const res = await fetch(withBase('/api/trips'), { credentials: 'same-origin' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const trips = (await res.json()) as Trip[];
       if (mountedRef.current) setState({ status: 'loaded', trips });
@@ -48,7 +49,7 @@ export function HomeClient({ tz }: { tz: string }) {
           {/* Bundled mascot → always renders offline. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/burgergo-logo.png"
+            src={withBase('/burgergo-logo.png')}
             alt={t('mascot.alt')}
             width={96}
             height={96}

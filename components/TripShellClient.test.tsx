@@ -52,7 +52,11 @@ function renderShell() {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
+});
 
 describe('TripShellClient', () => {
   it('renders a loading skeleton before the trip resolves', () => {
@@ -73,6 +77,23 @@ describe('TripShellClient', () => {
     expect(screen.getByRole('navigation', { name: 'Trip sections' })).toBeInTheDocument();
     // Fetched the per-trip read endpoint.
     expect(fetch).toHaveBeenCalledWith('/api/trips/trip-1', { credentials: 'same-origin' });
+  });
+
+  it('fetches the base-path-prefixed per-trip endpoint when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { TripShellClient: Prefixed } = await import('./TripShellClient');
+    const fetchMock = vi.fn(async () => ({ ok: true, status: 200, json: async () => ({ trip: TRIP }) }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Prefixed tripId="trip-1">
+          <div>Plan content</div>
+        </Prefixed>
+      </NextIntlClientProvider>,
+    );
+    await screen.findByText('Osaka');
+    expect(fetchMock).toHaveBeenCalledWith('/burgergo/api/trips/trip-1', { credentials: 'same-origin' });
   });
 
   it('renders a "trip not found" state when the trip 404s', async () => {

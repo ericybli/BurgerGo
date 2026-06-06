@@ -56,6 +56,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
 });
 
 describe('HomeClient', () => {
@@ -72,6 +74,21 @@ describe('HomeClient', () => {
     expect(await screen.findByText(en.home.emptyHeadline)).toBeInTheDocument();
     expect(screen.getByText(en.home.emptySubtext)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('/api/trips', { credentials: 'same-origin' });
+  });
+
+  it('fetches the base-path-prefixed /api/trips when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { HomeClient: PrefixedHome } = await import('./HomeClient');
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => [] })) as unknown as typeof fetch;
+    vi.stubGlobal('fetch', fetchMock);
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <PrefixedHome tz="UTC" />
+      </NextIntlClientProvider>,
+    );
+    await screen.findByText(en.home.emptyHeadline);
+    expect(fetchMock).toHaveBeenCalledWith('/burgergo/api/trips', { credentials: 'same-origin' });
   });
 
   it('lists trip cards when the fetch returns trips', async () => {

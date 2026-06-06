@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { SWRegister } from '@/components/SWRegister';
 import { OfflineBanner } from '@/components/OfflineBanner';
+import { withBase } from '@/src/lib/basePath';
 import './globals.css';
 
 const inter = Inter({
@@ -22,14 +23,14 @@ const notoSansSC = Noto_Sans_SC({
 export const metadata: Metadata = {
   title: 'BurgerGo',
   description: 'Your personal travel-planning assistant.',
-  manifest: '/manifest.webmanifest',
+  manifest: withBase('/manifest.webmanifest'),
   appleWebApp: {
     capable: true,
     title: 'BurgerGo',
     statusBarStyle: 'default',
   },
   icons: {
-    apple: '/icons/apple-touch-icon.png',
+    apple: withBase('/icons/apple-touch-icon.png'),
   },
 };
 

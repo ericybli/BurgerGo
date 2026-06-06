@@ -7,6 +7,7 @@ import { TripHeader } from '@/components/TripHeader';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { EmptyState } from '@/components/EmptyState';
 import { landingDate } from '@/src/lib/landingDate';
+import { withBase } from '@/src/lib/basePath';
 import type { Trip } from '@/src/db/schema';
 
 /** Browser-resolved IANA timezone; mirrors env.TZ for client-side day math. */
@@ -65,7 +66,7 @@ export function TripShellClient({
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch(`/api/trips/${tripId}`, { credentials: 'same-origin' });
+        const res = await fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' });
         if (res.status === 404) {
           if (!cancelled) setState({ status: 'notFound' });
           return;

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import type { DerivedDay } from '@/src/lib/days';
 import type { PlaceDTO } from '@/src/lib/planView';
 import {
@@ -12,6 +12,11 @@ import {
 } from '@/src/lib/planUrl';
 
 const range = { startDate: '2026-05-03', endDate: '2026-05-05' };
+
+afterEach(() => {
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
+});
 
 function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
   return {
@@ -64,6 +69,15 @@ describe('planUrl thumbnails', () => {
 
   it('cardPhotoUrl points at the B1 photos handler card variant', () => {
     expect(cardPhotoUrl('p9')).toBe('/api/photos/p9/card');
+  });
+
+  it('cardPhotoUrl is prefixed with the base path when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { cardPhotoUrl: prefixed } = await import('@/src/lib/planUrl');
+    expect(prefixed('p9')).toBe('/burgergo/api/photos/p9/card');
+    delete process.env.NEXT_PUBLIC_BASE_PATH;
+    vi.resetModules();
   });
 
   it('thumbForPlace prefers the cached photo (served via the photos handler), else the glyph', () => {

@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
 // Capture the sessionToken passed to getPlacePredictions so we can assert it.
@@ -36,6 +36,10 @@ beforeEach(() => {
   fetchSpy = vi.fn();
   vi.stubGlobal('fetch', fetchSpy);
   lastSearchSessionToken = undefined;
+});
+afterEach(() => {
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
 });
 
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
@@ -119,6 +123,25 @@ describe('usePlacesAutocomplete', () => {
     const urlParams = new URLSearchParams(calledUrl.split('?')[1]);
     const detailsToken = urlParams.get('sessionToken');
     expect(detailsToken).toBe(searchToken);
+  });
+
+  it('prefixes /api/google/details with the base path when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { usePlacesAutocomplete: prefixedHook } = await import('@/components/plan/useGooglePlaces');
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        googlePlaceId: 'pid-1', name: 'Senso-ji', address: 'Tokyo',
+        lat: 35.71, lng: 139.79, categoryGuess: 'sightseeing',
+        photoRef: null, photoLocalPath: null, cached: false,
+      }),
+    });
+    const { result } = renderHook(() => prefixedHook());
+    await act(async () => { await result.current.search('senso'); });
+    await act(async () => { await result.current.select('pid-1'); });
+    const url = new URL(fetchSpy.mock.calls[0]![0] as string, 'http://x');
+    expect(url.pathname).toBe('/burgergo/api/google/details');
   });
 
   it('rotates the session token after select (fresh session for next search)', async () => {

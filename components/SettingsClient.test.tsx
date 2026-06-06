@@ -28,7 +28,11 @@ function renderSettings() {
   );
 }
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
+});
 
 describe('SettingsClient', () => {
   it('renders the static chrome (title + back link) immediately', () => {
@@ -43,6 +47,21 @@ describe('SettingsClient', () => {
     renderSettings();
     expect(await screen.findByText('zh')).toBeInTheDocument();
     expect(screen.getByText('JPY')).toBeInTheDocument();
+  });
+
+  it('fetches the base-path-prefixed /api/settings when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { SettingsClient: Prefixed } = await import('./SettingsClient');
+    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ language: 'zh', currency: 'JPY' }) }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Prefixed />
+      </NextIntlClientProvider>,
+    );
+    await screen.findByText('zh');
+    expect(fetchMock).toHaveBeenCalledWith('/burgergo/api/settings', { credentials: 'same-origin' });
   });
 
   it('falls back to en/USD when settings are not yet seeded (null)', async () => {

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { withBase } from '@/src/lib/basePath';
 
 type SettingsRow = { language: string; currency: string } | null;
 
@@ -19,7 +20,7 @@ export function SettingsClient() {
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch('/api/settings', { credentials: 'same-origin' });
+        const res = await fetch(withBase('/api/settings'), { credentials: 'same-origin' });
         if (!res.ok) return;
         const row = (await res.json()) as SettingsRow;
         if (!cancelled) setSettings(row);
@@ -66,7 +67,7 @@ export function SettingsClient() {
       <section className="mt-4 rounded-card bg-card p-6 text-center shadow-card">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/burgergo-logo.png"
+          src={withBase('/burgergo-logo.png')}
           alt={t('mascot.alt')}
           width={88}
           height={88}

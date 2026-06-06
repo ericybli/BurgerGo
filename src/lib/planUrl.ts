@@ -9,6 +9,7 @@
  */
 import type { DerivedDay } from '@/src/lib/days';
 import { colorIndexForDay, placesForDay, savedPlaces, type PlaceDTO } from '@/src/lib/planView';
+import { withBase } from '@/src/lib/basePath';
 
 export type PlanView = 'list' | 'map';
 export type PlanBucket = 'days' | 'saved';
@@ -58,7 +59,7 @@ export function buildPlanQuery(p: PlanParams): string {
 
 /** URL for a place's cached Google card photo (B1 photos handler). */
 export function cardPhotoUrl(placeId: string): string {
-  return `/api/photos/${placeId}/card`;
+  return withBase(`/api/photos/${placeId}/card`);
 }
 
 export type Thumb = { kind: 'photo'; src: string } | { kind: 'glyph'; glyph: string };

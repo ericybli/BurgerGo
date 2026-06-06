@@ -98,7 +98,11 @@ beforeEach(() => {
   deletePlaceAction.mockClear();
   vi.stubGlobal('navigator', { onLine: true });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  vi.resetModules();
+});
 
 describe('PlanClient', () => {
   it('fetches both endpoints and renders the day itinerary', async () => {
@@ -108,6 +112,21 @@ describe('PlanClient', () => {
     expect(screen.getByText('Stop B')).toBeInTheDocument();
     expect(f).toHaveBeenCalledWith('/api/trips/t1', { credentials: 'same-origin' });
     expect(f).toHaveBeenCalledWith('/api/trips/t1/places', { credentials: 'same-origin' });
+  });
+
+  it('fetches both base-path-prefixed endpoints when NEXT_PUBLIC_BASE_PATH is set', async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
+    const { PlanClient: Prefixed } = await import('./PlanClient');
+    const f = mockFetch();
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Prefixed tripId="t1" tz="UTC" currency="JPY" locale="en" />
+      </NextIntlClientProvider>,
+    );
+    await screen.findByText('Stop A');
+    expect(f).toHaveBeenCalledWith('/burgergo/api/trips/t1', { credentials: 'same-origin' });
+    expect(f).toHaveBeenCalledWith('/burgergo/api/trips/t1/places', { credentials: 'same-origin' });
   });
 
   it('switches to the Saved bucket via the toggle, writing URL state', async () => {

@@ -1,5 +1,7 @@
 'use client';
 
+import { withBase } from '@/src/lib/basePath';
+
 type EmptyStateProps = {
   mascotAlt: string;
   headline: string;
@@ -20,7 +22,7 @@ export function EmptyState({
       {/* Bundled mascot asset → always renders offline (§9.6). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src="/burgergo-logo.png"
+        src={withBase('/burgergo-logo.png')}
         alt={mascotAlt}
         width={112}
         height={112}
