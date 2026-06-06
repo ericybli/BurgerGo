@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip } from '@/src/db/repos/places';
-import { getCachedDetails } from '@/src/db/repos/placeCache';
-import { travelLegs, type Place, type TravelLeg } from '@/src/db/schema';
+import { travelLegs, placeDetailsCache, type Place, type TravelLeg } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,15 +32,32 @@ export async function GET(
 
   const rawPlaces = listAllForTrip(db, tripId);
 
-  // Build PlaceDTO by joining photoLocalPath from place_details_cache.
-  const placesResult: PlaceDTO[] = rawPlaces.map((p) => {
-    let photoPath: string | null = null;
-    if (p.googlePlaceId) {
-      const cacheRow = getCachedDetails(db, p.googlePlaceId);
-      photoPath = cacheRow?.photoLocalPath ?? null;
+  // Batch-fetch photoLocalPath from place_details_cache for all places in one
+  // query instead of one query per place (avoids N+1).
+  const googlePlaceIds = rawPlaces
+    .map((p) => p.googlePlaceId)
+    .filter((id): id is string => id !== null);
+
+  const photoMap = new Map<string, string | null>();
+  if (googlePlaceIds.length > 0) {
+    const cacheRows = db
+      .select({
+        googlePlaceId: placeDetailsCache.googlePlaceId,
+        photoLocalPath: placeDetailsCache.photoLocalPath,
+      })
+      .from(placeDetailsCache)
+      .where(inArray(placeDetailsCache.googlePlaceId, googlePlaceIds))
+      .all();
+    for (const row of cacheRows) {
+      photoMap.set(row.googlePlaceId, row.photoLocalPath ?? null);
     }
-    return { ...p, photoPath };
-  });
+  }
+
+  // Build PlaceDTO using the pre-fetched map.
+  const placesResult: PlaceDTO[] = rawPlaces.map((p) => ({
+    ...p,
+    photoPath: (p.googlePlaceId ? (photoMap.get(p.googlePlaceId) ?? null) : null),
+  }));
 
   const legs: LegDTO[] = db
     .select()

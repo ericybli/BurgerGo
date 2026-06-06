@@ -193,8 +193,9 @@ export async function recomputeDayLegsAction(
         env.GOOGLE_MAPS_SERVER_KEY,
       );
       legs.push(leg);
-    } catch {
+    } catch (err) {
       // Log and continue — a single failed pair should not block the rest.
+      console.error('[recomputeDayLegsAction] leg fetch failed', err);
     }
   }
   return legs;

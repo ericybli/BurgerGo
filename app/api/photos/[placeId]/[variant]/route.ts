@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { join, extname } from 'node:path';
+import { join, resolve, sep, extname } from 'node:path';
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/src/db/client';
@@ -16,11 +16,23 @@ const MIME: Record<string, string> = {
   '.png': 'image/png',
 };
 
+/**
+ * Allowed photo size variants. 1B stores a single image file and all valid
+ * variants currently resolve to that one photoLocalPath; true per-size files
+ * are a later plan (B3+).
+ */
+const ALLOWED_VARIANTS = new Set(['thumb', 'card', 'full']);
+
 export async function GET(
   _req: Request,
   ctx: { params: Promise<{ placeId: string; variant: string }> },
 ) {
-  const { placeId } = await ctx.params;
+  const { placeId, variant } = await ctx.params;
+
+  // Validate the variant segment against the allowed set.
+  if (!ALLOWED_VARIANTS.has(variant)) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
 
   // Look up the place to get its googlePlaceId.
   const place = db
@@ -41,8 +53,15 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  // Stream the file from the uploads directory.
+  // Constrain the resolved path to UPLOADS_DIR to prevent path traversal.
   const filePath = join(env.UPLOADS_DIR, cacheRow.photoLocalPath);
+  const resolved = resolve(filePath);
+  const root = resolve(env.UPLOADS_DIR);
+  if (resolved !== root && !resolved.startsWith(root + sep)) {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  // Stream the file from the uploads directory.
   try {
     const bytes = readFileSync(filePath);
     const ext = extname(filePath).toLowerCase();

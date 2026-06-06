@@ -120,4 +120,48 @@ describe('GET /api/photos/[placeId]/[variant]', () => {
     );
     expect(res.status).toBe(404);
   });
+
+  it('returns 404 (not outside UPLOADS_DIR) when photoLocalPath contains path traversal', async () => {
+    // Seed a cache row with a traversal path pointing outside UPLOADS_DIR.
+    testHandle.db.insert(places).values({
+      id: 'trav-place', tripId: 'trip-1', dayDate: null, googlePlaceId: 'gpid-trav',
+      name: 'Traversal', address: null, lat: null, lng: null, category: 'other',
+      scheduledTime: null, durationMin: null, cost: null, notes: null,
+      orderIndex: 3, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(placeDetailsCache).values({
+      googlePlaceId: 'gpid-trav', name: 'Traversal', address: null, lat: null, lng: null,
+      categoryGuess: 'other', photoRef: null, photoLocalPath: '../../etc/passwd',
+      rawJson: '{}', fetchedAt: TS,
+    }).run();
+    const res = await GET(
+      new Request('http://x/api/photos/trav-place/card'),
+      ctx('trav-place', 'card'),
+    );
+    // Must be 404 — must NOT attempt to read outside UPLOADS_DIR.
+    expect(res.status).toBe(404);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe('not_found');
+  });
+
+  it('returns 404 for an invalid variant', async () => {
+    const res = await GET(
+      new Request('http://x/api/photos/place-1/original'),
+      ctx('place-1', 'original'),
+    );
+    expect(res.status).toBe(404);
+    const body = await res.json() as { error: string };
+    expect(body.error).toBe('not_found');
+  });
+
+  it('accepts all valid variants (thumb, card, full)', async () => {
+    for (const variant of ['thumb', 'card', 'full']) {
+      const res = await GET(
+        new Request(`http://x/api/photos/place-1/${variant}`),
+        ctx('place-1', variant),
+      );
+      // All valid variants resolve to the same single image in 1B.
+      expect(res.status).toBe(200);
+    }
+  });
 });

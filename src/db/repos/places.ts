@@ -142,6 +142,8 @@ export function deletePlace(db: Db, id: string): void {
 /**
  * Renumber a day's places to match `orderedIds`. Ids not in the target day
  * are ignored; the remaining matched ids become orderIndex 0..n-1.
+ * Wrapped in a transaction so a concurrent reader never sees a partially-
+ * reordered day.
  */
 export function reorderDay(
   db: Db,
@@ -149,17 +151,22 @@ export function reorderDay(
   dayDate: string,
   orderedIds: string[],
 ): void {
-  const inDay = new Set(listByDay(db, tripId, dayDate).map((p) => p.id));
-  const ts = new Date(now());
-  let i = 0;
-  for (const id of orderedIds) {
-    if (!inDay.has(id)) continue;
-    db.update(places)
-      .set({ orderIndex: i, updatedAt: ts })
-      .where(eq(places.id, id))
-      .run();
-    i += 1;
-  }
+  db.transaction((tx) => {
+    // tx is BetterSQLiteTransaction which shares the same BaseSQLiteDatabase
+    // API as Db; the cast is safe because $client is never used inside repos.
+    const txDb = tx as unknown as Db;
+    const inDay = new Set(listByDay(txDb, tripId, dayDate).map((p) => p.id));
+    const ts = new Date(now());
+    let i = 0;
+    for (const id of orderedIds) {
+      if (!inDay.has(id)) continue;
+      txDb.update(places)
+        .set({ orderIndex: i, updatedAt: ts })
+        .where(eq(places.id, id))
+        .run();
+      i += 1;
+    }
+  });
 }
 
 /**
