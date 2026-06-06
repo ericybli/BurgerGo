@@ -18,6 +18,7 @@ export function getExpense(db: Db, id: string): Expense | undefined {
 /**
  * All expenses for a trip, by spent_on date descending then createdAt
  * descending — the §4.2 "grouped by date, newest first" feed order.
+ * Aliased as `listExpensesForTrip` for C3 compatibility.
  */
 export function listByTrip(db: Db, tripId: string): Expense[] {
   return db
@@ -72,6 +73,9 @@ export function updateExpense(
     .run();
   return getExpense(db, id);
 }
+
+/** Alias for listByTrip (C3 API compatibility). */
+export const listExpensesForTrip = listByTrip;
 
 /** Delete an expense. */
 export function deleteExpense(db: Db, id: string): void {
