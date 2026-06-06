@@ -62,6 +62,27 @@
     "journal": "Journal is on its way",
     "subtext": "BurgerGo is still unpacking this one. Check back soon."
   },
+  "planMap": {
+    "allDays": "All days",
+    "dayChip": "Day {n}",
+    "legendLabel": "Day visibility",
+    "openDayRoute": "Open day route in Google Maps",
+    "openInMaps": "Open in Google Maps",
+    "addToDay": "Add to day →",
+    "offlineHeadline": "Map needs a connection",
+    "offlineSubtext": "Tap any place to open Google Maps.",
+    "emptyHeadline": "No places to map yet",
+    "emptySubtext": "Add a place to see it on the map.",
+    "loading": "Loading map…",
+    "infoCardLabel": "Place"
+  },
+  "category": {
+    "sightseeing": "Sightseeing",
+    "lodging": "Lodging",
+    "transport": "Transport",
+    "activity": "Activity",
+    "other": "Other"
+  },
   "settings": {
     "title": "Settings",
     "language": "Language",
