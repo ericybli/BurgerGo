@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
@@ -10,8 +10,13 @@ vi.mock('next/link', () => ({
     </a>
   ),
 }));
+const replaceMock = vi.fn();
+let pathnameValue = '/trip/trip-1/plan';
+let searchValue = '';
 vi.mock('next/navigation', () => ({
-  usePathname: () => '/trip/trip-1/plan',
+  usePathname: () => pathnameValue,
+  useSearchParams: () => new URLSearchParams(searchValue),
+  useRouter: () => ({ replace: replaceMock, push: vi.fn() }),
 }));
 vi.mock('@/app/_actions/trips', () => ({
   createTripAction: vi.fn(),
@@ -90,5 +95,62 @@ describe('TripShellClient', () => {
     // Header/children are not rendered when there is no trip data.
     expect(screen.queryByText('Osaka')).not.toBeInTheDocument();
     expect(screen.queryByText('Plan content')).not.toBeInTheDocument();
+  });
+});
+
+describe('TripShellClient — active-trip auto-land (§3.8)', () => {
+  beforeEach(() => {
+    replaceMock.mockClear();
+    pathnameValue = '/trip/trip-1/plan';
+    searchValue = '';
+    // Use fake timers with shouldAdvanceTime so async/await + findByText still work,
+    // while Date.now() / new Date() are frozen for deterministic landingDate tests.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date('2026-06-06T10:00:00Z')); // within Osaka 06-05..06-07
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("replaces the URL with today's date on an active trip when no date param", async () => {
+    mockFetch({ trip: TRIP });
+    renderShell();
+    await screen.findByText('Osaka');
+    await vi.waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith(
+        '/trip/trip-1/plan?view=list&bucket=days&date=2026-06-06',
+      ),
+    );
+  });
+
+  it('does not redirect when a date param is already present', async () => {
+    searchValue = 'view=list&bucket=days&date=2026-06-05';
+    mockFetch({ trip: TRIP });
+    renderShell();
+    await screen.findByText('Osaka');
+    await Promise.resolve();
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
+
+  it('lands on start_date for a non-active (past) trip', async () => {
+    vi.setSystemTime(new Date('2026-07-01T10:00:00Z')); // after Osaka end
+    mockFetch({ trip: TRIP });
+    renderShell();
+    await screen.findByText('Osaka');
+    await vi.waitFor(() =>
+      expect(replaceMock).toHaveBeenCalledWith(
+        '/trip/trip-1/plan?view=list&bucket=days&date=2026-06-05',
+      ),
+    );
+  });
+
+  it('does not redirect on a non-plan path (e.g. eats)', async () => {
+    pathnameValue = '/trip/trip-1/eats';
+    mockFetch({ trip: TRIP });
+    renderShell();
+    await screen.findByText('Osaka');
+    await Promise.resolve();
+    expect(replaceMock).not.toHaveBeenCalled();
   });
 });

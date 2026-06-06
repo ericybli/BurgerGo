@@ -2,10 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { TripHeader } from '@/components/TripHeader';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { EmptyState } from '@/components/EmptyState';
+import { landingDate } from '@/src/lib/landingDate';
 import type { Trip } from '@/src/db/schema';
+
+/** Browser-resolved IANA timezone; mirrors env.TZ for client-side day math. */
+function clientTz(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+}
 
 function formatSubtitle(startDate: string, endDate: string): string {
   const fmt = new Intl.DateTimeFormat('en-US', {
@@ -38,6 +45,21 @@ export function TripShellClient({
 }) {
   const t = useTranslations();
   const [state, setState] = useState<ShellState>({ status: 'loading' });
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Active-trip auto-land (spec §2/§3.8): once the trip resolves, if we are on
+  // the Plan path with no `date` param, replace the URL with the landing date
+  // (today for active trips, start_date otherwise). Client-side so the page
+  // stays a static, cacheable shell — no server DB read, no force-dynamic.
+  useEffect(() => {
+    if (state.status !== 'loaded') return;
+    if (!pathname.endsWith('/plan')) return;
+    if (searchParams.get('date')) return;
+    const date = landingDate(state.trip, clientTz());
+    router.replace(`/trip/${tripId}/plan?view=list&bucket=days&date=${date}`);
+  }, [state, pathname, searchParams, router, tripId]);
 
   useEffect(() => {
     let cancelled = false;
