@@ -71,10 +71,8 @@
     "addToDay": "Add to day →",
     "offlineHeadline": "Map needs a connection",
     "offlineSubtext": "Tap any place to open Google Maps.",
-    "emptyHeadline": "No places to map yet",
-    "emptySubtext": "Add a place to see it on the map.",
-    "loading": "Loading map…",
-    "infoCardLabel": "Place"
+    "infoCardLabel": "Place",
+    "mapAriaLabel": "Trip map"
   },
   "category": {
     "sightseeing": "Sightseeing",

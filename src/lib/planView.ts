@@ -6,6 +6,8 @@
  * per-day color indexes + pin labels (`orderIndex + 1`).
  */
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
+import { DAY_COLORS, colorForIndex } from '@/src/lib/map/colors';
+export { DAY_COLORS } from '@/src/lib/map/colors';
 
 /**
  * One place as returned by the B1 read handler. Structural superset of the
@@ -40,20 +42,7 @@ export interface LegDTO {
   polyline: string | null;
 }
 
-/**
- * Per-day pin/route colors (spec §3.4). Drawn from the Sunset Wanderer palette
- * (tailwind.config.ts) and cycled by day index so day 1 = Coral, day 2 = Teal…
- */
-export const DAY_COLORS = [
-  '#EE5B3C', // coral
-  '#4F8A86', // teal
-  '#F2C879', // sun
-  '#D94E30', // coral-press
-  '#3E8E6E', // success/green
-  '#6E5544', // ink
-] as const;
-
-export type DayColor = (typeof DAY_COLORS)[number];
+export type DayColor = string;
 
 const byOrder = (a: PlaceDTO, b: PlaceDTO) => a.orderIndex - b.orderIndex;
 
@@ -65,7 +54,7 @@ export function colorIndexForDay(dayIndex: number): number {
 
 /** Stable color for a 0-based day index; clamps/cycles, never undefined. */
 export function dayColor(dayIndex: number): DayColor {
-  return DAY_COLORS[colorIndexForDay(dayIndex)]!;
+  return colorForIndex(colorIndexForDay(dayIndex));
 }
 
 /** Displayed pin number for a place (spec §5.8: `orderIndex + 1`). */

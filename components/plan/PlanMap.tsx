@@ -249,7 +249,6 @@ export function PlanMap({
                 onClick={(e) => {
                   e.preventDefault();
                   onOpenDayRoute(r.date);
-                  window.open(r.url, '_blank', 'noopener,noreferrer');
                 }}
                 className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
               >

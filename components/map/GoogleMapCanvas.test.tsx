@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import en from '@/messages/en.json';
 import type { PlaceMarker } from '@/src/lib/map/markers';
 import type { DayPath } from '@/src/lib/map/types';
 
@@ -15,6 +17,7 @@ function makeFakeGoogle() {
   captured = { markers: [], polylines: [], fitBoundsCalls: [] };
   return {
     Map: vi.fn(function (this: any, _el: HTMLElement) {
+      this.setCenter = (_c: unknown) => {};
       this.fitBounds = (b: unknown) => captured.fitBoundsCalls.push(b);
     }),
     Marker: vi.fn(function (this: any, opts: any) {
@@ -45,6 +48,16 @@ vi.mock('@/src/lib/googleLoader', () => ({
 
 import { GoogleMapCanvas } from './GoogleMapCanvas';
 
+function renderCanvas(
+  props: React.ComponentProps<typeof GoogleMapCanvas>,
+) {
+  return render(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <GoogleMapCanvas {...props} />
+    </NextIntlClientProvider>,
+  );
+}
+
 const MARKERS: PlaceMarker[] = [
   {
     id: 'a', name: 'Senso-ji', category: 'sightseeing', googlePlaceId: 'ga',
@@ -68,15 +81,13 @@ afterEach(() => vi.clearAllMocks());
 
 describe('GoogleMapCanvas', () => {
   it('loads the Maps API and renders the map container', async () => {
-    render(
-      <GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={vi.fn()} />,
-    );
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(mockLoadGoogleMaps).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
   });
 
   it('creates one marker per entry with correct position and numbered label', async () => {
-    render(<GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={vi.fn()} />);
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.markers).toHaveLength(2));
     expect(captured.markers[0].opts.position).toEqual({ lat: 35.0, lng: 139.0 });
     expect(captured.markers[0].opts.label.text).toBe('1');
@@ -84,7 +95,7 @@ describe('GoogleMapCanvas', () => {
   });
 
   it('creates a colored polyline per day path', async () => {
-    render(<GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={vi.fn()} />);
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.polylines).toHaveLength(1));
     expect(captured.polylines[0].opts.strokeColor).toBe('#EE5B3C');
     expect(captured.polylines[0].opts.path).toEqual([
@@ -98,19 +109,19 @@ describe('GoogleMapCanvas', () => {
       { id: 's', name: 'Wish', category: 'other', googlePlaceId: null,
         photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null },
     ];
-    render(<GoogleMapCanvas markers={savedMarkers} paths={[]} onMarkerClick={vi.fn()} />);
+    renderCanvas({ markers: savedMarkers, paths: [], onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.markers).toHaveLength(1));
     expect(captured.markers[0].opts.label).toBeUndefined();
   });
 
   it('calls fitBounds with the marker extent', async () => {
-    render(<GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={vi.fn()} />);
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.fitBoundsCalls).toHaveLength(1));
   });
 
   it('forwards a marker tap with the place id to onMarkerClick', async () => {
     const onMarkerClick = vi.fn();
-    render(<GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={onMarkerClick} />);
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick });
     await waitFor(() => expect(captured.markers).toHaveLength(2));
     captured.markers[0].listeners['click']!();
     expect(onMarkerClick).toHaveBeenCalledWith('a');
@@ -118,7 +129,7 @@ describe('GoogleMapCanvas', () => {
 
   it('renders the container but creates no markers when the loader rejects', async () => {
     mockLoadGoogleMaps.mockRejectedValue(new Error('no key'));
-    render(<GoogleMapCanvas markers={MARKERS} paths={PATHS} onMarkerClick={vi.fn()} />);
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(mockLoadGoogleMaps).toHaveBeenCalled());
     // Container still visible; markers were never created.
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();

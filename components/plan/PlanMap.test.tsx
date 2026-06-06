@@ -1,13 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 import type { DayGroup, LegDTO } from '@/src/lib/map/types';
-
-// Control connectivity.
-const mockOnline = vi.fn(() => true);
-vi.mock('@/src/lib/useOnline', () => ({ useOnline: () => mockOnline() }));
 
 // Stub GoogleMapCanvas: render pins as tappable buttons.
 vi.mock('@/components/map/GoogleMapCanvas', () => ({
@@ -80,7 +76,6 @@ function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}
 }
 
 beforeEach(() => {
-  mockOnline.mockReturnValue(true);
   vi.clearAllMocks();
 });
 afterEach(() => vi.clearAllMocks());
@@ -135,12 +130,17 @@ describe('PlanMap (online, days bucket)', () => {
     expect(onSelectPlace).toHaveBeenCalledWith('s');
   });
 
-  it('renders a per-day "Open day route in Google Maps" link calling onOpenDayRoute', async () => {
+  it('clicking a day-route link calls onOpenDayRoute once and does NOT call window.open', async () => {
     const user = userEvent.setup();
+    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     renderMap();
-    // There should be one link per day with visible places.
     const links = screen.getAllByRole('link', { name: en.planMap.openDayRoute });
     expect(links.length).toBeGreaterThanOrEqual(1);
+    await user.click(links[0]!);
+    expect(onOpenDayRoute).toHaveBeenCalledTimes(1);
+    expect(onOpenDayRoute).toHaveBeenCalledWith('2026-06-04');
+    expect(windowOpenSpy).not.toHaveBeenCalled();
+    windowOpenSpy.mockRestore();
   });
 });
 
