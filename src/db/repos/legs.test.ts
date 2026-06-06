@@ -123,12 +123,10 @@ describe('legs repo cache primitives', () => {
 
 describe('legs repo — legsForDay', () => {
   let db: Db;
-  let sqlite: ReturnType<typeof makeTestDb>['sqlite'];
 
   beforeEach(() => {
     const h = makeTestDb();
     db = h.db;
-    sqlite = h.sqlite;
     seed(db);
     // Add a third place so we have three consecutive stops.
     db.insert(places).values({
@@ -162,12 +160,10 @@ describe('legs repo — legsForDay', () => {
 
 describe('legs repo — invalidateLegsTouchingPlace', () => {
   let db: Db;
-  let sqlite: ReturnType<typeof makeTestDb>['sqlite'];
 
   beforeEach(() => {
     const h = makeTestDb();
     db = h.db;
-    sqlite = h.sqlite;
     seed(db);
     db.insert(places).values({
       id: 'p-c', tripId: 'trip-1', dayDate: '2026-06-05', googlePlaceId: null,
