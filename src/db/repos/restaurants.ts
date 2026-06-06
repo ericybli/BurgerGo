@@ -3,6 +3,7 @@ import type { TestDb } from '@/src/db/testDb';
 import { restaurants, type Restaurant } from '@/src/db/schema';
 import { newId } from '@/src/db/ids';
 import { now } from '@/src/lib/clock';
+import { addPlace, deletePlace, getPlace, type Place } from '@/src/db/repos/places';
 
 export type { Restaurant };
 
@@ -108,4 +109,62 @@ export function scheduleToDay(
 /** Clear the schedule link (sets linked_place_id NULL). */
 export function unschedule(db: Db, id: string): Restaurant | undefined {
   return updateRestaurant(db, id, { linkedPlaceId: null });
+}
+
+/** Alias for listByTrip (C2 naming convention). */
+export function listRestaurants(db: Db, tripId: string): Restaurant[] {
+  return listByTrip(db, tripId);
+}
+
+/**
+ * Schedule a restaurant onto `dayDate`: create a new category='other' Place
+ * (copying name + notes once) and point restaurants.linked_place_id at it.
+ * If the restaurant was already scheduled, delete the previous place first so
+ * exactly one linked place exists at a time. Returns both rows.
+ */
+export function scheduleRestaurantToDay(
+  db: Db,
+  restaurantId: string,
+  dayDate: string,
+): { restaurant: Restaurant; place: Place } {
+  const existing = getRestaurant(db, restaurantId);
+  if (!existing) throw new Error('Restaurant not found');
+
+  // Drop any previously-linked place so we never accumulate orphans.
+  if (existing.linkedPlaceId) {
+    deletePlace(db, existing.linkedPlaceId); // FK set-null clears the link below anyway
+  }
+
+  const place = addPlace(db, {
+    tripId: existing.tripId,
+    dayDate,
+    name: existing.name,
+    category: 'other',
+    notes: existing.notes ?? null,
+  });
+
+  db.update(restaurants)
+    .set({ linkedPlaceId: place.id, updatedAt: new Date(now()) })
+    .where(eq(restaurants.id, restaurantId))
+    .run();
+
+  const restaurant = getRestaurant(db, restaurantId)!;
+  return { restaurant, place };
+}
+
+/**
+ * Un-schedule a restaurant: delete its linked place (if any) and clear the
+ * link. Returns the updated restaurant, or undefined if not found.
+ */
+export function unscheduleRestaurant(db: Db, restaurantId: string): Restaurant | undefined {
+  const existing = getRestaurant(db, restaurantId);
+  if (!existing) return undefined;
+  if (existing.linkedPlaceId && getPlace(db, existing.linkedPlaceId)) {
+    deletePlace(db, existing.linkedPlaceId);
+  }
+  db.update(restaurants)
+    .set({ linkedPlaceId: null, updatedAt: new Date(now()) })
+    .where(eq(restaurants.id, restaurantId))
+    .run();
+  return getRestaurant(db, restaurantId);
 }
