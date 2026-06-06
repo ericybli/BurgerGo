@@ -146,7 +146,17 @@
     "reorderHint": "Drag to reorder",
     "mutationFailed": "Action failed — please try again.",
     "saveFailed": "Couldn't save — please try again.",
-    "routeError": "Something went wrong loading this plan."
+    "routeError": "Something went wrong loading this plan.",
+    "photosLabel": "Photos",
+    "addPhoto": "Add photo",
+    "addPhotoOffline": "Connect to add photos",
+    "uploadingPhoto": "Uploading…",
+    "photoUploadFailed": "Couldn't upload — please try again.",
+    "deletePhoto": "Delete photo",
+    "photoTooLarge": "That image is too large (max 10MB).",
+    "photoNotImage": "Please choose an image file.",
+    "closePhoto": "Close photo",
+    "photoOf": "Photo of {name}"
   },
   "placeCategory": {
     "sightseeing": "Sightseeing",
