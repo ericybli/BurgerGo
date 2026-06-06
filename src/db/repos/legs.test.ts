@@ -5,6 +5,7 @@ import {
   getCachedLeg,
   upsertLeg,
   legsForDay,
+  invalidateLegsTouchingPlace,
 } from '@/src/db/repos/legs';
 
 // Deterministic clock so computedAt is assertable.
@@ -156,5 +157,39 @@ describe('legs repo — legsForDay', () => {
 
   it('returns [] for a day with fewer than two places', () => {
     expect(legsForDay(db, 'trip-1', '2026-06-07', 'walk')).toEqual([]);
+  });
+});
+
+describe('legs repo — invalidateLegsTouchingPlace', () => {
+  let db: Db;
+  let sqlite: ReturnType<typeof makeTestDb>['sqlite'];
+
+  beforeEach(() => {
+    const h = makeTestDb();
+    db = h.db;
+    sqlite = h.sqlite;
+    seed(db);
+    db.insert(places).values({
+      id: 'p-c', tripId: 'trip-1', dayDate: '2026-06-05', googlePlaceId: null,
+      name: 'C', address: null, lat: 35.2, lng: 139.2, category: 'sightseeing',
+      scheduledTime: null, durationMin: null, cost: null, notes: null,
+      orderIndex: 2, createdAt: TS, updatedAt: TS,
+    }).run();
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-a', toPlaceId: 'p-b', mode: 'walk', durationSeconds: 600, distanceMeters: 750, polyline: null });
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-b', toPlaceId: 'p-c', mode: 'walk', durationSeconds: 420, distanceMeters: 500, polyline: null });
+    upsertLeg(db, { tripId: 'trip-1', fromPlaceId: 'p-a', toPlaceId: 'p-c', mode: 'drive', durationSeconds: 200, distanceMeters: 900, polyline: null });
+  });
+
+  it('deletes every leg where the place is from OR to, across all modes', () => {
+    const removed = invalidateLegsTouchingPlace(db, 'p-b');
+    expect(removed).toBe(2); // p-a→p-b and p-b→p-c
+    expect(getCachedLeg(db, 'p-a', 'p-b', 'walk')).toBeUndefined();
+    expect(getCachedLeg(db, 'p-b', 'p-c', 'walk')).toBeUndefined();
+    // p-a→p-c (drive) does not touch p-b and survives.
+    expect(getCachedLeg(db, 'p-a', 'p-c', 'drive')?.durationSeconds).toBe(200);
+  });
+
+  it('returns 0 when the place is in no legs', () => {
+    expect(invalidateLegsTouchingPlace(db, 'unknown-place')).toBe(0);
   });
 });
