@@ -136,7 +136,7 @@ export function normalizeDirections(raw: unknown): NormalizedDirections {
 // --- Fetch wrappers (network injected via globalThis.fetch) -------------------
 
 async function getJson(url: string): Promise<unknown> {
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) {
     throw new GoogleApiError(`HTTP_${res.status}`, `Google HTTP ${res.status}`);
   }

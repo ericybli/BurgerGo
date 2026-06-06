@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { loadGoogleMaps, SessionTokenManager } from '@/src/lib/google/loader';
+import { loadGoogleMaps } from '@/src/lib/google/loader';
 
 export interface Prediction {
   placeId: string;
@@ -24,58 +24,58 @@ export interface UsePlacesAutocompleteResult {
   predictions: Prediction[];
   loading: boolean;
   search: (input: string) => Promise<void>;
-  select: (placeId: string, sessionToken?: string) => Promise<PlaceDetails | null>;
+  select: (placeId: string) => Promise<PlaceDetails | null>;
   clear: () => void;
 }
 
 /**
- * Autocomplete hook: one AutocompleteSessionToken per search→select cycle
- * (bundles the typing session + Details call into one billing unit). The
- * loader and fetch are mockable so tests need no real Maps JS or server key.
+ * Autocomplete hook: one client-generated UUID session token per search→select
+ * cycle. The same UUID is passed to getPlacePredictions (as the sessionToken
+ * field) and to GET /api/google/details?sessionToken= so Google's backend can
+ * bundle the Autocomplete + Details calls into a single billing unit.
+ *
+ * Using a plain UUID string (not the opaque AutocompleteSessionToken object)
+ * avoids the serialization bug where (token as {id}).id === undefined, which
+ * caused every session to be billed as individual per-keystroke calls.
  */
 export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // One session-token manager per hook instance; stable across renders.
-  const tokenMgrRef = useRef<SessionTokenManager<{ id: string }> | null>(null);
-  function getTokenMgr(): SessionTokenManager<{ id: string }> {
-    if (!tokenMgrRef.current) {
-      tokenMgrRef.current = new SessionTokenManager(() => ({ id: crypto.randomUUID() }));
-    }
-    return tokenMgrRef.current;
-  }
+  // UUID string for the current billing session; rotated after select/clear.
+  const sessionTokenRef = useRef<string>(crypto.randomUUID());
+
+  const rotateToken = () => { sessionTokenRef.current = crypto.randomUUID(); };
 
   const search = useCallback(async (input: string) => {
     if (!input.trim()) { setPredictions([]); return; }
     setLoading(true);
     try {
-      const google = await loadGoogleMaps();
-      const maps = google.maps as {
+      const maps = await loadGoogleMaps();
+      const places = (maps as {
         places: {
           AutocompleteService: new () => {
             getPlacePredictions: (
-              req: { input: string; sessionToken: unknown },
+              req: { input: string; sessionToken: string },
               cb: (results: Array<{ place_id: string; description: string }>, status: string) => void,
             ) => void;
           };
-          AutocompleteSessionToken: new () => unknown;
         };
-      };
-      const service = new maps.places.AutocompleteService();
-      const token = new maps.places.AutocompleteSessionToken();
-      // Stash the real Maps token for the select call.
-      tokenMgrRef.current = new SessionTokenManager(() => token as { id: string });
+      }).places;
+      const service = new places.AutocompleteService();
 
       await new Promise<void>((resolve) => {
-        service.getPlacePredictions({ input, sessionToken: token }, (results, status) => {
-          if (status === 'OK' && results) {
-            setPredictions(results.map((r) => ({ placeId: r.place_id, description: r.description })));
-          } else {
-            setPredictions([]);
-          }
-          resolve();
-        });
+        service.getPlacePredictions(
+          { input, sessionToken: sessionTokenRef.current },
+          (results, status) => {
+            if (status === 'OK' && results) {
+              setPredictions(results.map((r) => ({ placeId: r.place_id, description: r.description })));
+            } else {
+              setPredictions([]);
+            }
+            resolve();
+          },
+        );
       });
     } catch {
       setPredictions([]);
@@ -84,15 +84,15 @@ export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
     }
   }, []);
 
-  const select = useCallback(async (placeId: string, _sessionToken?: string): Promise<PlaceDetails | null> => {
-    const mgr = getTokenMgr();
-    const token = mgr.current();
+  const select = useCallback(async (placeId: string): Promise<PlaceDetails | null> => {
+    const sessionToken = sessionTokenRef.current;
     try {
-      const tokenId = (token as { id: string }).id;
-      const res = await fetch(`/api/google/details?placeId=${encodeURIComponent(placeId)}&sessionToken=${encodeURIComponent(tokenId)}`);
+      const res = await fetch(
+        `/api/google/details?placeId=${encodeURIComponent(placeId)}&sessionToken=${encodeURIComponent(sessionToken)}`,
+      );
       if (!res.ok) return null;
       const data = (await res.json()) as PlaceDetails;
-      mgr.consume(); // session complete
+      rotateToken(); // session complete → next search starts a fresh session
       return data;
     } catch {
       return null;
@@ -101,7 +101,7 @@ export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
 
   const clear = useCallback(() => {
     setPredictions([]);
-    getTokenMgr().reset();
+    rotateToken();
   }, []);
 
   return { predictions, loading, search, select, clear };

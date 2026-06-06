@@ -6,10 +6,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
-  const lat = Number(url.searchParams.get('lat'));
-  const lng = Number(url.searchParams.get('lng'));
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) ||
-      url.searchParams.get('lat') === null || url.searchParams.get('lng') === null) {
+  const rawLat = url.searchParams.get('lat');
+  const rawLng = url.searchParams.get('lng');
+  const lat = Number(rawLat);
+  const lng = Number(rawLng);
+  // Reject missing params, empty strings (Number('') === 0 but is logically
+  // absent), and non-finite values (NaN / Infinity from non-numeric strings).
+  if (!rawLat || !rawLng || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return NextResponse.json({ error: 'missing_latlng' }, { status: 400 });
   }
   if (!env.GOOGLE_MAPS_SERVER_KEY) {

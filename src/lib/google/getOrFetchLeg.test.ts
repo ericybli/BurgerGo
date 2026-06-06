@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places } from '@/src/db/schema';
+import { trips, places, travelLegs } from '@/src/db/schema';
 import { getCachedLeg } from '@/src/db/repos/legs';
 import { getOrFetchLeg } from '@/src/lib/google/getOrFetchLeg';
+import { GoogleApiError } from '@/src/lib/google/server';
 
 vi.mock('@/src/lib/clock', () => ({ now: () => 1_700_000_000_000 }));
 
@@ -85,5 +86,35 @@ describe('getOrFetchLeg', () => {
     await expect(
       getOrFetchLeg(db, { id: 'p-a', tripId: 'trip-1', lat: null, lng: null }, placeB, 'drive', 'K'),
     ).rejects.toThrow(/coordinates/i);
+  });
+
+  it('cache MISS + fetchDirections throws REQUEST_DENIED: error propagates and no leg is persisted', async () => {
+    // Simulate Google returning REQUEST_DENIED (non-OK status → GoogleApiError).
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'REQUEST_DENIED', routes: [] }),
+    });
+
+    await expect(
+      getOrFetchLeg(db, placeA, placeB, 'walk', 'BAD_KEY'),
+    ).rejects.toBeInstanceOf(GoogleApiError);
+
+    // No partial row should have been written to travel_legs.
+    const rows = db.select().from(travelLegs).all();
+    expect(rows).toHaveLength(0);
+  });
+
+  it('cache MISS + fetchDirections throws ZERO_RESULTS: error propagates and no leg is persisted', async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ status: 'ZERO_RESULTS', routes: [] }),
+    });
+
+    await expect(
+      getOrFetchLeg(db, placeA, placeB, 'drive', 'SERVER_KEY'),
+    ).rejects.toBeInstanceOf(GoogleApiError);
+
+    const rows = db.select().from(travelLegs).all();
+    expect(rows).toHaveLength(0);
   });
 });

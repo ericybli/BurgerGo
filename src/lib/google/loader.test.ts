@@ -25,8 +25,9 @@ describe('loadGoogleMaps', () => {
     __resetMapsLoaderForTests();
   });
 
-  it('injects exactly one script and resolves with window.google after the script loads', async () => {
-    const fakeGoogle = { maps: { Map: vi.fn(), places: {} } };
+  it('injects exactly one script and resolves with window.google.maps after the script loads', async () => {
+    const fakeMaps = { Map: vi.fn(), places: {} };
+    const fakeGoogle = { maps: fakeMaps };
     const loadScript = vi.fn(async () => {
       (globalThis as unknown as { google: unknown }).google = fakeGoogle;
     });
@@ -35,8 +36,8 @@ describe('loadGoogleMaps', () => {
     const p2 = loadGoogleMaps({ loadScript });
     const [g1, g2] = await Promise.all([p1, p2]);
 
-    expect(g1).toBe(fakeGoogle);
-    expect(g2).toBe(fakeGoogle);
+    expect(g1).toBe(fakeMaps);
+    expect(g2).toBe(fakeMaps);
     // Memoized: only one injection even with two concurrent callers.
     expect(loadScript).toHaveBeenCalledTimes(1);
     const calledUrl = (loadScript.mock.calls[0] as unknown[])[0] as string;
@@ -47,6 +48,47 @@ describe('loadGoogleMaps', () => {
     const loadScript = vi.fn(async () => {});
     await expect(loadGoogleMaps({ loadScript, apiKey: '' })).rejects.toThrow(/key/i);
     expect(loadScript).not.toHaveBeenCalled();
+  });
+
+  it('real callback path: resolves when Google invokes the named callback (not onload)', async () => {
+    // Simulate the real browser path by NOT providing loadScript.
+    // Instead, we intercept document.createElement to capture the script el,
+    // then simulate Google invoking the registered callback.
+    const fakeMaps = { Map: vi.fn(), places: { AutocompleteService: vi.fn() } };
+    const fakeGoogle = { maps: fakeMaps };
+
+    let capturedCallback: (() => void) | null = null;
+
+    // Intercept document.head.appendChild to capture the callback name from src.
+    const realAppendChild = document.head.appendChild.bind(document.head);
+    const appendSpy = vi.spyOn(document.head, 'appendChild').mockImplementation((node) => {
+      if (node instanceof HTMLScriptElement) {
+        // Extract the callback name from the script src.
+        const url = new URL(node.src);
+        const cbName = url.searchParams.get('callback');
+        if (cbName) {
+          capturedCallback = (globalThis as Record<string, unknown>)[cbName] as () => void;
+        }
+        // Do NOT actually append (no real network).
+        return node;
+      }
+      return realAppendChild(node);
+    });
+
+    // Start the real load (no loadScript injection = real path).
+    const promise = loadGoogleMaps({ apiKey: 'BROWSER_KEY' });
+
+    // At this point Google hasn't responded yet — callback not fired.
+    // Simulate Google setting up the namespace and invoking the callback.
+    (globalThis as unknown as { google: unknown }).google = fakeGoogle;
+    if (capturedCallback) {
+      (capturedCallback as () => void)();
+    }
+
+    const result = await promise;
+    expect(result).toBe(fakeMaps);
+
+    appendSpy.mockRestore();
   });
 });
 

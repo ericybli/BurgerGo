@@ -16,9 +16,12 @@ describe('GET /api/google/geocode', () => {
     vi.stubGlobal('fetch', fetchSpy);
   });
 
-  it('returns 400 when lat or lng is missing / non-numeric', async () => {
+  it('returns 400 when lat or lng is missing / non-numeric / empty', async () => {
     expect((await GET(req('lat=35.1'))).status).toBe(400);
     expect((await GET(req('lat=abc&lng=139.2'))).status).toBe(400);
+    // Empty strings: Number('') === 0 which is finite, so must be caught explicitly.
+    expect((await GET(req('lat=&lng='))).status).toBe(400);
+    expect((await GET(req('lat=35.1&lng='))).status).toBe(400);
   });
 
   it('returns the first formatted_address on OK', async () => {

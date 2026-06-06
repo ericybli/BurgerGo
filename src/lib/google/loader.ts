@@ -26,50 +26,96 @@ export function buildMapsScriptUrl(apiKey: string, callbackName: string): string
   return `${MAPS_JS_BASE}?${params.toString()}`;
 }
 
-/** Default browser script injector — appends a <script> and resolves on load. */
-function defaultLoadScript(src: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const el = document.createElement('script');
-    el.src = src;
-    el.async = true;
-    el.onerror = () => reject(new Error('Failed to load Google Maps JS'));
-    el.onload = () => resolve();
-    document.head.appendChild(el);
-  });
+/** Default browser script injector — appends a <script> and rejects on error.
+ *  Resolution is handled by the Google callback registered on globalThis, NOT
+ *  by the script's onload event (with `loading=async` onload fires before
+ *  window.google.maps is populated). */
+function defaultLoadScript(
+  src: string,
+  onError: (err: Error) => void,
+): void {
+  const el = document.createElement('script');
+  el.src = src;
+  el.async = true;
+  el.onerror = () => onError(new Error('Failed to load Google Maps JS'));
+  document.head.appendChild(el);
 }
 
-let loadPromise: Promise<GoogleNamespace> | null = null;
+let loadPromise: Promise<GoogleNamespace['maps']> | null = null;
 
 export interface LoadOptions {
-  /** Injectable for tests; defaults to a real <script> tag injector. */
+  /** Injectable for tests; defaults to a real <script> tag injector.
+   *  The injected function sets globalThis.google and resolves the returned
+   *  promise so the callback path is bypassed in tests. */
   loadScript?: (src: string) => Promise<void>;
   /** Override the key (tests); defaults to the configured browser key. */
   apiKey?: string;
 }
 
 /**
- * Load (or reuse) the Maps JS API. Resolves with `window.google`. Concurrent
- * callers share one in-flight promise; a settled load is returned immediately.
+ * Load (or reuse) the Maps JS API. Resolves with `window.google.maps`.
+ * Concurrent callers share one in-flight promise; a settled load is returned
+ * immediately.
+ *
+ * Real load path: registers a named callback on globalThis so Google's async
+ * loader can invoke it once the Maps JS namespace is ready — this is the only
+ * correct signal with `loading=async`. The script's onload is NOT used for
+ * resolution because it fires before window.google.maps is populated.
+ *
+ * Test path: callers inject a `loadScript` that sets globalThis.google and
+ * resolves; the callback is a no-op in that case.
  */
-export function loadGoogleMaps(opts: LoadOptions = {}): Promise<GoogleNamespace> {
+export function loadGoogleMaps(opts: LoadOptions = {}): Promise<GoogleNamespace['maps']> {
   if (loadPromise) return loadPromise;
 
   const apiKey = opts.apiKey ?? env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     return Promise.reject(new Error('Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (browser key)'));
   }
-  const loadScript = opts.loadScript ?? defaultLoadScript;
 
-  loadPromise = (async () => {
+  if (opts.loadScript) {
+    // ── Test / injected path ─────────────────────────────────────────────────
+    // The injected loadScript sets globalThis.google synchronously before
+    // resolving, so we just await it and read the namespace.
+    const loadScript = opts.loadScript;
+    loadPromise = (async () => {
+      const existing = (globalThis as unknown as { google?: GoogleNamespace }).google;
+      if (existing?.maps) return existing.maps;
+      const callbackName = `__burgergoMapsCb_${Date.now()}`;
+      const src = buildMapsScriptUrl(apiKey, callbackName);
+      await loadScript(src);
+      const g = (globalThis as unknown as { google?: GoogleNamespace }).google;
+      if (!g?.maps) throw new Error('Google Maps JS loaded but window.google.maps is undefined');
+      return g.maps;
+    })();
+    return loadPromise;
+  }
+
+  // ── Real browser path ──────────────────────────────────────────────────────
+  // Register a named callback BEFORE injecting the script tag. Google's async
+  // loader invokes it once window.google.maps is fully ready; only then do we
+  // resolve. The script's onerror → reject so network failures surface.
+  loadPromise = new Promise<GoogleNamespace['maps']>((resolve, reject) => {
     const existing = (globalThis as unknown as { google?: GoogleNamespace }).google;
-    if (existing) return existing;
+    if (existing?.maps) { resolve(existing.maps); return; }
+
     const callbackName = `__burgergoMapsCb_${Date.now()}`;
+    (globalThis as Record<string, unknown>)[callbackName] = () => {
+      delete (globalThis as Record<string, unknown>)[callbackName];
+      const g = (globalThis as unknown as { google?: GoogleNamespace }).google;
+      if (g?.maps) {
+        resolve(g.maps);
+      } else {
+        reject(new Error('Google Maps callback fired but window.google.maps is undefined'));
+      }
+    };
+
     const src = buildMapsScriptUrl(apiKey, callbackName);
-    await loadScript(src);
-    const g = (globalThis as unknown as { google?: GoogleNamespace }).google;
-    if (!g) throw new Error('Google Maps JS loaded but window.google is undefined');
-    return g;
-  })();
+    defaultLoadScript(src, (err) => {
+      delete (globalThis as Record<string, unknown>)[callbackName];
+      reject(err);
+    });
+  });
 
   return loadPromise;
 }
@@ -78,6 +124,12 @@ export function loadGoogleMaps(opts: LoadOptions = {}): Promise<GoogleNamespace>
 export function __resetMapsLoaderForTests(): void {
   loadPromise = null;
   delete (globalThis as unknown as { google?: unknown }).google;
+  // Remove any dangling callback registrations from prior test runs.
+  for (const key of Object.keys(globalThis as object)) {
+    if (key.startsWith('__burgergoMapsCb_')) {
+      delete (globalThis as Record<string, unknown>)[key];
+    }
+  }
 }
 
 /**
