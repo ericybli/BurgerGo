@@ -1,0 +1,1 @@
+ALTER TABLE `travel_legs` ADD `polyline` text;

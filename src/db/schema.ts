@@ -64,6 +64,7 @@ export const travelLegs = sqliteTable(
     mode: text('mode', { enum: ['walk', 'drive', 'transit'] }).notNull(),
     durationSeconds: integer('duration_seconds').notNull(),
     distanceMeters: integer('distance_meters').notNull(),
+    polyline: text('polyline'),  // nullable: NULL until Google Directions returns it
     computedAt: integer('computed_at', { mode: 'timestamp' }).notNull(),
   },
   (t) => ({
