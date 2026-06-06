@@ -20,9 +20,11 @@ export async function deletePhotoAction(id: string): Promise<void> {
   if (!existing) throw new Error('Photo not found');
 
   // Guard against a path-traversal attack via a tampered DB `path` column.
+  // Must be strictly *under* the uploads root — never the root itself (an empty
+  // `path` would otherwise recursively delete the entire uploads dir).
   const absPath = join(env.UPLOADS_DIR, existing.path);
   const root = resolve(env.UPLOADS_DIR);
-  if (resolve(absPath) !== root && !resolve(absPath).startsWith(root + sep)) {
+  if (!resolve(absPath).startsWith(root + sep)) {
     throw new Error('Invalid photo path');
   }
 

@@ -69,4 +69,16 @@ describe('deletePhotoAction', () => {
     await expect(deletePhotoAction('bad-photo')).rejects.toThrow('Invalid photo path');
     expect(rmFn).not.toHaveBeenCalled();
   });
+
+  it('throws and does NOT rm when the DB path resolves to the uploads root itself', async () => {
+    // An empty `path` would resolve to UPLOADS_DIR — recursively deleting it
+    // would wipe every trip's photos. The guard must reject it.
+    testHandle.db.insert(photos).values({
+      id: 'root-photo', tripId: 'trip-1', ownerType: 'place', ownerId: 'place-1',
+      path: '', width: null, height: null, orderIndex: 2, createdAt: TS,
+    }).run();
+
+    await expect(deletePhotoAction('root-photo')).rejects.toThrow('Invalid photo path');
+    expect(rmFn).not.toHaveBeenCalled();
+  });
 });

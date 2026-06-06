@@ -218,7 +218,7 @@ export function BudgetClient({
       )}
 
       <ExpenseSheet
-        key={expenseSheet.expense?.id ?? 'new'}
+        key={`expense:${expenseSheet.open ? (expenseSheet.expense?.id ?? 'new') : 'closed'}`}
         open={expenseSheet.open}
         tripId={tripId}
         expense={expenseSheet.expense}
@@ -235,7 +235,7 @@ export function BudgetClient({
       />
 
       <SetBudgetSheet
-        key={budgetSheetOpen ? 'open' : 'closed'}
+        key={`budget:${budgetSheetOpen ? 'open' : 'closed'}`}
         open={budgetSheetOpen}
         tripId={tripId}
         targets={targets}
