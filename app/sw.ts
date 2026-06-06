@@ -69,7 +69,10 @@ export function buildRuntimeCaching(base: string = swBasePath()): CacheEntry[] {
         return (
           url.pathname === `${base}/burgergo-logo.png` ||
           url.pathname.startsWith(`${base}/icons/`) ||
-          new RegExp(`^${base}/api/photos/[^/]+/[^/]+$`).test(url.pathname)
+          // 1B cached-Google photos: /api/photos/<placeId>/<variant>
+          new RegExp(`^${base}/api/photos/[^/]+/[^/]+$`).test(url.pathname) ||
+          // Plan-2 personal photos: /api/photos/p/<photoId>/<size>
+          new RegExp(`^${base}/api/photos/p/[^/]+/[^/]+$`).test(url.pathname)
         );
       },
       options: {

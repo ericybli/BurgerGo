@@ -50,6 +50,24 @@ describe('buildRuntimeCaching', () => {
     expect(matches('photos', 'https://app.example.com/api/trips')).toBe(false);
   });
 
+  it('CacheFirst matches the personal-photo serving path /api/photos/p/<id>/<size>', () => {
+    const entry = buildRuntimeCaching('').find((e) => e.name === 'photos')!;
+    const url = new URL('http://x/api/photos/p/photo-1/card');
+    expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(true);
+  });
+
+  it('CacheFirst matches the personal-photo path under a basePath', () => {
+    const entry = buildRuntimeCaching('/burgergo').find((e) => e.name === 'photos')!;
+    const url = new URL('http://x/burgergo/api/photos/p/photo-1/thumb');
+    expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(true);
+  });
+
+  it('does NOT CacheFirst the single-segment upload endpoint /api/photos', () => {
+    const entry = buildRuntimeCaching('').find((e) => e.name === 'photos')!;
+    const url = new URL('http://x/api/photos');
+    expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(false);
+  });
+
   it('NetworkOnly for the Google proxy and Google/Maps origins', () => {
     const entry = matcher('google');
     expect(entry.handler).toBe('NetworkOnly');
