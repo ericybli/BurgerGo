@@ -75,6 +75,12 @@ docker compose cp app:/data/backup-$(date +%F).db ./
 docker run --rm -v burgergo-uploads:/u -v "$PWD":/out busybox tar czf /out/uploads-$(date +%F).tgz -C /u .
 ```
 
+## Troubleshooting
+
+- **Docker build fails at `npm ci` with `Invalid Version:`** — npm sometimes writes
+  version-less sharp musl optional-dep entries into `package-lock.json` that crash
+  `npm ci` on linux. Fix: `node scripts/fix-lockfile.mjs` (commit the result), then redeploy.
+
 > **Note:** the app has **no authentication** and is **public** at the URL above —
 > anyone with the link can read/edit the trips. Add nginx HTTP Basic Auth or a
 > Cloudflare Access policy on `/burgergo` if you want to lock it down later.
