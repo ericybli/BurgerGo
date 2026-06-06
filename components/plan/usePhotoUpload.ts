@@ -15,15 +15,20 @@ export interface UploadArgs {
   ownerId: string;
 }
 
+export type UploadResult =
+  | { photo: UploadedPhoto; errorCode: null }
+  | { photo: null; errorCode: string };
+
 /**
  * Multipart photo upload to POST /api/photos (online-only). Returns the created
- * photo on success, or null on failure (error code surfaced via `error`).
+ * photo on success, or null on failure (error code surfaced both inline and via
+ * the `error` state for convenience).
  */
 export function usePhotoUpload() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const upload = useCallback(async (args: UploadArgs): Promise<UploadedPhoto | null> => {
+  const upload = useCallback(async (args: UploadArgs): Promise<UploadResult> => {
     setUploading(true);
     setError(null);
     try {
@@ -41,13 +46,13 @@ export function usePhotoUpload() {
           if (body?.error) code = body.error;
         } catch { /* non-JSON error body */ }
         setError(code);
-        return null;
+        return { photo: null, errorCode: code };
       }
       const body = (await res.json()) as { photo: UploadedPhoto };
-      return body.photo;
+      return { photo: body.photo, errorCode: null };
     } catch {
       setError('network');
-      return null;
+      return { photo: null, errorCode: 'network' };
     } finally {
       setUploading(false);
     }

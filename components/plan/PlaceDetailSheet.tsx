@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
@@ -49,6 +49,9 @@ export function PlaceDetailSheet({
   const { upload, uploading } = usePhotoUpload();
   const [photoError, setPhotoError] = useState<string | null>(null);
 
+  // M2: clear stale photo error whenever the sheet opens for a different place.
+  useEffect(() => { setPhotoError(null); }, [place.id]);
+
   if (!open) return null;
 
   const mapsHref = placeUrl({
@@ -69,11 +72,18 @@ export function PlaceDetailSheet({
     if (!file) return;
     setPhotoError(null);
     if (!file.type.startsWith('image/')) { setPhotoError(t('photoNotImage')); return; }
-    const result = await upload({ file, tripId: place.tripId, ownerId: place.id });
-    if (result) {
+    const { photo, errorCode } = await upload({ file, tripId: place.tripId, ownerId: place.id });
+    if (photo) {
       onSaved(); // PlanClient reloads → gallery + card thumb refresh
     } else {
-      setPhotoError(t('photoUploadFailed'));
+      // Map server error codes to user-friendly i18n messages.
+      if (errorCode === 'too_large') {
+        setPhotoError(t('photoTooLarge'));
+      } else if (errorCode === 'too_many') {
+        setPhotoError(t('photoTooMany'));
+      } else {
+        setPhotoError(t('photoUploadFailed'));
+      }
     }
   }
 

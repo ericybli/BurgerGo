@@ -12,6 +12,7 @@ import {
   validateUpload,
   processPhoto,
 } from '@/src/lib/photos/pipeline';
+import { newId } from '@/src/db/ids';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,7 @@ export async function POST(req: Request): Promise<Response> {
 
   // Pre-generate the id so the on-disk path base matches the DB row.
   // We pass it to both processPhoto (for the directory name) and addPhoto.
-  const photoId = crypto.randomUUID().replace(/-/g, '');
+  const photoId = newId();
   let result;
   try {
     const arrayBuf = await image.arrayBuffer();

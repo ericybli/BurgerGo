@@ -154,6 +154,7 @@
     "photoUploadFailed": "Couldn't upload — please try again.",
     "deletePhoto": "Delete photo",
     "photoTooLarge": "That image is too large (max 10MB).",
+    "photoTooMany": "You've reached the photo limit for this place (max 12).",
     "photoNotImage": "Please choose an image file.",
     "closePhoto": "Close photo",
     "photoOf": "Photo of {name}"

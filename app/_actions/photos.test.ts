@@ -58,4 +58,15 @@ describe('deletePhotoAction', () => {
     await expect(deletePhotoAction('nope')).rejects.toThrow();
     expect(rmFn).not.toHaveBeenCalled();
   });
+
+  it('throws and does NOT call rm when the DB path traverses outside UPLOADS_DIR', async () => {
+    // Insert a photo row with a malicious path that would escape UPLOADS_DIR.
+    testHandle.db.insert(photos).values({
+      id: 'bad-photo', tripId: 'trip-1', ownerType: 'place', ownerId: 'place-1',
+      path: '../../etc', width: null, height: null, orderIndex: 1, createdAt: TS,
+    }).run();
+
+    await expect(deletePhotoAction('bad-photo')).rejects.toThrow('Invalid photo path');
+    expect(rmFn).not.toHaveBeenCalled();
+  });
 });

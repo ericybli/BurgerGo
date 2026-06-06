@@ -10,13 +10,13 @@ vi.mock('@/src/db/client', () => ({
 }));
 
 const PHOTO_BYTES = Buffer.from('FAKE_WEBP_DATA');
-vi.mock('node:fs', () => {
-  const read = (path: string) => {
+vi.mock('node:fs/promises', () => {
+  const read = async (path: string) => {
     if (path.includes('photo-1') && path.endsWith('card.webp')) return PHOTO_BYTES;
     const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
     throw err;
   };
-  return { default: { readFileSync: vi.fn(read) }, readFileSync: vi.fn(read) };
+  return { default: { readFile: vi.fn(read) }, readFile: vi.fn(read) };
 });
 vi.mock('@/src/env', () => ({ env: { UPLOADS_DIR: '/uploads' } }));
 

@@ -27,7 +27,7 @@ vi.mock('@/app/_actions/photos', () => {
   };
 });
 
-const uploadFn = vi.fn(async () => ({ id: 'new-photo', width: 1600, height: 800 }));
+const uploadFn = vi.fn(async () => ({ photo: { id: 'new-photo', width: 1600, height: 800 }, errorCode: null }));
 const uploadState = { uploading: false, error: null as string | null };
 vi.mock('@/components/plan/usePhotoUpload', () => ({
   usePhotoUpload: () => ({ upload: uploadFn, uploading: uploadState.uploading, error: uploadState.error }),

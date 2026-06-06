@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { NextResponse } from 'next/server';
 import { db } from '@/src/db/client';
@@ -34,7 +34,7 @@ export async function GET(
   }
 
   try {
-    const bytes = readFileSync(filePath);
+    const bytes = await readFile(filePath);
     return new Response(bytes, {
       status: 200,
       headers: {

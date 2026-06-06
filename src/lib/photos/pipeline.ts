@@ -57,7 +57,9 @@ export async function processPhoto(input: ProcessPhotoInput): Promise<ProcessPho
 
   // `.rotate()` (no args) bakes EXIF orientation then drops it; re-encoding to
   // WebP without `.withMetadata()` strips all remaining EXIF.
-  const base = () => sharp(buffer).rotate();
+  // `limitInputPixels` is sharp's decompression-bomb guard (268 MP max). We set
+  // it explicitly to make the protection visible rather than relying on the default.
+  const base = () => sharp(buffer, { limitInputPixels: 268_402_689 }).rotate();
 
   let full: { width: number; height: number } | null = null;
   for (const size of Object.keys(SIZES) as PhotoSize[]) {

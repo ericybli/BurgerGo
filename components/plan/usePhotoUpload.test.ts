@@ -32,19 +32,19 @@ describe('usePhotoUpload', () => {
     expect(fd.get('ownerType')).toBe('place');
     expect(fd.get('ownerId')).toBe('place-1');
     expect(fd.get('image')).toBeInstanceOf(File);
-    expect(returned).toEqual({ id: 'ph1', width: 1600, height: 800 });
+    expect(returned).toEqual({ photo: { id: 'ph1', width: 1600, height: 800 }, errorCode: null });
     expect(result.current.uploading).toBe(false);
     expect(result.current.error).toBeNull();
   });
 
-  it('sets error and returns null when the server rejects', async () => {
+  it('sets error and returns { photo: null, errorCode } when the server rejects', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'too_large' }), { status: 413 })));
     const { result } = renderHook(() => usePhotoUpload());
     let returned: unknown = 'sentinel';
     await act(async () => {
       returned = await result.current.upload({ file, tripId: 't1', ownerId: 'place-1' });
     });
-    expect(returned).toBeNull();
+    expect(returned).toEqual({ photo: null, errorCode: 'too_large' });
     await waitFor(() => expect(result.current.error).toBe('too_large'));
   });
 
@@ -55,7 +55,7 @@ describe('usePhotoUpload', () => {
     await act(async () => {
       returned = await result.current.upload({ file, tripId: 't1', ownerId: 'place-1' });
     });
-    expect(returned).toBeNull();
+    expect(returned).toEqual({ photo: null, errorCode: 'network' });
     await waitFor(() => expect(result.current.error).toBe('network'));
   });
 });
