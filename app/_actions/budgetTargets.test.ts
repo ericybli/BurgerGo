@@ -52,12 +52,17 @@ describe('budget target actions', () => {
     expect(rows[0]!.plannedAmount).toBe(120000);
   });
 
-  it('rejects a negative or non-integer planned amount', async () => {
+  it('rejects a negative, zero, or non-integer planned amount', async () => {
     await expect(
       setTargetAction({ tripId: 'trip-1', category: null, plannedAmount: -5 }),
     ).rejects.toThrow();
     await expect(
       setTargetAction({ tripId: 'trip-1', category: 'food', plannedAmount: 1.5 }),
+    ).rejects.toThrow();
+    // A zero planned amount is a no-target (clear), not a 0 budget — reject it
+    // so it never persists as a target row that breaks percent math.
+    await expect(
+      setTargetAction({ tripId: 'trip-1', category: null, plannedAmount: 0 }),
     ).rejects.toThrow();
   });
 

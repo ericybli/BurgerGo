@@ -42,13 +42,22 @@ function RemainingLabel({
 function Bar({
   testId,
   row,
+  label,
 }: {
   testId: string;
   row: BudgetRow;
+  label: string;
 }) {
   const width = clampPercent(row.percent);
   return (
-    <div className="mt-1 h-2 w-full overflow-hidden rounded-chip bg-paper shadow-inset">
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={width}
+      className="mt-1 h-2 w-full overflow-hidden rounded-chip bg-paper shadow-inset"
+    >
       <div
         data-testid={testId}
         className={`h-full rounded-chip ${row.over ? 'bg-red-500' : 'bg-coral'}`}
@@ -82,7 +91,7 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
               planned: formatMoney(overall.planned, currency, locale),
             })}
       </p>
-      <Bar testId="bar-overall" row={overall} />
+      <Bar testId="bar-overall" row={overall} label={t('overall')} />
       <p className="mt-1">
         <RemainingLabel row={overall} currency={currency} locale={locale} />
       </p>
@@ -103,7 +112,11 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
                     })}
               </span>
             </div>
-            <Bar testId={`bar-${row.category}`} row={row} />
+            <Bar
+              testId={`bar-${row.category}`}
+              row={row}
+              label={t(`categories.${row.category as BudgetCategory}`)}
+            />
             <p className="mt-1">
               <RemainingLabel row={row} currency={currency} locale={locale} />
             </p>

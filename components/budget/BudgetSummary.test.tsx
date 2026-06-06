@@ -60,6 +60,23 @@ describe('BudgetSummary', () => {
     expect(foodBar).toHaveStyle({ width: '75%' });
   });
 
+  it('exposes each bar as a labelled progressbar with clamped aria-valuenow', () => {
+    renderWith(
+      <BudgetSummary overall={overall} categories={rows} currency="USD" locale="en" onSetBudget={vi.fn()} />,
+    );
+    // Overall bar: 38% → aria-valuenow 38, labelled "Overall".
+    const overallBar = screen.getByRole('progressbar', { name: en.budget.overall });
+    expect(overallBar).toHaveAttribute('aria-valuenow', '38');
+    expect(overallBar).toHaveAttribute('aria-valuemin', '0');
+    expect(overallBar).toHaveAttribute('aria-valuemax', '100');
+    // Over-budget lodging bar: 133% clamps to 100 for the accessible value.
+    const lodgingBar = screen.getByRole('progressbar', { name: en.budget.categories.lodging });
+    expect(lodgingBar).toHaveAttribute('aria-valuenow', '100');
+    // No-target transport bar: percent null → 0.
+    const transportBar = screen.getByRole('progressbar', { name: en.budget.categories.transport });
+    expect(transportBar).toHaveAttribute('aria-valuenow', '0');
+  });
+
   it('fires onSetBudget when the set-budget button is pressed', async () => {
     const onSetBudget = vi.fn();
     renderWith(

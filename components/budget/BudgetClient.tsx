@@ -235,6 +235,7 @@ export function BudgetClient({
       />
 
       <SetBudgetSheet
+        key={budgetSheetOpen ? 'open' : 'closed'}
         open={budgetSheetOpen}
         tripId={tripId}
         targets={targets}

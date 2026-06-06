@@ -25,7 +25,10 @@ function revalidateBudget(tripId: string): void {
 const setSchema = z.object({
   tripId: z.string().min(1),
   category: targetCategory,
-  plannedAmount: z.number().int('Planned amount must be whole minor units').nonnegative(),
+  plannedAmount: z
+    .number()
+    .int('Planned amount must be whole minor units')
+    .positive('Planned amount must be greater than zero'),
 });
 
 export type SetTargetActionInput = z.input<typeof setSchema>;

@@ -48,12 +48,16 @@ describe('expense actions', () => {
     expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/budget');
   });
 
-  it('rejects a non-integer or negative amount', async () => {
+  it('rejects a non-integer, negative, or zero amount', async () => {
     await expect(
       addExpenseAction({ tripId: 'trip-1', amount: 12.5, category: 'food', spentOn: '2026-06-06' }),
     ).rejects.toThrow();
     await expect(
       addExpenseAction({ tripId: 'trip-1', amount: -1, category: 'food', spentOn: '2026-06-06' }),
+    ).rejects.toThrow();
+    // A zero-amount expense is meaningless — reject rather than store a 0 row.
+    await expect(
+      addExpenseAction({ tripId: 'trip-1', amount: 0, category: 'food', spentOn: '2026-06-06' }),
     ).rejects.toThrow();
   });
 

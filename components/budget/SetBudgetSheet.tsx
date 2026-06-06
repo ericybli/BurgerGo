@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { currencyExponent } from '@/src/lib/currency';
+import { inputToMinor, minorToInput } from '@/src/lib/currency';
 import { BUDGET_CATEGORIES, type BudgetCategory } from '@/src/lib/budgetView';
 import { setTargetAction, clearTargetAction } from '@/app/_actions/budgetTargets';
 import type { TargetDTO } from '@/app/api/trips/[tripId]/budget/route';
@@ -19,20 +19,6 @@ type Props = {
 };
 
 type Key = 'overall' | BudgetCategory;
-
-function minorToInput(minor: number, currency: string): string {
-  const exp = currencyExponent(currency);
-  return (minor / 10 ** exp).toFixed(exp);
-}
-
-/** Major-unit string → integer minor units; '' → null; invalid/≤0 → null. */
-function inputToMinor(value: string, currency: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === '') return null;
-  const major = Number(trimmed);
-  if (!Number.isFinite(major) || major <= 0) return null;
-  return Math.round(major * 10 ** currencyExponent(currency));
-}
 
 export function SetBudgetSheet({
   open,

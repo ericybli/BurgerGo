@@ -9,7 +9,7 @@ describe('en.json budget namespace', () => {
     'addExpense', 'editExpense', 'amountLabel', 'categoryLabel', 'dateLabel',
     'noteLabel', 'linkPlaceLabel', 'noLinkedPlace', 'save', 'cancel', 'delete',
     'emptyHeadline', 'emptySubtext',
-    'offlineHint', 'saveFailed', 'mutationFailed',
+    'offlineHint', 'saveFailed', 'invalidAmount', 'mutationFailed',
     'overallPlannedLabel', 'categoryPlannedLabel', 'clearTarget', 'dayTotal',
   ];
   const cats = ['food', 'lodging', 'transport', 'activities', 'shopping', 'other'];

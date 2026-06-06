@@ -114,12 +114,19 @@ describe('ExpenseSheet', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('rejects a zero/blank amount without calling the action', async () => {
+  it('rejects a zero/blank amount with the invalid-amount message, not saveFailed', async () => {
     renderWith(
       <ExpenseSheet open tripId="trip-1" places={places} currency="USD" locale="en" disabled={false} today="2026-06-06" onClose={vi.fn()} onSaved={vi.fn()} />,
     );
+    // Blank amount → client-side validation, distinct from a server error.
     screen.getByRole('button', { name: en.budget.save }).click();
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.budget.invalidAmount));
+    expect(addExpenseAction).not.toHaveBeenCalled();
+
+    // An explicit zero is rejected the same way.
+    fireEvent.change(screen.getByLabelText(en.budget.amountLabel), { target: { value: '0' } });
+    screen.getByRole('button', { name: en.budget.save }).click();
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.budget.invalidAmount));
     expect(addExpenseAction).not.toHaveBeenCalled();
   });
 });

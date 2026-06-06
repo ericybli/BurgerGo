@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { currencyExponent } from '@/src/lib/currency';
+import { inputToMinor, minorToInput } from '@/src/lib/currency';
 import { BUDGET_CATEGORIES, type BudgetCategory } from '@/src/lib/budgetView';
 import {
   addExpenseAction,
@@ -26,22 +26,6 @@ type Props = {
   onClose: () => void;
   onSaved: () => void;
 };
-
-/** Integer minor units → major-unit string for the amount input. */
-function minorToInput(minor: number, currency: string): string {
-  const exp = currencyExponent(currency);
-  return (minor / 10 ** exp).toFixed(exp);
-}
-
-/** Parse a major-unit input string → integer minor units, or null if invalid/≤0. */
-function inputToMinor(value: string, currency: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === '') return null;
-  const major = Number(trimmed);
-  if (!Number.isFinite(major) || major <= 0) return null;
-  const exp = currencyExponent(currency);
-  return Math.round(major * 10 ** exp);
-}
 
 export function ExpenseSheet({
   open,
@@ -82,7 +66,7 @@ export function ExpenseSheet({
     setError(null);
     const minor = inputToMinor(amount, currency);
     if (minor === null) {
-      setError(t('saveFailed'));
+      setError(t('invalidAmount'));
       return;
     }
     const payload = {

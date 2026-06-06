@@ -234,6 +234,7 @@
     "emptySubtext": "Tap Add expense to start tracking what you spend.",
     "offlineHint": "Connect to the internet to make changes.",
     "saveFailed": "Couldn't save — please try again.",
+    "invalidAmount": "Enter an amount greater than zero.",
     "mutationFailed": "Something went wrong — please try again.",
     "overallPlannedLabel": "Overall budget",
     "categoryPlannedLabel": "{category} budget",

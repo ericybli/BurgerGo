@@ -12,7 +12,10 @@ import {
 } from '@/src/db/repos/expenses';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
-const amount = z.number().int('Amount must be whole minor units').nonnegative();
+const amount = z
+  .number()
+  .int('Amount must be whole minor units')
+  .positive('Amount must be greater than zero');
 const category = z.enum([
   'food', 'lodging', 'transport', 'activities', 'shopping', 'other',
 ]);

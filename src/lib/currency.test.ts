@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { currencyExponent, formatMoney } from '@/src/lib/currency';
+import {
+  currencyExponent,
+  formatMoney,
+  inputToMinor,
+  minorToInput,
+} from '@/src/lib/currency';
 
 describe('currencyExponent', () => {
   it('maps known currencies to their ISO-4217 minor-unit exponent', () => {
@@ -45,5 +50,33 @@ describe('formatMoney', () => {
   it('handles zero and negative amounts', () => {
     expect(formatMoney(0, 'USD', 'en-US')).toBe('$0.00');
     expect(formatMoney(-500, 'USD', 'en-US')).toBe('-$5.00');
+  });
+});
+
+describe('minorToInput', () => {
+  it('renders minor units at the currency precision', () => {
+    expect(minorToInput(30000, 'USD')).toBe('300.00');
+    expect(minorToInput(1500, 'JPY')).toBe('1500');
+    expect(minorToInput(1234567, 'KWD')).toBe('1234.567');
+  });
+});
+
+describe('inputToMinor', () => {
+  it('parses a major-unit string into integer minor units', () => {
+    expect(inputToMinor('15.30', 'USD')).toBe(1530);
+    expect(inputToMinor('300', 'USD')).toBe(30000);
+    expect(inputToMinor('1500', 'JPY')).toBe(1500);
+  });
+
+  it('round-trips with minorToInput', () => {
+    expect(inputToMinor(minorToInput(30000, 'USD'), 'USD')).toBe(30000);
+  });
+
+  it('returns null for empty, non-numeric, zero, or negative input', () => {
+    expect(inputToMinor('', 'USD')).toBeNull();
+    expect(inputToMinor('   ', 'USD')).toBeNull();
+    expect(inputToMinor('abc', 'USD')).toBeNull();
+    expect(inputToMinor('0', 'USD')).toBeNull();
+    expect(inputToMinor('-5', 'USD')).toBeNull();
   });
 });
