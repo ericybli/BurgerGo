@@ -9,6 +9,9 @@ import {
   updatePlace,
   deletePlace,
   getPlace,
+  reorderDay,
+  promoteToDay,
+  moveToSaved,
 } from '@/src/db/repos/places';
 
 vi.mock('@/src/lib/clock', () => ({ now: () => 1_700_000_000_000 }));
@@ -231,5 +234,84 @@ describe('places repo — getPlace', () => {
 
   it('returns undefined when not found', () => {
     expect(getPlace(db, 'nope')).toBeUndefined();
+  });
+});
+
+describe('places repo — reorderDay', () => {
+  let db: Db;
+  beforeEach(() => {
+    db = makeTestDb().db;
+    seedTrip(db);
+    seedPlace(db, { id: 'a', dayDate: '2026-06-05', orderIndex: 0 });
+    seedPlace(db, { id: 'b', dayDate: '2026-06-05', orderIndex: 1 });
+    seedPlace(db, { id: 'c', dayDate: '2026-06-05', orderIndex: 2 });
+  });
+
+  it('rewrites orderIndex to match the given id order (0-based contiguous)', () => {
+    reorderDay(db, 'trip-1', '2026-06-05', ['c', 'a', 'b']);
+    const rows = listByDay(db, 'trip-1', '2026-06-05');
+    expect(rows.map((p) => p.id)).toEqual(['c', 'a', 'b']);
+    expect(rows.map((p) => p.orderIndex)).toEqual([0, 1, 2]);
+  });
+
+  it('ignores ids that are not in the target day', () => {
+    seedTrip(db, 'trip-2');
+    seedPlace(db, { id: 'z', tripId: 'trip-2', dayDate: '2026-06-05', orderIndex: 0 });
+    reorderDay(db, 'trip-1', '2026-06-05', ['b', 'z', 'a', 'c']);
+    const rows = listByDay(db, 'trip-1', '2026-06-05');
+    // 'z' is skipped; remaining are renumbered contiguously by their position.
+    expect(rows.map((p) => p.id)).toEqual(['b', 'a', 'c']);
+    expect(rows.map((p) => p.orderIndex)).toEqual([0, 1, 2]);
+  });
+});
+
+describe('places repo — promoteToDay', () => {
+  let db: Db;
+  beforeEach(() => {
+    db = makeTestDb().db;
+    seedTrip(db);
+    seedPlace(db, { id: 'd-0', dayDate: '2026-06-05', orderIndex: 0 });
+    seedPlace(db, { id: 's-0', dayDate: null, orderIndex: 0 });
+    seedPlace(db, { id: 's-1', dayDate: null, orderIndex: 1 });
+  });
+
+  it('sets day_date and appends at max(day order)+1', () => {
+    const row = promoteToDay(db, 's-1', '2026-06-05');
+    expect(row?.dayDate).toBe('2026-06-05');
+    expect(row?.orderIndex).toBe(1); // existing d-0 is 0, so next is 1
+    expect(listByDay(db, 'trip-1', '2026-06-05').map((p) => p.id)).toEqual([
+      'd-0', 's-1',
+    ]);
+  });
+
+  it('promotes to an empty day at orderIndex 0', () => {
+    const row = promoteToDay(db, 's-0', '2026-06-06');
+    expect(row?.dayDate).toBe('2026-06-06');
+    expect(row?.orderIndex).toBe(0);
+  });
+
+  it('returns undefined for an unknown id', () => {
+    expect(promoteToDay(db, 'nope', '2026-06-05')).toBeUndefined();
+  });
+});
+
+describe('places repo — moveToSaved', () => {
+  let db: Db;
+  beforeEach(() => {
+    db = makeTestDb().db;
+    seedTrip(db);
+    seedPlace(db, { id: 'd-0', dayDate: '2026-06-05', orderIndex: 0 });
+    seedPlace(db, { id: 's-0', dayDate: null, orderIndex: 0 });
+  });
+
+  it('nulls day_date and appends at the end of the Saved bucket', () => {
+    const row = moveToSaved(db, 'd-0');
+    expect(row?.dayDate).toBeNull();
+    expect(row?.orderIndex).toBe(1); // s-0 occupies 0
+    expect(listSaved(db, 'trip-1').map((p) => p.id)).toEqual(['s-0', 'd-0']);
+  });
+
+  it('returns undefined for an unknown id', () => {
+    expect(moveToSaved(db, 'nope')).toBeUndefined();
   });
 });
