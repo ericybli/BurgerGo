@@ -62,6 +62,7 @@ function maxOrderIndex(
 }
 
 export interface AddPhotoInput {
+  id?: string;
   tripId: string;
   ownerType: PhotoOwnerType;
   ownerId: string;
@@ -78,7 +79,7 @@ export function addPhoto(db: Db, input: AddPhotoInput): Photo {
   let row!: Photo;
   db.transaction((tx) => {
     const txDb = tx as unknown as Db;
-    const id = newId();
+    const id = input.id ?? newId();
     row = {
       id,
       tripId: input.tripId,
