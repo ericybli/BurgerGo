@@ -40,6 +40,12 @@ describe('buildRuntimeCaching', () => {
     expect(matches('data', 'https://app.example.com/api/health')).toBe(false);
   });
 
+  it('SWR-caches the budget read handler (covered by the /api/trips prefix)', () => {
+    const url = new URL('http://localhost/api/trips/trip-1/budget');
+    const entry = buildRuntimeCaching('').find((e) => e.name === 'data')!;
+    expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(true);
+  });
+
   it('CacheFirst-caches logo, icons, and uploaded photos under burgergo-photos', () => {
     const entry = matcher('photos');
     expect(entry.handler).toBe('CacheFirst');
