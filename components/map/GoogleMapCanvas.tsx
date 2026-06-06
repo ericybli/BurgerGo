@@ -36,7 +36,8 @@ export function GoogleMapCanvas({
     const overlays: Array<{ setMap: (m: unknown) => void }> = [];
 
     void (async () => {
-      let maps: typeof google.maps;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let maps: any;
       try {
         maps = await loadGoogleMaps();
       } catch {
