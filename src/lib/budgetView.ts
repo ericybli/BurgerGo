@@ -126,18 +126,19 @@ export function buildOverallBudget(
   return buildRow('overall', totalSpent(expenses), targetMap(targets).overall);
 }
 
-export interface DateGroup {
+export interface DateGroup<T extends ExpenseLite = ExpenseLite> {
   date: string; // YYYY-MM-DD
   total: number;
-  items: ExpenseLite[];
+  items: T[];
 }
 
 /**
  * Group expenses by spent_on, newest date first. Items inside a date keep the
  * incoming order (the read handler returns spent_on desc, created_at desc).
+ * Generic so callers with richer expense types (e.g. ExpenseDTO) keep their type.
  */
-export function groupByDate(expenses: ExpenseLite[]): DateGroup[] {
-  const byDate = new Map<string, ExpenseLite[]>();
+export function groupByDate<T extends ExpenseLite>(expenses: T[]): DateGroup<T>[] {
+  const byDate = new Map<string, T[]>();
   for (const e of expenses) {
     const list = byDate.get(e.spentOn);
     if (list) list.push(e);

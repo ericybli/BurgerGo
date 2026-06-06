@@ -15,13 +15,14 @@ describe('en.json budget namespace', () => {
   const cats = ['food', 'lodging', 'transport', 'activities', 'shopping', 'other'];
 
   it('defines every budget UI key', () => {
-    const b = (en as Record<string, Record<string, unknown>>).budget;
+    const b: Record<string, unknown> = en.budget as unknown as Record<string, unknown>;
     expect(b).toBeDefined();
     for (const k of required) expect(b[k], `budget.${k}`).toBeTypeOf('string');
   });
 
   it('defines a label for every budget category', () => {
-    const c = (en as Record<string, Record<string, Record<string, unknown>>>).budget.categories;
+    const b: Record<string, unknown> = en.budget as unknown as Record<string, unknown>;
+    const c: Record<string, unknown> = b.categories as Record<string, unknown>;
     expect(c).toBeDefined();
     for (const k of cats) expect(c[k], `budget.categories.${k}`).toBeTypeOf('string');
   });
