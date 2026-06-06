@@ -29,7 +29,7 @@ describe('SWRegister', () => {
   it('registers /sw.js and requests persistent storage after window load', async () => {
     render(<SWRegister />);
     window.dispatchEvent(new Event('load'));
-    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
+    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/' }));
     await waitFor(() => expect(persist).toHaveBeenCalled());
   });
 
@@ -45,7 +45,7 @@ describe('SWRegister', () => {
     Object.defineProperty(document, 'readyState', { value: 'complete', configurable: true });
     render(<SWRegister />);
     // No load event fired — registration must happen synchronously within the effect.
-    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
+    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/' }));
     await waitFor(() => expect(persist).toHaveBeenCalled());
   });
 
@@ -56,7 +56,7 @@ describe('SWRegister', () => {
     expect(register).not.toHaveBeenCalled();
     // Fire the load event to trigger registration.
     window.dispatchEvent(new Event('load'));
-    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js'));
+    await waitFor(() => expect(register).toHaveBeenCalledWith('/sw.js', { scope: '/' }));
     await waitFor(() => expect(persist).toHaveBeenCalled());
   });
 });

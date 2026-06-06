@@ -26,17 +26,35 @@ export interface CacheEntry {
 }
 
 /**
+ * Derive the deploy sub-path from the SW's own URL. The SW is served at
+ * `<basePath>/sw.js`, so stripping the trailing `/sw.js` yields the basePath
+ * (`/burgergo`, or `''` at root). NEXT_PUBLIC_BASE_PATH is not inlined into the
+ * @serwist/next-compiled worker, so we resolve it at runtime instead. Falsy
+ * `self.location` (jsdom/test) falls back to `''`.
+ */
+export function swBasePath(): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const loc = (globalThis as any).self?.location?.href as string | undefined;
+  if (!loc) return '';
+  return new URL(loc).pathname.replace(/\/sw\.js$/, '');
+}
+
+/**
  * Runtime caching policy (spec §7.3). Pure + exported so it is unit-testable without a SW global.
  * Order matters: `google` (NetworkOnly) is first so /api/google/* never falls through to SWR.
+ *
+ * `base` is the deploy sub-path (e.g. `/burgergo`, or `''` at root). All same-origin
+ * path matchers are prefixed with it so the policy works under any basePath; defaults
+ * to the runtime-derived value (`swBasePath()`) but is injectable for tests.
  */
-export function buildRuntimeCaching(): CacheEntry[] {
+export function buildRuntimeCaching(base: string = swBasePath()): CacheEntry[] {
   return [
     {
       name: 'google',
       handler: 'NetworkOnly',
       matcher({ url }: TestableMatcherOptions) {
         return (
-          url.pathname.startsWith('/api/google') ||
+          url.pathname.startsWith(`${base}/api/google`) ||
           /(^|\.)googleapis\.com$/.test(url.hostname) ||
           /(^|\.)gstatic\.com$/.test(url.hostname) ||
           url.hostname === 'maps.google.com'
@@ -49,9 +67,9 @@ export function buildRuntimeCaching(): CacheEntry[] {
       handler: 'CacheFirst',
       matcher({ url }: TestableMatcherOptions) {
         return (
-          url.pathname === '/burgergo-logo.png' ||
-          url.pathname.startsWith('/icons/') ||
-          /^\/api\/photos\/[^/]+\/[^/]+$/.test(url.pathname)
+          url.pathname === `${base}/burgergo-logo.png` ||
+          url.pathname.startsWith(`${base}/icons/`) ||
+          new RegExp(`^${base}/api/photos/[^/]+/[^/]+$`).test(url.pathname)
         );
       },
       options: {
@@ -63,7 +81,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
       name: 'data',
       handler: 'StaleWhileRevalidate',
       matcher({ url }: TestableMatcherOptions) {
-        return url.pathname.startsWith('/api/trips') || url.pathname === '/api/settings';
+        return url.pathname.startsWith(`${base}/api/trips`) || url.pathname === `${base}/api/settings`;
       },
       options: {
         cacheName: 'burgergo-data',
@@ -80,7 +98,7 @@ export function buildRuntimeCaching(): CacheEntry[] {
       handler: 'NetworkFirst',
       matcher({ url, request, sameOrigin }: TestableMatcherOptions) {
         if (!sameOrigin) return false;
-        if (url.pathname.startsWith('/api/')) return false;
+        if (url.pathname.startsWith(`${base}/api/`)) return false;
         return request.mode === 'navigate' || request.headers.get('RSC') === '1';
       },
       options: {

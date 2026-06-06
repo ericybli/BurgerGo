@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildRuntimeCaching } from './sw';
+import { buildRuntimeCaching, swBasePath } from './sw';
 
-function matcher(name: string) {
-  const entry = buildRuntimeCaching().find((e) => e.name === name);
+function matcher(name: string, base = '') {
+  const entry = buildRuntimeCaching(base).find((e) => e.name === name);
   if (!entry) throw new Error(`no runtimeCaching entry named ${name}`);
   return entry;
 }
@@ -10,9 +10,9 @@ function matcher(name: string) {
 function matches(
   name: string,
   url: string,
-  init?: { mode?: RequestMode; headers?: Record<string, string>; sameOrigin?: boolean },
+  init?: { mode?: RequestMode; headers?: Record<string, string>; sameOrigin?: boolean; base?: string },
 ): boolean {
-  const entry = matcher(name);
+  const entry = matcher(name, init?.base ?? '');
   // The matchers only read `request.mode` and `request.headers`. jsdom's Request
   // ignores `mode`, so we hand-build a minimal request-shaped object instead.
   const request = {
@@ -99,5 +99,65 @@ describe('buildRuntimeCaching', () => {
     expect(
       matches('pages', 'https://app.example.com/some-page', { mode: 'navigate', sameOrigin: true }),
     ).toBe(true);
+  });
+});
+
+describe('buildRuntimeCaching under a /burgergo sub-path', () => {
+  const base = '/burgergo';
+
+  it('matches prefixed data paths and rejects the unprefixed (root) ones', () => {
+    expect(matches('data', 'https://app.example.com/burgergo/api/trips', { base })).toBe(true);
+    expect(matches('data', 'https://app.example.com/burgergo/api/trips/abc-123', { base })).toBe(true);
+    expect(matches('data', 'https://app.example.com/burgergo/api/settings', { base })).toBe(true);
+    // Unprefixed root paths must NOT match when deployed under /burgergo.
+    expect(matches('data', 'https://app.example.com/api/trips', { base })).toBe(false);
+    expect(matches('data', 'https://app.example.com/burgergo/api/health', { base })).toBe(false);
+  });
+
+  it('matches prefixed photo/icon/logo paths', () => {
+    expect(matches('photos', 'https://app.example.com/burgergo/burgergo-logo.png', { base })).toBe(true);
+    expect(matches('photos', 'https://app.example.com/burgergo/icons/icon-192.png', { base })).toBe(true);
+    expect(matches('photos', 'https://app.example.com/burgergo/api/photos/p1/card', { base })).toBe(true);
+    expect(matches('photos', 'https://app.example.com/icons/icon-192.png', { base })).toBe(false);
+  });
+
+  it('matches the prefixed Google proxy and still matches Google/Maps origins', () => {
+    expect(matches('google', 'https://app.example.com/burgergo/api/google/details', { base })).toBe(true);
+    expect(matches('google', 'https://maps.googleapis.com/maps/api/js', { base })).toBe(true);
+    expect(matches('google', 'https://app.example.com/api/google/details', { base })).toBe(false);
+  });
+
+  it('caches prefixed navigations under pages but excludes prefixed /api/*', () => {
+    expect(matches('pages', 'https://app.example.com/burgergo/', { mode: 'navigate', base })).toBe(true);
+    expect(matches('pages', 'https://app.example.com/burgergo/trip/abc-123/plan', { mode: 'navigate', base })).toBe(true);
+    expect(matches('pages', 'https://app.example.com/burgergo/api/trips', { mode: 'navigate', base })).toBe(false);
+  });
+});
+
+describe('swBasePath', () => {
+  // The SW is served at `<basePath>/sw.js`, so its base is its own path minus
+  // the `/sw.js` suffix. We drive `self.location.href` to verify both deploys.
+  function withSelfLocation<T>(href: string | undefined, fn: () => T): T {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const g = globalThis as any;
+    const original = g.self;
+    g.self = href === undefined ? undefined : { location: { href } };
+    try {
+      return fn();
+    } finally {
+      g.self = original;
+    }
+  }
+
+  it('returns "" at the root deploy (served at /sw.js)', () => {
+    expect(withSelfLocation('https://app.example.com/sw.js', swBasePath)).toBe('');
+  });
+
+  it('returns the sub-path when served under /burgergo/sw.js', () => {
+    expect(withSelfLocation('https://app.example.com/burgergo/sw.js', swBasePath)).toBe('/burgergo');
+  });
+
+  it('falls back to "" when self.location is unavailable', () => {
+    expect(withSelfLocation(undefined, swBasePath)).toBe('');
   });
 });
