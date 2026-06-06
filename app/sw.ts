@@ -1,7 +1,7 @@
 import { defaultCache } from '@serwist/next/worker';
 import type { RouteMatchCallback, RouteMatchCallbackOptions, SerwistGlobalConfig } from 'serwist';
 import type { PrecacheEntry } from 'serwist';
-import { Serwist, CacheFirst, StaleWhileRevalidate, NetworkOnly, ExpirationPlugin } from 'serwist';
+import { Serwist, CacheFirst, StaleWhileRevalidate, NetworkFirst, NetworkOnly, ExpirationPlugin } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -70,6 +70,23 @@ export function buildRuntimeCaching(): CacheEntry[] {
         expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
       },
     },
+    {
+      // Page documents (the static app shells) + Next's RSC navigation/prefetch
+      // payloads. NetworkFirst so an online visit caches the shell; offline
+      // navigations to any previously-visited route (/, /trip/:id, /trip/:id/plan,
+      // /settings) fall back to the cache. Ordered AFTER `data` so /api/* requests
+      // (incl. RSC fetches to API routes) are never swallowed here. (spec §7.3/§8.2)
+      name: 'pages',
+      handler: 'NetworkFirst',
+      matcher({ url, request }: TestableMatcherOptions) {
+        if (url.pathname.startsWith('/api/')) return false;
+        return request.mode === 'navigate' || request.headers.get('RSC') === '1';
+      },
+      options: {
+        cacheName: 'burgergo-pages',
+        expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+      },
+    },
   ];
 }
 
@@ -92,6 +109,9 @@ if (typeof _g.skipWaiting === 'function') {
         break;
       case 'StaleWhileRevalidate':
         handler = new StaleWhileRevalidate({ cacheName: entry.options.cacheName, plugins });
+        break;
+      case 'NetworkFirst':
+        handler = new NetworkFirst({ cacheName: entry.options.cacheName, plugins });
         break;
       case 'NetworkOnly':
       default:
