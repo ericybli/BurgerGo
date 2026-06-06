@@ -27,6 +27,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     notes: null,
     orderIndex: 0,
     photoPath: null,
+    photos: [],
     ...over,
   };
 }

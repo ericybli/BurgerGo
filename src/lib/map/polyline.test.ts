@@ -7,7 +7,7 @@ function p(id: string, orderIndex: number, lat: number, lng: number) {
   return { id, orderIndex, lat, lng, name: id, category: 'other' as const,
            tripId: 't', dayDate: '2026-06-04', googlePlaceId: null,
            address: null, scheduledTime: null, durationMin: null, cost: null,
-           notes: null, photoPath: null };
+           notes: null, photoPath: null, photos: [] };
 }
 
 function group(date: string, places: ReturnType<typeof p>[], colorIndex = 0): DayGroup {

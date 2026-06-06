@@ -6,6 +6,9 @@ import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { currencyExponent } from '@/src/lib/currency';
 import { updatePlaceAction } from '@/app/_actions/places';
+import { PhotoGallery } from '@/components/plan/PhotoGallery';
+import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
+import { deletePhotoAction } from '@/app/_actions/photos';
 
 const CATEGORIES: PlaceDTO['category'][] = [
   'sightseeing', 'lodging', 'transport', 'activity', 'other',
@@ -43,6 +46,8 @@ export function PlaceDetailSheet({
   const [isPending, startTransition] = useTransition();
   // FIX I1: inline error when the Server Action rejects
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { upload, uploading } = usePhotoUpload();
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -56,6 +61,32 @@ export function PlaceDetailSheet({
   // FIX I3: Escape closes the dialog
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') onClose();
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    setPhotoError(null);
+    if (!file.type.startsWith('image/')) { setPhotoError(t('photoNotImage')); return; }
+    const result = await upload({ file, tripId: place.tripId, ownerId: place.id });
+    if (result) {
+      onSaved(); // PlanClient reloads → gallery + card thumb refresh
+    } else {
+      setPhotoError(t('photoUploadFailed'));
+    }
+  }
+
+  function handlePhotoDelete(photoId: string) {
+    setPhotoError(null);
+    startTransition(async () => {
+      try {
+        await deletePhotoAction(photoId);
+        onSaved();
+      } catch {
+        setPhotoError(t('photoUploadFailed'));
+      }
+    });
   }
 
   // FIX I1: wrap action in try/catch; on error show message and keep sheet open
@@ -146,6 +177,36 @@ export function PlaceDetailSheet({
           onChange={(e) => setNotes(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
         />
+
+        {photoError ? (
+          <p role="alert" className="mt-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+            {photoError}
+          </p>
+        ) : null}
+
+        <PhotoGallery
+          photos={place.photos}
+          placeName={place.name}
+          disabled={disabled}
+          onDelete={handlePhotoDelete}
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-photo">
+          {t('addPhoto')}
+        </label>
+        {disabled ? <p className="text-caption text-ink-muted">{t('addPhotoOffline')}</p> : null}
+        <input
+          id="pd-photo"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          disabled={disabled || uploading}
+          onChange={handlePhotoChange}
+          className="mt-1 w-full text-body text-ink disabled:opacity-60"
+        />
+        {uploading ? (
+          <p className="mt-1 text-caption text-ink-muted">{t('uploadingPhoto')}</p>
+        ) : null}
 
         <a
           href={mapsHref}

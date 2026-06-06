@@ -17,7 +17,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     id: 's1', tripId: 't1', dayDate: null, googlePlaceId: 'g1',
     name: 'Backup Cafe', address: 'Shibuya', lat: 0, lng: 0, category: 'other',
     scheduledTime: null, durationMin: null, cost: null, notes: 'maybe',
-    orderIndex: 0, photoPath: null, ...over,
+    orderIndex: 0, photoPath: null, photos: [], ...over,
   };
 }
 
