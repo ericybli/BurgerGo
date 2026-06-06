@@ -100,6 +100,20 @@ describe('HomeClient', () => {
     expect(screen.getByRole('dialog', { name: en.newTripSheet.title })).toBeInTheDocument();
   });
 
+  it('shows a retry button on error and re-invokes fetch when clicked', async () => {
+    const user = userEvent.setup();
+    // First call throws; second call succeeds with an empty list.
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ ok: true, json: async () => [] });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+    renderHome();
+    expect(await screen.findByText(en.home.errorHeadline)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en.common.retry })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: en.common.retry }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+  });
+
   it('re-fetches /api/trips after a successful trip creation', async () => {
     const user = userEvent.setup();
     const fetchMock = mockFetchTrips([]);

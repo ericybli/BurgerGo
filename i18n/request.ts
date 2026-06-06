@@ -8,6 +8,7 @@ import en from '@/messages/en.json';
 // whole tree statically renderable (and SW-cacheable). The cookie-driven zh toggle
 // arrives in a later plan, alongside per-locale handling that won't force-dynamic
 // the cacheable read surfaces. (spec §7.3/§8.2)
+// extend when the zh locale toggle lands in a later plan
 const SUPPORTED = ['en'] as const;
 type Locale = (typeof SUPPORTED)[number];
 

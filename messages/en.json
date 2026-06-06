@@ -76,5 +76,8 @@
   },
   "mascot": {
     "alt": "BurgerGo the Siamese cat"
+  },
+  "common": {
+    "retry": "Try again"
   }
 }

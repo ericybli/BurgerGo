@@ -10,7 +10,7 @@ function matcher(name: string) {
 function matches(
   name: string,
   url: string,
-  init?: { mode?: RequestMode; headers?: Record<string, string> },
+  init?: { mode?: RequestMode; headers?: Record<string, string>; sameOrigin?: boolean },
 ): boolean {
   const entry = matcher(name);
   // The matchers only read `request.mode` and `request.headers`. jsdom's Request
@@ -19,11 +19,12 @@ function matches(
     mode: init?.mode ?? 'cors',
     headers: new Headers(init?.headers),
   } as unknown as Request;
+  const sameOrigin = init?.sameOrigin ?? (new URL(url).origin === 'https://app.example.com');
   return Boolean(
     entry.matcher({
       url: new URL(url),
       request,
-      sameOrigin: new URL(url).origin === 'https://app.example.com',
+      sameOrigin,
     }),
   );
 }
@@ -87,5 +88,16 @@ describe('buildRuntimeCaching', () => {
     expect(names.indexOf('data')).toBeLessThan(names.indexOf('pages'));
     expect(names.indexOf('google')).toBeLessThan(names.indexOf('pages'));
     expect(names.indexOf('photos')).toBeLessThan(names.indexOf('pages'));
+  });
+
+  it('pages matcher returns false for cross-origin navigation requests', () => {
+    // A cross-origin URL with sameOrigin: false must not be cached by the pages rule.
+    expect(
+      matches('pages', 'https://other.example.com/some-page', { mode: 'navigate', sameOrigin: false }),
+    ).toBe(false);
+    // Same URL but sameOrigin: true would match (sanity check).
+    expect(
+      matches('pages', 'https://app.example.com/some-page', { mode: 'navigate', sameOrigin: true }),
+    ).toBe(true);
   });
 });

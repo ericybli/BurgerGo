@@ -51,4 +51,17 @@ describe('SettingsClient', () => {
     expect(await screen.findByText('en')).toBeInTheDocument();
     expect(screen.getByText('USD')).toBeInTheDocument();
   });
+
+  it('shows en/USD fallback and does not crash when fetch throws (offline, no cache)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => { throw new Error('Failed to fetch'); }) as unknown as typeof fetch,
+    );
+    renderSettings();
+    // The static chrome renders immediately regardless.
+    expect(screen.getByText(en.settings.title)).toBeInTheDocument();
+    // Fallback defaults are displayed — no crash.
+    expect(await screen.findByText('en')).toBeInTheDocument();
+    expect(screen.getByText('USD')).toBeInTheDocument();
+  });
 });

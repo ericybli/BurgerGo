@@ -52,7 +52,10 @@ export function TripShellClient({
         const { trip } = (await res.json()) as { trip: Trip };
         if (!cancelled) setState({ status: 'loaded', trip });
       } catch {
-        // Offline with no cached trip → treat as not found (friendly, no crash).
+        // Offline with no cached trip (or any 5xx/network error) → intentionally
+        // mapped to notFound. For a private single-user app, "can't load" and
+        // "not found" are the same user-facing outcome; a distinct error screen
+        // adds no value here.
         if (!cancelled) setState({ status: 'notFound' });
       }
     })();

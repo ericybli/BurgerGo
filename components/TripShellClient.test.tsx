@@ -78,4 +78,17 @@ describe('TripShellClient', () => {
     // No tab bar / children for a missing trip.
     expect(screen.queryByText('Plan content')).not.toBeInTheDocument();
   });
+
+  it('renders the not-found UI and does not crash when fetch throws (offline, no cache)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => { throw new Error('Failed to fetch'); }) as unknown as typeof fetch,
+    );
+    renderShell();
+    expect(await screen.findByText(en.trip.notFoundHeadline)).toBeInTheDocument();
+    expect(screen.getByText(en.trip.notFoundSubtext)).toBeInTheDocument();
+    // Header/children are not rendered when there is no trip data.
+    expect(screen.queryByText('Osaka')).not.toBeInTheDocument();
+    expect(screen.queryByText('Plan content')).not.toBeInTheDocument();
+  });
 });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Trip } from '@/src/db/schema';
 import { TripCard } from '@/components/TripCard';
@@ -21,16 +21,19 @@ export function HomeClient({ tz }: { tz: string }) {
   const t = useTranslations();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  const mountedRef = useRef(true);
+
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const loadTrips = useCallback(async () => {
     try {
       const res = await fetch('/api/trips', { credentials: 'same-origin' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const trips = (await res.json()) as Trip[];
-      setState({ status: 'loaded', trips });
+      if (mountedRef.current) setState({ status: 'loaded', trips });
     } catch {
       // Fetch failed AND the SW had no cached response → friendly error.
-      setState({ status: 'error' });
+      if (mountedRef.current) setState({ status: 'error' });
     }
   }, []);
 
@@ -58,6 +61,8 @@ export function HomeClient({ tz }: { tz: string }) {
           mascotAlt={t('mascot.alt')}
           headline={t('home.errorHeadline')}
           subtext={t('home.errorSubtext')}
+          actionLabel={t('common.retry')}
+          onAction={() => void loadTrips()}
         />
       ) : state.trips.length === 0 ? (
         <EmptyState

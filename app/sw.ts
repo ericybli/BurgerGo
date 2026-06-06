@@ -78,7 +78,8 @@ export function buildRuntimeCaching(): CacheEntry[] {
       // (incl. RSC fetches to API routes) are never swallowed here. (spec §7.3/§8.2)
       name: 'pages',
       handler: 'NetworkFirst',
-      matcher({ url, request }: TestableMatcherOptions) {
+      matcher({ url, request, sameOrigin }: TestableMatcherOptions) {
+        if (!sameOrigin) return false;
         if (url.pathname.startsWith('/api/')) return false;
         return request.mode === 'navigate' || request.headers.get('RSC') === '1';
       },
