@@ -1,6 +1,7 @@
 import { defaultCache } from '@serwist/next/worker';
-import type { PrecacheEntry, RuntimeCaching, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import type { RouteMatchCallback, SerwistGlobalConfig } from 'serwist';
+import type { PrecacheEntry } from 'serwist';
+import { Serwist, CacheFirst, StaleWhileRevalidate, NetworkOnly, ExpirationPlugin } from 'serwist';
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -10,10 +11,21 @@ declare global {
 }
 
 /**
+ * Describes a runtime caching entry in a plain, serialisable form so the routing
+ * policy is unit-testable without a real ServiceWorker environment.
+ */
+export interface CacheEntry {
+  name: string;
+  handler: string;
+  matcher: RouteMatchCallback;
+  options: { cacheName: string; expiration?: { maxEntries?: number; maxAgeSeconds?: number } };
+}
+
+/**
  * Runtime caching policy (spec §7.3). Pure + exported so it is unit-testable without a SW global.
  * Order matters: `google` (NetworkOnly) is first so /api/google/* never falls through to SWR.
  */
-export function buildRuntimeCaching(): RuntimeCaching[] {
+export function buildRuntimeCaching(): CacheEntry[] {
   return [
     {
       name: 'google',
@@ -26,6 +38,7 @@ export function buildRuntimeCaching(): RuntimeCaching[] {
           url.hostname === 'maps.google.com'
         );
       },
+      options: { cacheName: 'burgergo-google' },
     },
     {
       name: 'photos',
@@ -56,17 +69,43 @@ export function buildRuntimeCaching(): RuntimeCaching[] {
   ];
 }
 
-declare const self: ServiceWorkerGlobalScope;
+// Service worker bootstrap — only runs in the real SW environment.
+// The `self.__SW_MANIFEST` reference below is required by @serwist/next's
+// injectManifest transform; it stamps the build-hashed precache list here at build time.
+// In test/jsdom the global `skipWaiting` function is absent so we skip instantiation.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const _g = globalThis as any;
+if (typeof _g.skipWaiting === 'function') {
+  const runtimeCaching = buildRuntimeCaching().map((entry) => {
+    const plugins = entry.options.expiration
+      ? [new ExpirationPlugin({ maxEntries: entry.options.expiration.maxEntries, maxAgeSeconds: entry.options.expiration.maxAgeSeconds })]
+      : [];
 
-// Only bootstrap the Serwist runtime when actually running as a service worker.
-// Guarding here lets `buildRuntimeCaching` be imported and unit-tested in jsdom.
-if (typeof ServiceWorkerGlobalScope !== 'undefined' && self instanceof ServiceWorkerGlobalScope) {
+    let handler;
+    switch (entry.handler) {
+      case 'CacheFirst':
+        handler = new CacheFirst({ cacheName: entry.options.cacheName, plugins });
+        break;
+      case 'StaleWhileRevalidate':
+        handler = new StaleWhileRevalidate({ cacheName: entry.options.cacheName, plugins });
+        break;
+      case 'NetworkOnly':
+      default:
+        handler = new NetworkOnly();
+        break;
+    }
+
+    return { matcher: entry.matcher, handler };
+  });
+
   const serwist = new Serwist({
-    precacheEntries: self.__SW_MANIFEST,
+    // self.__SW_MANIFEST is stamped in by @serwist/next's injectManifest transform at build time.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    precacheEntries: (self as any).__SW_MANIFEST as (PrecacheEntry | string)[] | undefined,
     skipWaiting: true,
     clientsClaim: true,
     navigationPreload: true,
-    runtimeCaching: [...buildRuntimeCaching(), ...defaultCache],
+    runtimeCaching: [...runtimeCaching, ...defaultCache],
   });
 
   serwist.addEventListeners();

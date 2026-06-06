@@ -1,5 +1,8 @@
 import type { NextConfig } from 'next';
 import withSerwistInit from '@serwist/next';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const withSerwist = withSerwistInit({
   // Serwist injectManifest source compiled to public/sw.js — implemented by the PWA group.
@@ -19,4 +22,4 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ['better-sqlite3'],
 };
 
-export default withSerwist(nextConfig);
+export default withSerwist(withNextIntl(nextConfig));
