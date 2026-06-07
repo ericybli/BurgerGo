@@ -87,7 +87,13 @@
     "currency": "Currency",
     "comingSoon": "Settings controls are on their way.",
     "about": "About",
-    "aboutTagline": "Your personal travel companion"
+    "aboutTagline": "Your personal travel companion",
+    "aboutVersion": "Version {version}",
+    "offlineInstallTitle": "Offline & install",
+    "offlineInstallBody": "Works offline for reading. Installing the app and using your location need HTTPS or localhost.",
+    "yourDataTitle": "Your data",
+    "yourDataBody": "All your data lives in a SQLite database on your own server.",
+    "yourDataBackup": "Back it up by copying that database file."
   },
   "offline": {
     "banner": "Offline — viewing saved data. Editing needs a connection.",
