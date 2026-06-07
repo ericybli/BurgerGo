@@ -48,7 +48,13 @@ export function addLink(db: Db, input: AddLinkInput): SavedLink {
   return row;
 }
 
-/** Editable subset (never id/tripId/timestamps). */
+/**
+ * Editable subset (never id/tripId/timestamps). NOTE: `url` is patchable, but
+ * the repo only stores the string — it performs no fetch, so storing any URL is
+ * not itself an SSRF vector. The link-preview route SSRF-validates independently
+ * before fetching; the update action should still run `isHttpUrl` on a changed
+ * `url` for data hygiene.
+ */
 export type LinkPatch = Partial<
   Pick<SavedLink, 'url' | 'title' | 'note' | 'thumbnail'>
 >;

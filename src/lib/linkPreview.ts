@@ -58,6 +58,9 @@ export function isBlockedAddress(ip: string): boolean {
   }
 
   // IPv6 (and IPv4-mapped) — normalize and inspect the leading hextets.
+  // Node's dns.lookup returns canonical compressed form, so matching the literal
+  // '::1' covers loopback in practice; any other notation we don't recognize
+  // falls through to the fail-closed `''` path below (blocked).
   const lower = ip.toLowerCase();
   if (lower === '::1') return true; // loopback
 

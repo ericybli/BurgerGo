@@ -88,6 +88,13 @@ describe('isBlockedAddress', () => {
     expect(isBlockedAddress('2606:4700:4700::1111')).toBe(false);
   });
 
+  it('blocks IPv4-mapped IPv6 of private/metadata addresses, allows a public one', () => {
+    expect(isBlockedAddress('::ffff:10.0.0.1')).toBe(true);
+    expect(isBlockedAddress('::ffff:192.168.1.1')).toBe(true);
+    expect(isBlockedAddress('::ffff:169.254.169.254')).toBe(true);
+    expect(isBlockedAddress('::ffff:8.8.8.8')).toBe(false);
+  });
+
   it('treats unparseable input as blocked (fail closed)', () => {
     expect(isBlockedAddress('not an ip')).toBe(true);
     expect(isBlockedAddress('')).toBe(true);
