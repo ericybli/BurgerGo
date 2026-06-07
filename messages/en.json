@@ -242,7 +242,18 @@
     "photoNotImage": "That file isn't an image.",
     "photoTooLarge": "That image is too large (max 10 MB).",
     "photoTooMany": "You've reached the photo limit for this entry.",
-    "photoUploadFailed": "Couldn't upload that photo. Try again."
+    "photoUploadFailed": "Couldn't upload that photo. Try again.",
+    "readingListTab": "Reading list",
+    "addLink": "Add link",
+    "editLink": "Edit link",
+    "urlLabel": "URL",
+    "noteLabel": "Note",
+    "previewFetching": "Fetching preview…",
+    "previewFailed": "Couldn't fetch a preview — add the details yourself.",
+    "openLink": "Open",
+    "linksEmptyHeadline": "No saved links yet",
+    "linksEmptySubtext": "Save blogs and articles to read before your trip.",
+    "invalidUrl": "Enter a valid http(s) link."
   },
   "budget": {
     "loading": "Loading your budget…",

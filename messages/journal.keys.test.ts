@@ -27,3 +27,21 @@ describe('en.json journal namespace', () => {
     for (const k of required) expect(j[k], `journal.${k}`).toBeTypeOf('string');
   });
 });
+
+describe('en.json journal namespace — reading list', () => {
+  const required = [
+    'readingListTab',
+    'addLink', 'editLink',
+    'urlLabel', 'titleLabel', 'noteLabel',
+    'previewFetching', 'previewFailed',
+    'openLink', 'edit', 'delete', 'save', 'cancel',
+    'linksEmptyHeadline', 'linksEmptySubtext',
+    'invalidUrl', 'saveFailed', 'mutationFailed', 'offlineHint',
+  ];
+
+  it('defines every reading-list UI key', () => {
+    const j = en.journal as unknown as Record<string, unknown>;
+    expect(j, 'journal namespace').toBeDefined();
+    for (const k of required) expect(j[k], `journal.${k}`).toBeTypeOf('string');
+  });
+});
