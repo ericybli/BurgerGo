@@ -102,9 +102,13 @@ shows when present, each long block with a **"show more"/"show less"** toggle
 
 Actions: **Open in Google Maps** (offline-safe `placeUrl`) and **Edit** →
 opens the existing `PlaceDetailSheet` editor for that place. Saved-bucket pins
-still show "Add to day". List taps still open the editor directly (unchanged).
-Placement mirrors the current info card (overlay near the bottom of the map);
-it scrolls internally if tall.
+still show "Add to day". As a map overlay it mirrors the current info card
+(near the bottom), scrolling internally if tall.
+
+**Reachable from the list too:** each list `PlaceCard` gets a **View** button
+that opens this same read view (rendered as a bottom sheet when opened from the
+list). Tapping the card body still opens the editor directly (unchanged), so
+View = read, body-tap/Edit = edit.
 
 ## §6 Item 3 — AI summary flow
 
@@ -147,9 +151,12 @@ fired it). Accessible: real `<button>`s with aria-labels.
 
 ## §9 Item 7 — distinct pill action buttons
 
-Replace the run-together text row in `PlaceCard` with three separated outlined
-pill buttons: **Save** (teal outline), **Move** (teal outline), **Delete** (red
-outline), evenly spaced, each a clear tap target. Disabled state preserved.
+Replace the run-together text row in `PlaceCard` with clearly separated outlined
+pill buttons, each a clear tap target: a **View** pill (opens the read view,
+§5) plus the three management pills **Save** (teal), **Move** (teal), **Delete**
+(red). View is visually distinct from the management group (e.g. leading, or
+slightly emphasized). Disabled state preserved on the management pills (View
+stays enabled offline — it's read-only).
 
 ## §10 Item 8 — lock the page so only inner regions scroll
 
@@ -176,7 +183,7 @@ route's `extends Place`, and the structural `src/lib/planView.ts` interface):
 
 New `plan` keys: `aiSummary` ("About"), `regenerateSummary`, `regenerating`,
 `summaryFailed`, `guidesLabel` ("Travel guides"), `addGuideLink`, `guideUrlPlaceholder`,
-`showMore`, `showLess`, `moveUp`, `moveDown`, `move`, `edit`. New `planMap` key
+`showMore`, `showLess`, `moveUp`, `moveDown`, `move`, `view`, `edit`. New `planMap` key
 `readCardLabel` (read-view dialog aria-label). Reuse existing keys where they
 already exist: `planMap.openInMaps`, `plan.moveToSaved`, `plan.delete`,
 `plan.save`, `plan.cancel`, and the link-error keys from the Journal namespace.
