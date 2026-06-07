@@ -17,6 +17,9 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
 
 function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {}) {
   const onTap = vi.fn();
+  const onView = vi.fn();
+  const onMoveUp = vi.fn();
+  const onMoveDown = vi.fn();
   const onMoveToSaved = vi.fn();
   const onMoveToDay = vi.fn();
   const onDelete = vi.fn();
@@ -29,7 +32,12 @@ function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {})
         currency="JPY"
         locale="en"
         disabled={false}
+        isFirst={false}
+        isLast={false}
         onTap={onTap}
+        onView={onView}
+        onMoveUp={onMoveUp}
+        onMoveDown={onMoveDown}
         onMoveToSaved={onMoveToSaved}
         onMoveToDay={onMoveToDay}
         onDelete={onDelete}
@@ -37,7 +45,7 @@ function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {})
       />
     </NextIntlClientProvider>,
   );
-  return { onTap, onMoveToSaved, onMoveToDay, onDelete };
+  return { onTap, onView, onMoveUp, onMoveDown, onMoveToSaved, onMoveToDay, onDelete };
 }
 
 describe('PlaceCard', () => {
@@ -63,19 +71,46 @@ describe('PlaceCard', () => {
     expect(onTap).toHaveBeenCalledWith('p1');
   });
 
-  it('fires the swipe actions', async () => {
+  it('fires the View action', async () => {
+    const { onView } = renderCard();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.view }));
+    expect(onView).toHaveBeenCalledWith('p1');
+  });
+
+  it('fires ▲ (onMoveUp) and is disabled when isFirst', async () => {
+    const { onMoveUp } = renderCard();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.moveUp }));
+    expect(onMoveUp).toHaveBeenCalledWith('p1');
+
+    const { onMoveUp: onMoveUpFirst } = renderCard({ isFirst: true });
+    expect(screen.getAllByRole('button', { name: en.plan.moveUp }).at(-1)).toBeDisabled();
+    expect(onMoveUpFirst).not.toHaveBeenCalled();
+  });
+
+  it('fires ▼ (onMoveDown) and is disabled when isLast', async () => {
+    const { onMoveDown } = renderCard();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.moveDown }));
+    expect(onMoveDown).toHaveBeenCalledWith('p1');
+
+    renderCard({ isLast: true });
+    expect(screen.getAllByRole('button', { name: en.plan.moveDown }).at(-1)).toBeDisabled();
+  });
+
+  it('fires the management actions (Save/Move/Delete)', async () => {
     const { onMoveToSaved, onMoveToDay, onDelete } = renderCard();
     await userEvent.click(screen.getByRole('button', { name: en.plan.moveToSaved }));
-    await userEvent.click(screen.getByRole('button', { name: en.plan.moveToDay }));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.move }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.delete }));
     expect(onMoveToSaved).toHaveBeenCalledWith('p1');
     expect(onMoveToDay).toHaveBeenCalledWith('p1');
     expect(onDelete).toHaveBeenCalledWith('p1');
   });
 
-  it('disables the swipe-action buttons when disabled (offline)', () => {
+  it('disables the management buttons when disabled (offline)', () => {
     renderCard({ disabled: true });
     expect(screen.getByRole('button', { name: en.plan.moveToSaved })).toBeDisabled();
     expect(screen.getByRole('button', { name: en.plan.delete })).toBeDisabled();
+    // View should still be enabled even when offline
+    expect(screen.getByRole('button', { name: en.plan.view })).not.toBeDisabled();
   });
 });

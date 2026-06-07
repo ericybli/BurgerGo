@@ -11,9 +11,15 @@ type PlaceCardProps = {
   pinColor: string;
   currency: string;
   locale: string;
-  /** Offline → swipe actions disabled (mutations are online-only). */
+  /** Offline → management actions disabled (mutations are online-only). */
   disabled: boolean;
+  isFirst: boolean;
+  isLast: boolean;
   onTap: (placeId: string) => void;
+  /** Opens the rich read view (works offline). */
+  onView: (placeId: string) => void;
+  onMoveUp: (placeId: string) => void;
+  onMoveDown: (placeId: string) => void;
   onMoveToSaved: (placeId: string) => void;
   onMoveToDay: (placeId: string) => void;
   onDelete: (placeId: string) => void;
@@ -26,7 +32,12 @@ export function PlaceCard({
   currency,
   locale,
   disabled,
+  isFirst,
+  isLast,
   onTap,
+  onView,
+  onMoveUp,
+  onMoveDown,
   onMoveToSaved,
   onMoveToDay,
   onDelete,
@@ -47,6 +58,26 @@ export function PlaceCard({
         >
           {pinNumber}
         </span>
+        <div className="mt-1 flex flex-col gap-0.5">
+          <button
+            type="button"
+            aria-label={t('moveUp')}
+            disabled={disabled || isFirst}
+            onClick={() => onMoveUp(place.id)}
+            className="text-ink-faint disabled:opacity-30"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            aria-label={t('moveDown')}
+            disabled={disabled || isLast}
+            onClick={() => onMoveDown(place.id)}
+            className="text-ink-faint disabled:opacity-30"
+          >
+            ▼
+          </button>
+        </div>
         <span className="mt-1 w-px flex-1 bg-line" aria-hidden="true" />
       </div>
 
@@ -92,12 +123,20 @@ export function PlaceCard({
           </span>
         </button>
 
-        <div className="mt-2 flex gap-2 border-t border-line pt-2">
+        <div className="mt-2 flex flex-wrap gap-2 border-t border-line pt-2">
+          {/* View is enabled even offline — opens local read card */}
+          <button
+            type="button"
+            onClick={() => onView(place.id)}
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal active:bg-teal-tint"
+          >
+            {t('view')}
+          </button>
           <button
             type="button"
             disabled={disabled}
             onClick={() => onMoveToSaved(place.id)}
-            className="text-caption font-medium text-teal disabled:opacity-40"
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
           >
             {t('moveToSaved')}
           </button>
@@ -105,15 +144,15 @@ export function PlaceCard({
             type="button"
             disabled={disabled}
             onClick={() => onMoveToDay(place.id)}
-            className="text-caption font-medium text-teal disabled:opacity-40"
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
           >
-            {t('moveToDay')}
+            {t('move')}
           </button>
           <button
             type="button"
             disabled={disabled}
             onClick={() => onDelete(place.id)}
-            className="text-caption font-medium text-danger disabled:opacity-40"
+            className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger disabled:opacity-40"
           >
             {t('delete')}
           </button>

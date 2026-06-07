@@ -34,6 +34,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
   const onAddFromSaved = vi.fn();
   const onReorder = vi.fn();
   const onTapPlace = vi.fn();
+  const onViewPlace = vi.fn();
   const onMoveToSaved = vi.fn();
   const onMoveToDay = vi.fn();
   const onDelete = vi.fn();
@@ -54,6 +55,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
         onAddFromSaved={onAddFromSaved}
         onReorder={onReorder}
         onTapPlace={onTapPlace}
+        onViewPlace={onViewPlace}
         onMoveToSaved={onMoveToSaved}
         onMoveToDay={onMoveToDay}
         onDelete={onDelete}
@@ -63,7 +65,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
       />
     </NextIntlClientProvider>,
   );
-  return { onAddPlace, onAddFromSaved, onReorder, onModeChange };
+  return { onAddPlace, onAddFromSaved, onReorder, onModeChange, onViewPlace };
 }
 
 describe('DayItinerary', () => {
@@ -93,5 +95,23 @@ describe('DayItinerary', () => {
     expect(
       screen.getByText(en.plan.emptyDayHeadline.replace('{dayLabel}', 'Day 3')),
     ).toBeInTheDocument();
+  });
+
+  it('clicking ▼ on the first stop calls onReorder with swapped order', async () => {
+    const { onReorder } = renderDay();
+    // Two stops: 'a' (isFirst) and 'b' (isLast).
+    // The first ▼ button belongs to stop 'a'; clicking it moves 'a' to index 1.
+    const downButtons = screen.getAllByRole('button', { name: en.plan.moveDown });
+    await userEvent.click(downButtons[0]!);
+    expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
+  });
+
+  it('clicking ▲ on the second stop calls onReorder with swapped order', async () => {
+    const { onReorder } = renderDay();
+    // Two stops: 'a' (isFirst) and 'b' (isLast).
+    // The second ▲ button belongs to stop 'b'; clicking it moves 'b' to index 0.
+    const upButtons = screen.getAllByRole('button', { name: en.plan.moveUp });
+    await userEvent.click(upButtons[1]!);
+    expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
   });
 });

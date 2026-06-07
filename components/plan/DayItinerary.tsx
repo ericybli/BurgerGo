@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
@@ -34,6 +33,7 @@ type DayItineraryProps = {
   onAddFromSaved: () => void;
   onReorder: (orderedIds: string[]) => void;
   onTapPlace: (placeId: string) => void;
+  onViewPlace: (placeId: string) => void;
   onMoveToSaved: (placeId: string) => void;
   onMoveToDay: (placeId: string) => void;
   onDelete: (placeId: string) => void;
@@ -54,6 +54,7 @@ export function DayItinerary({
   onAddFromSaved,
   onReorder,
   onTapPlace,
+  onViewPlace,
   onMoveToSaved,
   onMoveToDay,
   onDelete,
@@ -61,13 +62,13 @@ export function DayItinerary({
   onRecompute,
 }: DayItineraryProps) {
   const t = useTranslations('plan');
-  const dragFrom = useRef<number | null>(null);
 
-  function handleDrop(toIndex: number) {
-    const from = dragFrom.current;
-    dragFrom.current = null;
-    if (from === null || from === toIndex) return;
-    onReorder(reorderIds(stops.map((s) => s.id), from, toIndex));
+  function move(placeId: string, dir: 'up' | 'down') {
+    const ids = stops.map((s) => s.id);
+    const from = ids.indexOf(placeId);
+    const to = dir === 'up' ? from - 1 : from + 1;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    onReorder(reorderIds(ids, from, to));
   }
 
   return (
@@ -89,15 +90,7 @@ export function DayItinerary({
           {stops.map((stop, i) => {
             const prev = stops[i - 1];
             return (
-              <li
-                key={stop.id}
-                draggable={!disabled}
-                onDragStart={() => {
-                  dragFrom.current = i;
-                }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDrop(i)}
-              >
+              <li key={stop.id}>
                 {prev ? <LegConnector leg={legBetween(legs, prev.id, stop.id, mode)} /> : null}
                 <PlaceCard
                   place={stop}
@@ -106,7 +99,12 @@ export function DayItinerary({
                   currency={currency}
                   locale={locale}
                   disabled={disabled}
+                  isFirst={i === 0}
+                  isLast={i === stops.length - 1}
                   onTap={onTapPlace}
+                  onView={onViewPlace}
+                  onMoveUp={(id) => move(id, 'up')}
+                  onMoveDown={(id) => move(id, 'down')}
                   onMoveToSaved={onMoveToSaved}
                   onMoveToDay={onMoveToDay}
                   onDelete={onDelete}
