@@ -72,7 +72,7 @@ describe('EntrySheet', () => {
     renderWith(
       <EntrySheet open tripId="trip-1" today="2026-06-06" disabled={false} onClose={vi.fn()} onSaved={vi.fn()} />,
     );
-    screen.getByRole('button', { name: en.journal.save }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.journal.titleRequired));
     expect(addEntryAction).not.toHaveBeenCalled();
   });
@@ -84,7 +84,7 @@ describe('EntrySheet', () => {
     );
     fireEvent.change(screen.getByLabelText(en.journal.titleLabel), { target: { value: 'My Day' } });
     fireEvent.change(screen.getByLabelText(en.journal.bodyLabel), { target: { value: 'It rained.' } });
-    screen.getByRole('button', { name: en.journal.save }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(addEntryAction).toHaveBeenCalledTimes(1));
     expect(addEntryAction).toHaveBeenCalledWith({
       tripId: 'trip-1', title: 'My Day', body: 'It rained.', entryDate: '2026-06-06',
@@ -98,7 +98,7 @@ describe('EntrySheet', () => {
     );
     fireEvent.change(screen.getByLabelText(en.journal.titleLabel), { target: { value: 'X' } });
     fireEvent.change(screen.getByLabelText(en.journal.dateLabel), { target: { value: '' } });
-    screen.getByRole('button', { name: en.journal.save }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(addEntryAction).toHaveBeenCalledWith(
       expect.objectContaining({ entryDate: null }),
     ));
@@ -111,7 +111,7 @@ describe('EntrySheet', () => {
     const ta = screen.getByLabelText(en.journal.bodyLabel) as HTMLTextAreaElement;
     fireEvent.change(ta, { target: { value: 'word' } });
     ta.setSelectionRange(0, 4);
-    screen.getByRole('button', { name: en.journal.mdBold }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.mdBold }));
     expect(ta.value).toBe('**word**');
   });
 
@@ -122,7 +122,7 @@ describe('EntrySheet', () => {
     expect((screen.getByLabelText(en.journal.titleLabel) as HTMLInputElement).value).toBe('Day One');
     expect(screen.getByTestId('gallery')).toHaveTextContent('1');
     fireEvent.change(screen.getByLabelText(en.journal.titleLabel), { target: { value: 'Edited' } });
-    screen.getByRole('button', { name: en.journal.save }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(updateEntryAction).toHaveBeenCalledWith('e1', expect.objectContaining({ title: 'Edited' })));
     expect(screen.getByRole('button', { name: en.journal.delete })).toBeInTheDocument();
   });
@@ -132,9 +132,9 @@ describe('EntrySheet', () => {
     renderWith(
       <EntrySheet open tripId="trip-1" entry={editEntry} today="2026-06-06" disabled={false} onClose={vi.fn()} onSaved={onSaved} />,
     );
-    screen.getByRole('button', { name: en.journal.delete }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.delete }));
     expect(deleteEntryAction).not.toHaveBeenCalled();
-    screen.getByRole('button', { name: en.journal.confirmDelete }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.confirmDelete }));
     await waitFor(() => expect(deleteEntryAction).toHaveBeenCalledWith('e1'));
     expect(onSaved).toHaveBeenCalled();
   });
@@ -146,7 +146,7 @@ describe('EntrySheet', () => {
       <EntrySheet open tripId="trip-1" today="2026-06-06" disabled={false} onClose={onClose} onSaved={vi.fn()} />,
     );
     fireEvent.change(screen.getByLabelText(en.journal.titleLabel), { target: { value: 'X' } });
-    screen.getByRole('button', { name: en.journal.save }).click();
+    fireEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.journal.saveFailed));
     expect(onClose).not.toHaveBeenCalled();
   });

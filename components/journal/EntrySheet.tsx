@@ -47,15 +47,13 @@ export function EntrySheet({
   const isEdit = !!entry;
   const [title, setTitle] = useState(entry?.title ?? '');
   const [entryDate, setEntryDate] = useState(entry?.entryDate ?? today);
+  const [body, setBody] = useState(entry?.body ?? '');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  // Body is uncontrolled so toolbar mutations are reflected immediately in the DOM.
+  // Used only to read selection range and restore caret after toolbar action.
   const bodyRef = useRef<HTMLTextAreaElement>(null);
-  // Delete-confirm is tracked imperatively so the toggle is visible synchronously.
-  const confirmingDeleteRef = useRef(false);
-  const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const { upload, uploading } = usePhotoUpload();
 
   if (!open) return null;
@@ -67,17 +65,19 @@ export function EntrySheet({
   /** Wrap the current textarea selection in the action's markdown syntax. */
   function applyMarkdown(action: MdAction) {
     const ta = bodyRef.current;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const selected = ta.value.slice(start, end);
-    const next = ta.value.slice(0, start) + action.before + selected + action.after + ta.value.slice(end);
-    // Update the DOM value directly for immediate reflection (no React re-render needed).
-    ta.value = next;
-    // Restore a sensible caret/selection.
+    const start = ta?.selectionStart ?? body.length;
+    const end = ta?.selectionEnd ?? body.length;
+    const selected = body.slice(start, end);
+    const next = body.slice(0, start) + action.before + selected + action.after + body.slice(end);
+    setBody(next);
+    // Restore a sensible caret/selection after React flushes the state update.
     const caretStart = start + action.before.length;
-    ta.focus();
-    ta.setSelectionRange(caretStart, caretStart + selected.length);
+    requestAnimationFrame(() => {
+      if (ta) {
+        ta.focus();
+        ta.setSelectionRange(caretStart, caretStart + selected.length);
+      }
+    });
   }
 
   function handleSave() {
@@ -89,7 +89,7 @@ export function EntrySheet({
     }
     const payload = {
       title: trimmed,
-      body: bodyRef.current?.value ?? '',
+      body,
       entryDate: entryDate === '' ? null : entryDate,
     };
     startTransition(async () => {
@@ -108,14 +108,7 @@ export function EntrySheet({
   }
 
   function handleDeleteClick() {
-    if (!isEdit) return;
-    if (!confirmingDeleteRef.current) {
-      // First click: switch to confirm mode via direct DOM manipulation.
-      confirmingDeleteRef.current = true;
-      if (deleteButtonRef.current) deleteButtonRef.current.hidden = true;
-      if (confirmButtonRef.current) confirmButtonRef.current.hidden = false;
-      return;
-    }
+    setConfirmingDelete(true);
   }
 
   function handleConfirmDelete() {
@@ -233,7 +226,8 @@ export function EntrySheet({
           id="je-body"
           ref={bodyRef}
           rows={8}
-          defaultValue={entry?.body ?? ''}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
           disabled={disabled}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 font-mono text-body text-ink disabled:opacity-60"
         />
@@ -283,25 +277,25 @@ export function EntrySheet({
 
         {isEdit ? (
           <>
-            <button
-              ref={deleteButtonRef}
-              type="button"
-              onClick={handleDeleteClick}
-              disabled={disabled || isPending}
-              className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-red-600 shadow-inset disabled:opacity-40"
-            >
-              {t('delete')}
-            </button>
-            <button
-              ref={confirmButtonRef}
-              type="button"
-              hidden
-              onClick={handleConfirmDelete}
-              disabled={disabled || isPending}
-              className="mt-2 w-full rounded-control bg-red-50 px-4 py-3 text-label font-medium text-red-700 shadow-inset disabled:opacity-40"
-            >
-              {t('confirmDelete')}
-            </button>
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                disabled={disabled || isPending}
+                className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-red-600 shadow-inset disabled:opacity-40"
+              >
+                {t('delete')}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={disabled || isPending}
+                className="mt-2 w-full rounded-control bg-red-50 px-4 py-3 text-label font-medium text-red-700 shadow-inset disabled:opacity-40"
+              >
+                {t('confirmDelete')}
+              </button>
+            )}
           </>
         ) : null}
 
