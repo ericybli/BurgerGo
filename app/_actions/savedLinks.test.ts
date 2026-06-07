@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips } from '@/src/db/schema';
+import { trips, places } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({ get db() { return testHandle.db; }, sqlite: {} }));
@@ -30,6 +30,12 @@ function seed(db: ReturnType<typeof makeTestDb>['db']) {
   db.insert(trips).values({
     id: 'trip-1', name: 'Osaka', startDate: '2026-06-05', endDate: '2026-06-07',
     coverPhoto: null, createdAt: TS, updatedAt: TS,
+  }).run();
+  db.insert(places).values({
+    id: 'place-1', tripId: 'trip-1', dayDate: '2026-06-05', googlePlaceId: null,
+    name: 'Castle', address: null, lat: null, lng: null, category: 'sightseeing',
+    scheduledTime: null, durationMin: null, cost: null, notes: null, aiSummary: null,
+    orderIndex: 0, createdAt: TS, updatedAt: TS,
   }).run();
 }
 
@@ -128,5 +134,10 @@ describe('saved-link actions', () => {
 
   it('throws when deleting a missing link', async () => {
     await expect(deleteLinkAction('nope')).rejects.toThrow('Link not found');
+  });
+
+  it('addLinkAction stores placeId and revalidates the plan', async () => {
+    const link = await addLinkAction({ tripId: 'trip-1', url: 'https://g.example', placeId: 'place-1' });
+    expect(link.placeId).toBe('place-1');
   });
 });

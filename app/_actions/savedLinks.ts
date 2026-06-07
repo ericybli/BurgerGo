@@ -29,6 +29,7 @@ const addSchema = z.object({
   title: z.string().max(2000).nullish(),
   note: z.string().max(4000).nullish(),
   thumbnail: z.string().max(1000).nullish(),
+  placeId: z.string().min(1).nullish(),
 });
 
 export type AddLinkActionInput = z.input<typeof addSchema>;
@@ -41,8 +42,10 @@ export async function addLinkAction(input: AddLinkActionInput): Promise<SavedLin
     title: data.title ?? null,
     note: data.note ?? null,
     thumbnail: data.thumbnail ?? null,
+    placeId: data.placeId ?? null,
   });
-  revalidateJournal(data.tripId);
+  if (data.placeId) revalidatePath(`/trip/${data.tripId}/plan`);
+  else revalidateJournal(data.tripId);
   return link;
 }
 
