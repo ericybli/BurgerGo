@@ -26,7 +26,7 @@ function renderBar() {
 }
 
 describe('BottomTabBar', () => {
-  it('renders all four tabs with correct hrefs', () => {
+  it('renders all five tabs with correct hrefs', () => {
     renderBar();
     expect(screen.getByRole('link', { name: en.tabs.plan }).getAttribute('href')).toBe(
       '/trip/t1/plan',
@@ -36,6 +36,9 @@ describe('BottomTabBar', () => {
     );
     expect(screen.getByRole('link', { name: en.tabs.budget }).getAttribute('href')).toBe(
       '/trip/t1/budget',
+    );
+    expect(screen.getByRole('link', { name: en.tabs.packing }).getAttribute('href')).toBe(
+      '/trip/t1/packing',
     );
     expect(screen.getByRole('link', { name: en.tabs.journal }).getAttribute('href')).toBe(
       '/trip/t1/journal',

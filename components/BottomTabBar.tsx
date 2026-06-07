@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
-const TABS = ['plan', 'eats', 'budget', 'journal'] as const;
+const TABS = ['plan', 'eats', 'budget', 'packing', 'journal'] as const;
 type Tab = (typeof TABS)[number];
 
 export function BottomTabBar({ tripId }: { tripId: string }) {

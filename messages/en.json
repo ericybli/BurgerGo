@@ -46,7 +46,26 @@
     "plan": "Plan",
     "eats": "Eats",
     "budget": "Budget",
+    "packing": "Packing",
     "journal": "Journal"
+  },
+  "packing": {
+    "title": "Packing list",
+    "addCategory": "Add category",
+    "categoryNamePlaceholder": "New category (e.g. Clothes)",
+    "addItem": "Add",
+    "itemNamePlaceholder": "Add an item",
+    "quantityLabel": "Quantity",
+    "deleteItem": "Delete item",
+    "deleteCategory": "Delete {name} and its items",
+    "packedLabel": "Packed: {name}",
+    "empty": {
+      "headline": "Nothing to pack yet",
+      "subtext": "Create a category, then add things to bring."
+    },
+    "loading": "Loading your packing list…",
+    "errorHeadline": "Couldn't load your packing list",
+    "errorSubtext": "Connect to the internet and try again."
   },
   "trip": {
     "back": "Back",
