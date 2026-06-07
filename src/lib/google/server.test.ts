@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   normalizeDetails,
   normalizeReverseGeocode,
+  normalizeForwardGeocode,
   normalizeDirections,
   fetchPlaceDetails,
   fetchReverseGeocode,
+  fetchForwardGeocode,
   fetchDirections,
   GoogleApiError,
 } from '@/src/lib/google/server';
@@ -83,6 +85,35 @@ describe('normalizeReverseGeocode', () => {
 
   it('throws GoogleApiError on REQUEST_DENIED', () => {
     expect(() => normalizeReverseGeocode({ status: 'REQUEST_DENIED' })).toThrow(GoogleApiError);
+  });
+});
+
+describe('normalizeForwardGeocode', () => {
+  it('returns lat/lng/address from the first OK result', () => {
+    const raw = {
+      status: 'OK',
+      results: [
+        { formatted_address: 'Eiffel Tower, Paris', geometry: { location: { lat: 48.8584, lng: 2.2945 } } },
+        { formatted_address: 'Paris', geometry: { location: { lat: 48.85, lng: 2.35 } } },
+      ],
+    };
+    expect(normalizeForwardGeocode(raw)).toEqual({
+      lat: 48.8584,
+      lng: 2.2945,
+      address: 'Eiffel Tower, Paris',
+    });
+  });
+
+  it('returns null on ZERO_RESULTS (no throw)', () => {
+    expect(normalizeForwardGeocode({ status: 'ZERO_RESULTS', results: [] })).toBeNull();
+  });
+
+  it('returns null when the top result has no usable coordinates', () => {
+    expect(normalizeForwardGeocode({ status: 'OK', results: [{ formatted_address: 'x' }] })).toBeNull();
+  });
+
+  it('throws GoogleApiError on REQUEST_DENIED', () => {
+    expect(() => normalizeForwardGeocode({ status: 'REQUEST_DENIED' })).toThrow(GoogleApiError);
   });
 });
 
@@ -172,6 +203,24 @@ describe('fetch wrappers (injected fetch, no real key)', () => {
     expect(url.origin + url.pathname).toBe('https://maps.googleapis.com/maps/api/geocode/json');
     expect(url.searchParams.get('latlng')).toBe('35.1,139.2');
     expect(url.searchParams.get('key')).toBe('SERVER_KEY');
+  });
+
+  it('fetchForwardGeocode calls the geocode endpoint with address + key', async () => {
+    fetchSpy.mockReturnValueOnce(
+      okJson({ status: 'OK', results: [{ formatted_address: 'Paris, France', geometry: { location: { lat: 48.85, lng: 2.35 } } }] }),
+    );
+    const out = await fetchForwardGeocode({ address: '12 Rue de Rivoli, Paris', apiKey: 'SERVER_KEY' });
+    expect(out).toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
+
+    const url = new URL(fetchSpy.mock.calls[0]![0] as string);
+    expect(url.origin + url.pathname).toBe('https://maps.googleapis.com/maps/api/geocode/json');
+    expect(url.searchParams.get('address')).toBe('12 Rue de Rivoli, Paris');
+    expect(url.searchParams.get('key')).toBe('SERVER_KEY');
+  });
+
+  it('fetchForwardGeocode returns null on ZERO_RESULTS', async () => {
+    fetchSpy.mockReturnValueOnce(okJson({ status: 'ZERO_RESULTS', results: [] }));
+    expect(await fetchForwardGeocode({ address: 'nowhere', apiKey: 'SERVER_KEY' })).toBeNull();
   });
 
   it('fetchDirections maps walk→walking, passes ordered waypoints, returns normalized data', async () => {

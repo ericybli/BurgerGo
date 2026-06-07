@@ -9,7 +9,7 @@ describe('en.plan messages', () => {
       'legNeedsConnection', 'openInGoogleMaps', 'openDayRoute',
       'addPlace', 'addFromSaved', 'addToDay', 'moveToSaved', 'moveToDay', 'delete',
       'emptyDayHeadline', 'emptyDaySubtext', 'emptySavedHeadline', 'emptySavedSubtext',
-      'searchPlaceholder', 'dropPinTab', 'searchSubTab', 'longPressHint', 'confirm', 'cancel',
+      'searchPlaceholder', 'addressSearchPlaceholder', 'addressSearchHint', 'nameRequired', 'confirm', 'cancel',
       'nameLabel', 'addressLabel', 'categoryLabel', 'timeLabel', 'costLabel', 'notesLabel', 'save',
       'upNext', 'noTimeSet', 'skip', 'dayPickerTitle', 'recompute',
       'loading', 'errorHeadline', 'errorSubtext', 'reorderHint',

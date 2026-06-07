@@ -17,7 +17,7 @@ vi.mock('@/app/_actions/places', () => ({
   recomputeDayLegsAction: vi.fn(),
 }));
 
-// Mock the actual B0 usePlacesAutocomplete API: { predictions, loading, search, select, clear }
+// usePlacesAutocomplete: { predictions, loading, search, select, clear }
 const selectFn = vi.fn(async () => ({
   googlePlaceId: 'g1',
   name: 'Senso-ji',
@@ -29,22 +29,30 @@ const selectFn = vi.fn(async () => ({
   photoLocalPath: null,
   cached: false,
 }));
+const clearFn = vi.fn();
 vi.mock('@/components/plan/useGooglePlaces', () => ({
   usePlacesAutocomplete: () => ({
     predictions: [{ placeId: 'g1', description: 'Senso-ji, Asakusa' }],
     loading: false,
     search: vi.fn(),
     select: selectFn,
-    clear: vi.fn(),
+    clear: clearFn,
   }),
 }));
 
-// Mock reverseGeocode to return a string (actual B0 API)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const reverseGeocode = vi.fn(async (..._a: any[]) => '1 Chome, Asakusa');
-vi.mock('@/components/plan/googleClient', () => ({
+// forwardGeocode: typed-address → coords (or null on no match)
+const forwardGeocode = vi.fn(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  reverseGeocode: (...a: any[]) => reverseGeocode(...a),
+  async (..._a: any[]): Promise<{ lat: number; lng: number; address: string | null } | null> => ({
+    lat: 48.85,
+    lng: 2.35,
+    address: 'Paris, France',
+  }),
+);
+vi.mock('@/components/plan/googleClient', () => ({
+  reverseGeocode: vi.fn(async () => null),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  forwardGeocode: (...a: any[]) => forwardGeocode(...a),
 }));
 
 import { AddPlaceSheet } from './AddPlaceSheet';
@@ -71,66 +79,114 @@ function renderSheet(props: Partial<React.ComponentProps<typeof AddPlaceSheet>> 
 beforeEach(() => {
   addPlaceAction.mockClear();
   selectFn.mockClear();
-  reverseGeocode.mockClear();
+  clearFn.mockClear();
+  forwardGeocode.mockReset().mockResolvedValue({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
 });
 
 describe('AddPlaceSheet', () => {
-  it('adds a place from an Autocomplete selection with the day bucket', async () => {
+  it('adds a place from a Google suggestion (fills name + coords, no geocode)', async () => {
     const { onAdded, onClose } = renderSheet();
     await userEvent.click(screen.getByText('Senso-ji, Asakusa'));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
     await waitFor(() => expect(addPlaceAction).toHaveBeenCalled());
     expect(addPlaceAction).toHaveBeenCalledWith(
       expect.objectContaining({
-        tripId: 't1', dayDate: '2026-05-03', name: 'Senso-ji',
-        googlePlaceId: 'g1', category: 'sightseeing',
+        tripId: 't1',
+        dayDate: '2026-05-03',
+        name: 'Senso-ji',
+        googlePlaceId: 'g1',
+        category: 'sightseeing',
+        lat: 35.71,
+        lng: 139.79,
       }),
     );
+    expect(forwardGeocode).not.toHaveBeenCalled();
     expect(onAdded).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('saves a Saved-bucket place when dayDate is null', async () => {
+  it('saves to the Saved bucket when dayDate is null', async () => {
     renderSheet({ dayDate: null });
     await userEvent.click(screen.getByText('Senso-ji, Asakusa'));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
     await waitFor(() =>
       expect(addPlaceAction).toHaveBeenCalledWith(expect.objectContaining({ dayDate: null })),
     );
   });
 
-  it('drops a pin → reverse-geocode → add with googlePlaceId null', async () => {
+  it('adds a hand-typed place, forward-geocoding the address to coordinates', async () => {
     renderSheet();
-    await userEvent.click(screen.getByRole('tab', { name: en.plan.dropPinTab }));
-    await userEvent.click(screen.getByTestId('map-drop-target'));
-    await waitFor(() => expect(reverseGeocode).toHaveBeenCalled());
-    await userEvent.click(screen.getByRole('button', { name: en.plan.confirm }));
-    await waitFor(() =>
-      expect(addPlaceAction).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tripId: 't1', dayDate: '2026-05-03', googlePlaceId: null, address: '1 Chome, Asakusa',
-        }),
-      ),
+    await userEvent.type(screen.getByLabelText(en.plan.nameLabel), 'Hidden Café');
+    await userEvent.type(screen.getByLabelText(en.plan.addressLabel), '12 Rue de Rivoli, Paris');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(forwardGeocode).toHaveBeenCalledWith('12 Rue de Rivoli, Paris'));
+    expect(addPlaceAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tripId: 't1',
+        name: 'Hidden Café',
+        address: '12 Rue de Rivoli, Paris',
+        googlePlaceId: null,
+        lat: 48.85,
+        lng: 2.35,
+      }),
     );
   });
 
-  it('disables search input + drop target when offline', () => {
+  it('still saves a hand-typed place when geocoding finds nothing (null coords)', async () => {
+    forwardGeocode.mockResolvedValueOnce(null);
+    renderSheet();
+    await userEvent.type(screen.getByLabelText(en.plan.nameLabel), 'Grandma’s house');
+    await userEvent.type(screen.getByLabelText(en.plan.addressLabel), 'somewhere only we know');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(addPlaceAction).toHaveBeenCalled());
+    expect(addPlaceAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Grandma’s house',
+        address: 'somewhere only we know',
+        lat: null,
+        lng: null,
+        googlePlaceId: null,
+      }),
+    );
+  });
+
+  it('saves a name-only place with no address and no geocoding', async () => {
+    renderSheet();
+    await userEvent.type(screen.getByLabelText(en.plan.nameLabel), 'Picnic spot');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(addPlaceAction).toHaveBeenCalled());
+    expect(forwardGeocode).not.toHaveBeenCalled();
+    expect(addPlaceAction).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Picnic spot', address: null, lat: null, lng: null }),
+    );
+  });
+
+  it('requires a name: shows an error and does not call the action', async () => {
+    renderSheet();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.plan.nameRequired));
+    expect(addPlaceAction).not.toHaveBeenCalled();
+  });
+
+  it('disables the name + address inputs when offline', () => {
     renderSheet({ disabled: true });
-    expect(screen.getByPlaceholderText(en.plan.searchPlaceholder)).toBeDisabled();
+    expect(screen.getByLabelText(en.plan.nameLabel)).toBeDisabled();
+    expect(screen.getByLabelText(en.plan.addressLabel)).toBeDisabled();
   });
 
   it('shows an error and keeps the sheet open when the action rejects', async () => {
     addPlaceAction.mockRejectedValueOnce(new Error('server error'));
     const { onClose, onAdded } = renderSheet();
     await userEvent.click(screen.getByText('Senso-ji, Asakusa'));
-    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
-    expect(screen.getByRole('alert')).toHaveTextContent(en.plan.saveFailed);
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.plan.saveFailed));
     expect(onClose).not.toHaveBeenCalled();
     expect(onAdded).not.toHaveBeenCalled();
   });
 
   it('closes the sheet when Escape is pressed on the dialog', async () => {
     const { onClose } = renderSheet();
-    const dialog = screen.getByRole('dialog');
-    await userEvent.type(dialog, '{Escape}');
+    await userEvent.type(screen.getByRole('dialog'), '{Escape}');
     expect(onClose).toHaveBeenCalled();
   });
 });

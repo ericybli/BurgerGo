@@ -5,10 +5,15 @@ import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { addPlaceAction } from '@/app/_actions/places';
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
-import { reverseGeocode } from '@/components/plan/googleClient';
+import { forwardGeocode } from '@/components/plan/googleClient';
 
-type SubTab = 'search' | 'drop';
-type Dropped = { lat: number; lng: number; address: string | null };
+const CATEGORIES: PlaceDTO['category'][] = [
+  'sightseeing',
+  'lodging',
+  'transport',
+  'activity',
+  'other',
+];
 
 type AddPlaceSheetProps = {
   open: boolean;
@@ -20,6 +25,15 @@ type AddPlaceSheetProps = {
   onAdded: () => void;
 };
 
+/**
+ * Add a place via one unified form: a Name, an Address field that surfaces
+ * Google Places autocomplete suggestions as you type (pick one to auto-fill
+ * name/address/coordinates, or ignore them and type a free-form address), and
+ * a Category. On save, a picked suggestion already carries coordinates; a
+ * hand-typed address is best-effort forward-geocoded so the place still maps
+ * and routes. If geocoding is unavailable, the place is saved by name+address
+ * with no coordinates (it lists fine, just without a map pin).
+ */
 export function AddPlaceSheet({
   open,
   tripId,
@@ -29,72 +43,76 @@ export function AddPlaceSheet({
   onAdded,
 }: AddPlaceSheetProps) {
   const t = useTranslations('plan');
-  const [tab, setTab] = useState<SubTab>('search');
-  const [query, setQuery] = useState('');
-  const [dropped, setDropped] = useState<Dropped | null>(null);
-  const [dropName, setDropName] = useState('');
+  const tCat = useTranslations('placeCategory');
+  const [name, setName] = useState('');
+  const [address, setAddress] = useState('');
+  const [category, setCategory] = useState<PlaceDTO['category']>('other');
+  /** Coordinates + place id captured when a Google suggestion is picked. */
+  const [picked, setPicked] = useState<{ lat: number; lng: number; googlePlaceId: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  // FIX I1: inline error when the Server Action rejects
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const { predictions, search, select } = usePlacesAutocomplete();
+  const { predictions, search, select, clear } = usePlacesAutocomplete();
 
   if (!open) return null;
 
-  // FIX I3: Escape closes the dialog
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') onClose();
   }
 
-  function handleQueryChange(value: string) {
-    setQuery(value);
+  function handleAddressChange(value: string) {
+    setAddress(value);
+    setPicked(null); // editing the text invalidates any prior suggestion pick
     void search(value);
   }
 
-  // FIX I1: wrap action in try/catch; on error show message and keep sheet open
-  function commit(payload: Parameters<typeof addPlaceAction>[0]) {
-    setSaveError(null);
+  async function handlePick(placeId: string) {
+    const filled = await select(placeId);
+    if (!filled) return;
+    if (!name.trim() && filled.name) setName(filled.name);
+    if (filled.address) setAddress(filled.address);
+    if (filled.categoryGuess) setCategory(filled.categoryGuess as PlaceDTO['category']);
+    if (typeof filled.lat === 'number' && typeof filled.lng === 'number') {
+      setPicked({ lat: filled.lat, lng: filled.lng, googlePlaceId: filled.googlePlaceId });
+    }
+    clear(); // hide the suggestion list once one is chosen
+  }
+
+  function handleSave() {
+    setError(null);
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError(t('nameRequired'));
+      return;
+    }
+    const trimmedAddress = address.trim() || null;
     startTransition(async () => {
       try {
-        await addPlaceAction(payload);
+        let lat: number | null = picked?.lat ?? null;
+        let lng: number | null = picked?.lng ?? null;
+        // No coordinates from a suggestion but we have a typed address →
+        // best-effort forward-geocode so the place maps + routes.
+        if (lat === null && trimmedAddress) {
+          const geo = await forwardGeocode(trimmedAddress);
+          if (geo) {
+            lat = geo.lat;
+            lng = geo.lng;
+          }
+        }
+        await addPlaceAction({
+          tripId,
+          dayDate,
+          name: trimmedName,
+          address: trimmedAddress,
+          lat,
+          lng,
+          category,
+          googlePlaceId: picked?.googlePlaceId ?? null,
+        });
         onAdded();
         onClose();
       } catch {
-        setSaveError(t('saveFailed'));
+        setError(t('saveFailed'));
       }
-    });
-  }
-
-  async function handlePrediction(placeId: string) {
-    const filled = await select(placeId);
-    if (!filled) return;
-    commit({
-      tripId,
-      dayDate,
-      name: filled.name ?? 'Place',
-      address: filled.address,
-      lat: filled.lat,
-      lng: filled.lng,
-      category: (filled.categoryGuess as PlaceDTO['category']) ?? 'other',
-      googlePlaceId: filled.googlePlaceId,
-    });
-  }
-
-  async function handleDrop(lat: number, lng: number) {
-    const address = await reverseGeocode(lat, lng);
-    setDropped({ lat, lng, address });
-  }
-
-  function confirmDrop() {
-    if (!dropped) return;
-    commit({
-      tripId,
-      dayDate,
-      name: dropName.trim() || (dropped.address ?? 'Dropped pin'),
-      address: dropped.address,
-      lat: dropped.lat,
-      lng: dropped.lng,
-      category: 'other',
-      googlePlaceId: null,
     });
   }
 
@@ -111,114 +129,87 @@ export function AddPlaceSheet({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
       >
-        {/* FIX I1: inline save error */}
-        {saveError ? (
+        <h2 className="mb-3 text-heading font-semibold text-ink">{t('addPlace')}</h2>
+
+        {error ? (
           <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
-            {saveError}
+            {error}
           </p>
         ) : null}
 
-        {/* FIX M5: tabpanel role on each content wrapper */}
-        <div role="tablist" aria-label={t('addPlace')} className="mb-4 flex rounded-control bg-paper p-0.5 shadow-inset">
-          <button
-            id="add-tab-search"
-            type="button"
-            role="tab"
-            aria-selected={tab === 'search'}
-            aria-controls="add-panel-search"
-            onClick={() => setTab('search')}
-            className={`flex-1 rounded-control py-1.5 text-label font-medium ${
-              tab === 'search' ? 'bg-coral text-white' : 'text-ink-muted'
-            }`}
-          >
-            {t('searchSubTab')}
-          </button>
-          <button
-            id="add-tab-drop"
-            type="button"
-            role="tab"
-            aria-selected={tab === 'drop'}
-            aria-controls="add-panel-drop"
-            onClick={() => setTab('drop')}
-            className={`flex-1 rounded-control py-1.5 text-label font-medium ${
-              tab === 'drop' ? 'bg-coral text-white' : 'text-ink-muted'
-            }`}
-          >
-            {t('dropPinTab')}
-          </button>
-        </div>
+        <label className="block text-label font-medium text-ink" htmlFor="add-name">
+          {t('nameLabel')}
+        </label>
+        <input
+          id="add-name"
+          type="text"
+          value={name}
+          disabled={disabled}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
 
-        {tab === 'search' ? (
-          // FIX M5: role="tabpanel" + aria-labelledby
-          <div id="add-panel-search" role="tabpanel" aria-labelledby="add-tab-search">
-            <input
-              type="text"
-              value={query}
-              disabled={disabled}
-              placeholder={t('searchPlaceholder')}
-              onChange={(e) => handleQueryChange(e.target.value)}
-              className="w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
-            />
-            <ul className="mt-2 flex flex-col">
-              {predictions.map((p) => (
-                <li key={p.placeId}>
-                  <button
-                    type="button"
-                    disabled={disabled || isPending}
-                    onClick={() => void handlePrediction(p.placeId)}
-                    className="w-full rounded-control px-2 py-2 text-left text-body text-ink hover:bg-paper disabled:opacity-40"
-                  >
-                    {p.description}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : (
-          // FIX M5: role="tabpanel" + aria-labelledby
-          <div id="add-panel-drop" role="tabpanel" aria-labelledby="add-tab-drop">
-            <p className="mb-2 text-caption text-ink-muted">{t('longPressHint')}</p>
-            {/* B3's mini Google map mounts here; the drop callback is the contract.
-                The test affordance simulates a long-press drop. */}
-            <button
-              type="button"
-              data-testid="map-drop-target"
-              disabled={disabled}
-              onClick={() => void handleDrop(35.71, 139.79)}
-              className="flex h-48 w-full items-center justify-center rounded-card bg-paper text-caption text-ink-muted shadow-inset disabled:opacity-40"
-            >
-              {t('longPressHint')}
-            </button>
-            {dropped ? (
-              <div className="mt-3">
-                <label className="block text-label font-medium text-ink" htmlFor="drop-name">
-                  {t('nameLabel')}
-                </label>
-                <input
-                  id="drop-name"
-                  type="text"
-                  value={dropName}
-                  onChange={(e) => setDropName(e.target.value)}
-                  className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink"
-                />
-                <p className="mt-1 text-caption text-ink-muted">{dropped.address}</p>
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="add-address">
+          {t('addressLabel')}
+        </label>
+        <input
+          id="add-address"
+          type="text"
+          value={address}
+          disabled={disabled}
+          placeholder={t('addressSearchPlaceholder')}
+          autoComplete="off"
+          onChange={(e) => handleAddressChange(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+        <p className="mt-1 text-caption text-ink-muted">{t('addressSearchHint')}</p>
+
+        {predictions.length > 0 ? (
+          <ul className="mt-2 flex flex-col rounded-control border border-line bg-paper">
+            {predictions.map((p) => (
+              <li key={p.placeId}>
                 <button
                   type="button"
                   disabled={disabled || isPending}
-                  onClick={confirmDrop}
-                  className="mt-3 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+                  onClick={() => void handlePick(p.placeId)}
+                  className="w-full px-3 py-2 text-left text-body text-ink hover:bg-card disabled:opacity-40"
                 >
-                  {t('confirm')}
+                  {p.description}
                 </button>
-              </div>
-            ) : null}
-          </div>
-        )}
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="add-category">
+          {t('categoryLabel')}
+        </label>
+        <select
+          id="add-category"
+          value={category}
+          disabled={disabled}
+          onChange={(e) => setCategory(e.target.value as PlaceDTO['category'])}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        >
+          {CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {tCat(c)}
+            </option>
+          ))}
+        </select>
 
         <button
           type="button"
+          disabled={disabled || isPending}
+          onClick={handleSave}
+          className="mt-5 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+        >
+          {t('save')}
+        </button>
+        <button
+          type="button"
           onClick={onClose}
-          className="mt-4 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
         >
           {t('cancel')}
         </button>

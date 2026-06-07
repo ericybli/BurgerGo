@@ -50,6 +50,13 @@ export interface NormalizedReverseGeocode {
   address: string | null;
 }
 
+/** Normalized forward-geocode result (address → coords); null when no match. */
+export interface NormalizedForwardGeocode {
+  lat: number;
+  lng: number;
+  address: string | null;
+}
+
 /** Normalized Directions — summed across legs; polyline written into `travel_legs`. */
 export interface NormalizedDirections {
   durationSeconds: number;
@@ -113,6 +120,24 @@ export function normalizeReverseGeocode(raw: unknown): NormalizedReverseGeocode 
   return { address: r.results?.[0]?.formatted_address ?? null };
 }
 
+export function normalizeForwardGeocode(raw: unknown): NormalizedForwardGeocode | null {
+  const r = raw as {
+    status?: string;
+    results?: Array<{
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+    }>;
+  };
+  if (r.status === 'ZERO_RESULTS') return null;
+  if (r.status !== 'OK') {
+    throw new GoogleApiError(r.status ?? 'UNKNOWN', 'Forward geocode failed');
+  }
+  const top = r.results?.[0];
+  const loc = top?.geometry?.location;
+  if (!top || typeof loc?.lat !== 'number' || typeof loc?.lng !== 'number') return null;
+  return { lat: loc.lat, lng: loc.lng, address: top.formatted_address ?? null };
+}
+
 export function normalizeDirections(raw: unknown): NormalizedDirections {
   const r = raw as {
     status?: string;
@@ -171,6 +196,19 @@ export async function fetchReverseGeocode(input: FetchReverseGeocodeInput): Prom
     key: input.apiKey,
   });
   return normalizeReverseGeocode(await getJson(`${GEOCODE_URL}?${params.toString()}`));
+}
+
+export interface FetchForwardGeocodeInput {
+  address: string;
+  apiKey: string;
+}
+
+/** Forward-geocode an address string to coordinates; null when Google has no match. */
+export async function fetchForwardGeocode(
+  input: FetchForwardGeocodeInput,
+): Promise<NormalizedForwardGeocode | null> {
+  const params = new URLSearchParams({ address: input.address, key: input.apiKey });
+  return normalizeForwardGeocode(await getJson(`${GEOCODE_URL}?${params.toString()}`));
 }
 
 export interface FetchDirectionsInput {
