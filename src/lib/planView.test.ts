@@ -28,6 +28,8 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     orderIndex: 0,
     photoPath: null,
     photos: [],
+    aiSummary: null,
+    links: [],
     ...over,
   };
 }

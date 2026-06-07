@@ -32,6 +32,10 @@ export interface PlaceDTO {
   photoPath: string | null; // place_details_cache.photoLocalPath, else null
   /** Personal photos for this place, ordered (Plan 2). First wins for the card thumb. */
   photos: { id: string; width: number | null; height: number | null }[];
+  /** AI-generated intro (editable); null until generated. */
+  aiSummary: string | null;
+  /** Travel-guide links attached to this place (newest first). */
+  links: { id: string; url: string; title: string | null; thumbnail: string | null }[];
 }
 
 /** One cached travel leg as returned by the B1 read handler. */

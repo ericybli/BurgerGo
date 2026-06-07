@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, travelLegs, placeDetailsCache, photos } from '@/src/db/schema';
+import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks } from '@/src/db/schema';
 
 const SEEDED_PLACE_ID = 'b';
 
@@ -128,5 +128,29 @@ describe('GET /api/trips/[tripId]/places', () => {
     const res = await GET(new Request('http://x/api/trips/trip-1/places'), ctx('trip-1'));
     const body = await res.json() as { places: Array<{ photos: unknown[] }> };
     expect(Array.isArray(body.places[0]!.photos)).toBe(true);
+  });
+
+  it('includes aiSummary and attached links per place', async () => {
+    // Use a fresh db so we control exactly what's there
+    testHandle.db = makeTestDb().db;
+    testHandle.db.insert(trips).values({
+      id: 't1', name: 'Test', startDate: '2026-06-05', endDate: '2026-06-07',
+      coverPhoto: null, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(places).values({
+      id: 'p1', tripId: 't1', dayDate: '2026-06-05', googlePlaceId: null,
+      name: 'Place', address: null, lat: null, lng: null, category: 'sightseeing',
+      scheduledTime: null, durationMin: null, cost: null, notes: null, aiSummary: 'Hi',
+      orderIndex: 0, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(savedLinks).values({
+      id: 'sl1', tripId: 't1', url: 'https://x.example', title: null, note: null,
+      thumbnail: null, placeId: 'p1', createdAt: TS, updatedAt: TS,
+    }).run();
+    const res = await GET(new Request('http://t/'), { params: Promise.resolve({ tripId: 't1' }) });
+    const body = await res.json();
+    const p = body.places.find((x: { id: string }) => x.id === 'p1');
+    expect(p.aiSummary).toBe('Hi');
+    expect(p.links).toEqual([{ id: expect.any(String), url: 'https://x.example', title: null, thumbnail: null }]);
   });
 });

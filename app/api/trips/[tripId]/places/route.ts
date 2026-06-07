@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { and, asc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip } from '@/src/db/repos/places';
-import { travelLegs, placeDetailsCache, photos as photosTable, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
+import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 export interface PlaceDTO extends Place {
   photoPath: string | null;
   photos: { id: string; width: number | null; height: number | null }[];
+  links: { id: string; url: string; title: string | null; thumbnail: string | null }[];
 }
 
 /**
@@ -77,11 +78,29 @@ export async function GET(
     }
   }
 
+  // Batch-load attached travel-guide links for all places (place_id set).
+  const linksByPlace = new Map<string, { id: string; url: string; title: string | null; thumbnail: string | null }[]>();
+  if (placeIds.length > 0) {
+    const linkRows = db
+      .select({ id: savedLinks.id, placeId: savedLinks.placeId, url: savedLinks.url, title: savedLinks.title, thumbnail: savedLinks.thumbnail })
+      .from(savedLinks)
+      .where(inArray(savedLinks.placeId, placeIds))
+      .orderBy(asc(savedLinks.placeId), desc(savedLinks.createdAt))
+      .all();
+    for (const row of linkRows) {
+      if (!row.placeId) continue;
+      const list = linksByPlace.get(row.placeId) ?? [];
+      list.push({ id: row.id, url: row.url, title: row.title, thumbnail: row.thumbnail });
+      linksByPlace.set(row.placeId, list);
+    }
+  }
+
   // Build PlaceDTO using the pre-fetched maps.
   const placesResult: PlaceDTO[] = rawPlaces.map((p) => ({
     ...p,
     photoPath: (p.googlePlaceId ? (photoMap.get(p.googlePlaceId) ?? null) : null),
     photos: photoMapByOwner.get(p.id) ?? [],
+    links: linksByPlace.get(p.id) ?? [],
   }));
 
   const legs: LegDTO[] = db
