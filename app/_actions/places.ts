@@ -16,6 +16,7 @@ import {
 } from '@/src/db/repos/places';
 import { invalidateLegsTouchingPlace } from '@/src/db/repos/legs';
 import { getTrip } from '@/src/db/repos/trips';
+import { getSettings } from '@/src/db/repos/settings';
 import { env } from '@/src/env';
 import { getOrFetchLeg } from '@/src/lib/google/getOrFetchLeg';
 import { generatePlaceSummary } from '@/src/lib/openai/server';
@@ -201,6 +202,7 @@ export async function generatePlaceSummaryAction(placeId: string): Promise<Place
   const trip = getTrip(db, place.tripId);
   if (!trip) throw new Error('Trip not found');
 
+  const cfg = getSettings(db);
   const summary = await generatePlaceSummary({
     name: place.name,
     address: place.address,
@@ -208,6 +210,8 @@ export async function generatePlaceSummaryAction(placeId: string): Promise<Place
     tripName: trip.name,
     startDate: trip.startDate,
     endDate: trip.endDate,
+    prompt: cfg?.aiPrompt ?? null,
+    model: cfg?.aiModel ?? null,
   });
   if (!summary) return null; // no key / failure → leave existing summary untouched
 

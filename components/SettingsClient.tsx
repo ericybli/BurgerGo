@@ -1,12 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { APP_VERSION } from '@/src/lib/appVersion';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT } from '@/src/lib/openai/defaults';
+import { updateAiSettingsAction } from '@/app/_actions/settings';
 
-type SettingsRow = { language: string; currency: string } | null;
+type SettingsRow = {
+  language: string;
+  currency: string;
+  aiPrompt: string | null;
+  aiModel: string | null;
+} | null;
 
 /**
  * Settings data owner. The page is a static shell; this client fetches the
@@ -17,6 +24,22 @@ type SettingsRow = { language: string; currency: string } | null;
 export function SettingsClient() {
   const t = useTranslations();
   const [settings, setSettings] = useState<SettingsRow>(null);
+  const [online, setOnline] = useState(true);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiModel, setAiModel] = useState('');
+  const [aiStatus, setAiStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    update();
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -25,7 +48,11 @@ export function SettingsClient() {
         const res = await fetch(withBase('/api/settings'), { credentials: 'same-origin' });
         if (!res.ok) return;
         const row = (await res.json()) as SettingsRow;
-        if (!cancelled) setSettings(row);
+        if (!cancelled) {
+          setSettings(row);
+          setAiPrompt(row?.aiPrompt ?? '');
+          setAiModel(row?.aiModel ?? '');
+        }
       } catch {
         // Offline with no cached settings → keep the en/USD placeholder defaults.
       }
@@ -34,6 +61,24 @@ export function SettingsClient() {
       cancelled = true;
     };
   }, []);
+
+  function saveAi() {
+    setAiStatus('idle');
+    startTransition(async () => {
+      try {
+        await updateAiSettingsAction({ prompt: aiPrompt, model: aiModel });
+        setAiStatus('saved');
+      } catch {
+        setAiStatus('error');
+      }
+    });
+  }
+
+  function resetAi() {
+    setAiPrompt('');
+    setAiModel('');
+    setAiStatus('idle');
+  }
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
@@ -64,6 +109,63 @@ export function SettingsClient() {
           </span>
         </div>
         <p className="mt-3 text-caption text-ink-faint">{t('settings.comingSoon')}</p>
+      </section>
+
+      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
+        <p className="text-label font-medium text-ink">{t('settings.aiTitle')}</p>
+        <p className="mt-1 text-caption text-ink-muted">{t('settings.aiBody')}</p>
+
+        <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-model">
+          {t('settings.aiModelLabel')}
+        </label>
+        <input
+          id="ai-model"
+          type="text"
+          value={aiModel}
+          disabled={!online || isPending}
+          placeholder={DEFAULT_AI_MODEL}
+          onChange={(e) => { setAiModel(e.target.value); setAiStatus('idle'); }}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-prompt">
+          {t('settings.aiPromptLabel')}
+        </label>
+        <textarea
+          id="ai-prompt"
+          rows={8}
+          value={aiPrompt}
+          disabled={!online || isPending}
+          placeholder={DEFAULT_AI_PROMPT}
+          onChange={(e) => { setAiPrompt(e.target.value); setAiStatus('idle'); }}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-caption text-ink disabled:opacity-60"
+        />
+        <p className="mt-1 text-caption text-ink-faint">{t('settings.aiPromptHint')}</p>
+
+        <div className="mt-3 flex items-center gap-3">
+          <button
+            type="button"
+            disabled={!online || isPending}
+            onClick={saveAi}
+            className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          >
+            {t('settings.aiSave')}
+          </button>
+          <button
+            type="button"
+            disabled={!online || isPending}
+            onClick={resetAi}
+            className="text-caption font-medium text-teal disabled:opacity-40"
+          >
+            {t('settings.aiReset')}
+          </button>
+          {aiStatus === 'saved' ? (
+            <span role="status" className="text-caption text-ink-muted">{t('settings.aiSaved')}</span>
+          ) : null}
+          {aiStatus === 'error' ? (
+            <span role="alert" className="text-caption text-red-700">{t('settings.aiSaveFailed')}</span>
+          ) : null}
+        </div>
       </section>
 
       <section className="mt-4 rounded-card bg-card p-6 text-center shadow-card">

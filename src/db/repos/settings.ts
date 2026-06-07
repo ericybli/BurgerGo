@@ -11,7 +11,12 @@ export interface SettingsInput {
   currency: string;
 }
 
-export type SettingsPatch = Partial<SettingsInput>;
+export type SettingsPatch = Partial<{
+  language: 'en' | 'zh';
+  currency: string;
+  aiPrompt: string | null; // null clears → built-in default
+  aiModel: string | null;
+}>;
 
 /** Read the single global settings row, or undefined if not yet seeded. */
 export function getSettings(db: Db): Settings | undefined {
@@ -37,20 +42,21 @@ export function ensureSettings(db: Db, input: SettingsInput): Settings {
  * (language 'en', currency 'USD').
  */
 export function updateSettings(db: Db, patch: SettingsPatch): Settings {
-  const existing = getSettings(db);
-  if (!existing) {
-    return ensureSettings(db, {
+  if (!getSettings(db)) {
+    ensureSettings(db, {
       language: patch.language ?? 'en',
       currency: patch.currency ?? 'USD',
     });
   }
-  const next: SettingsInput = {
-    language: patch.language ?? existing.language,
-    currency: patch.currency ?? existing.currency,
+  const cur = getSettings(db) as Settings;
+  const set: Partial<typeof settings.$inferInsert> = {
+    language: patch.language ?? cur.language,
+    currency: patch.currency ?? cur.currency,
   };
-  db.update(settings)
-    .set({ language: next.language, currency: next.currency })
-    .where(eq(settings.id, SETTINGS_ID))
-    .run();
+  // aiPrompt/aiModel are nullable: only touch them when present in the patch
+  // (so a language/currency change never wipes them); null clears the override.
+  if ('aiPrompt' in patch) set.aiPrompt = patch.aiPrompt ?? null;
+  if ('aiModel' in patch) set.aiModel = patch.aiModel ?? null;
+  db.update(settings).set(set).where(eq(settings.id, SETTINGS_ID)).run();
   return getSettings(db) as Settings;
 }

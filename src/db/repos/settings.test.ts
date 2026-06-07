@@ -15,13 +15,13 @@ describe('settings repo', () => {
   it('ensureSettings inserts the id=1 row once and is idempotent', () => {
     const { db } = makeTestDb();
     const first = ensureSettings(db, { language: 'en', currency: 'USD' });
-    expect(first).toEqual({ id: 1, language: 'en', currency: 'USD' });
+    expect(first).toEqual({ id: 1, language: 'en', currency: 'USD', aiPrompt: null, aiModel: null });
 
     // Second call must NOT overwrite existing values.
     const second = ensureSettings(db, { language: 'zh', currency: 'CNY' });
-    expect(second).toEqual({ id: 1, language: 'en', currency: 'USD' });
+    expect(second).toEqual({ id: 1, language: 'en', currency: 'USD', aiPrompt: null, aiModel: null });
 
-    expect(getSettings(db)).toEqual({ id: 1, language: 'en', currency: 'USD' });
+    expect(getSettings(db)).toEqual({ id: 1, language: 'en', currency: 'USD', aiPrompt: null, aiModel: null });
   });
 
   it('updateSettings patches only the provided fields', () => {
@@ -29,16 +29,33 @@ describe('settings repo', () => {
     ensureSettings(db, { language: 'en', currency: 'USD' });
 
     const langOnly = updateSettings(db, { language: 'zh' });
-    expect(langOnly).toEqual({ id: 1, language: 'zh', currency: 'USD' });
+    expect(langOnly).toEqual({ id: 1, language: 'zh', currency: 'USD', aiPrompt: null, aiModel: null });
 
     const currOnly = updateSettings(db, { currency: 'JPY' });
-    expect(currOnly).toEqual({ id: 1, language: 'zh', currency: 'JPY' });
+    expect(currOnly).toEqual({ id: 1, language: 'zh', currency: 'JPY', aiPrompt: null, aiModel: null });
   });
 
   it('updateSettings on an unseeded db creates the row from the patch + defaults', () => {
     const { db } = makeTestDb();
     const row = updateSettings(db, { currency: 'EUR' });
     // Falls back to language 'en' when seeding via a partial patch.
-    expect(row).toEqual({ id: 1, language: 'en', currency: 'EUR' });
+    expect(row).toEqual({ id: 1, language: 'en', currency: 'EUR', aiPrompt: null, aiModel: null });
+  });
+
+  it('updateSettings sets + clears the AI prompt/model without touching language/currency', () => {
+    const { db } = makeTestDb();
+    ensureSettings(db, { language: 'zh', currency: 'CNY' });
+
+    const set = updateSettings(db, { aiPrompt: 'my prompt', aiModel: 'gpt-4o-mini' });
+    expect(set).toMatchObject({ language: 'zh', currency: 'CNY', aiPrompt: 'my prompt', aiModel: 'gpt-4o-mini' });
+
+    // A currency-only change must NOT wipe the AI overrides.
+    const keep = updateSettings(db, { currency: 'USD' });
+    expect(keep).toMatchObject({ aiPrompt: 'my prompt', aiModel: 'gpt-4o-mini' });
+
+    // null clears the override.
+    const cleared = updateSettings(db, { aiPrompt: null, aiModel: null });
+    expect(cleared.aiPrompt).toBeNull();
+    expect(cleared.aiModel).toBeNull();
   });
 });

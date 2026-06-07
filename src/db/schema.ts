@@ -90,6 +90,8 @@ export const settings = sqliteTable('settings', {
   id: integer('id').primaryKey(), // always 1
   language: text('language', { enum: ['en', 'zh'] }).notNull(),
   currency: text('currency').notNull(), // ISO 4217, single global currency
+  aiPrompt: text('ai_prompt'), // custom AI-summary system prompt; null → built-in default
+  aiModel: text('ai_model'), // custom OpenAI model id; null → built-in default
 });
 
 export const restaurants = sqliteTable(
