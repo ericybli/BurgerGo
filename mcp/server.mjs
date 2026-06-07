@@ -73,8 +73,9 @@ server.tool(
   'List all BurgerGo trips (id, name, date range).',
   async () => {
     try {
-      const { trips } = await apiGet('/api/trips');
-      return ok((trips ?? []).map((t) => ({ id: t.id, name: t.name, startDate: t.startDate, endDate: t.endDate })));
+      const trips = await apiGet('/api/trips'); // bare array
+      const list = Array.isArray(trips) ? trips : [];
+      return ok(list.map((t) => ({ id: t.id, name: t.name, startDate: t.startDate, endDate: t.endDate })));
     } catch (e) {
       return fail(String(e.message ?? e));
     }
