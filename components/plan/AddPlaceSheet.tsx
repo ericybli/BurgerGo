@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
-import { addPlaceAction } from '@/app/_actions/places';
+import { addPlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
 import { forwardGeocode } from '@/components/plan/googleClient';
 
@@ -98,7 +98,7 @@ export function AddPlaceSheet({
             lng = geo.lng;
           }
         }
-        await addPlaceAction({
+        const created = await addPlaceAction({
           tripId,
           dayDate,
           name: trimmedName,
@@ -108,6 +108,8 @@ export function AddPlaceSheet({
           category,
           googlePlaceId: picked?.googlePlaceId ?? null,
         });
+        // Fire-and-forget AI summary; reload picks it up when it lands. Never blocks the add.
+        void generatePlaceSummaryAction(created.id).catch(() => {});
         onAdded();
         onClose();
       } catch {

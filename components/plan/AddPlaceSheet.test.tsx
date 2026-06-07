@@ -5,10 +5,12 @@ import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const addPlaceAction = vi.fn(async (..._a: any[]) => ({ id: 'p-new' }));
+const addPlaceAction = vi.fn(async (..._a: any[]) => ({ id: 'new-place' }));
+const generatePlaceSummaryAction = vi.fn(async (_id: string) => null);
 vi.mock('@/app/_actions/places', () => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   addPlaceAction: (...a: any[]) => addPlaceAction(...a),
+  generatePlaceSummaryAction: (id: string) => generatePlaceSummaryAction(id),
   updatePlaceAction: vi.fn(),
   deletePlaceAction: vi.fn(),
   reorderDayAction: vi.fn(),
@@ -78,6 +80,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof AddPlaceSheet>> 
 
 beforeEach(() => {
   addPlaceAction.mockClear();
+  generatePlaceSummaryAction.mockClear();
   selectFn.mockClear();
   clearFn.mockClear();
   forwardGeocode.mockReset().mockResolvedValue({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
@@ -188,5 +191,13 @@ describe('AddPlaceSheet', () => {
     const { onClose } = renderSheet();
     await userEvent.type(screen.getByRole('dialog'), '{Escape}');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('fires AI summary generation after a successful add', async () => {
+    renderSheet(); // existing helper
+    await userEvent.type(screen.getByLabelText(en.plan.nameLabel), 'Senso-ji');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(addPlaceAction).toHaveBeenCalled());
+    await waitFor(() => expect(generatePlaceSummaryAction).toHaveBeenCalledWith('new-place'));
   });
 });
