@@ -1,15 +1,15 @@
-import { PackingClient } from '@/components/packing/PackingClient';
+import { ToDoClient } from '@/components/todo/ToDoClient';
 
 // Static app shell: no server DB read, no cookies() — so the SW caches the page
-// document and it loads offline. PackingClient client-fetches
-// /api/trips/:id/packing and owns all interaction state. (spec §7.3)
+// document and it loads offline. ToDoClient hosts the Packing list + Tasks
+// sub-views, each client-fetching its own data. (spec §7.3)
 export const dynamic = 'force-static';
 
-export default async function PackingPage({
+export default async function ToDoPage({
   params,
 }: {
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  return <PackingClient tripId={tripId} />;
+  return <ToDoClient tripId={tripId} />;
 }

@@ -283,6 +283,27 @@ export const packingItems = sqliteTable(
   }),
 );
 
+// Simple trip to-do tasks (the "To do" tab's Tasks section). No category — just
+// a title, an optional note, and a done checkbox. Trips cascade-delete tasks.
+export const tasks = sqliteTable(
+  'tasks',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    note: text('note'),
+    done: integer('done', { mode: 'boolean' }).notNull().default(false),
+    orderIndex: integer('order_index').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTrip: index('idx_tasks_trip').on(t.tripId, t.orderIndex),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -384,3 +405,5 @@ export type PackingCategory = typeof packingCategories.$inferSelect;
 export type NewPackingCategory = typeof packingCategories.$inferInsert;
 export type PackingItem = typeof packingItems.$inferSelect;
 export type NewPackingItem = typeof packingItems.$inferInsert;
+export type Task = typeof tasks.$inferSelect;
+export type NewTask = typeof tasks.$inferInsert;

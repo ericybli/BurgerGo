@@ -64,8 +64,25 @@
     "plan": "Plan",
     "eats": "Eats",
     "budget": "Budget",
-    "packing": "Packing",
+    "packing": "To do",
     "journal": "Journal"
+  },
+  "todo": {
+    "packingTab": "Packing list",
+    "tasksTab": "Tasks"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "addTask": "Add",
+    "taskPlaceholder": "Add a task",
+    "notePlaceholder": "Add a note",
+    "deleteTask": "Delete task",
+    "doneLabel": "Done: {title}",
+    "emptyHeadline": "No tasks yet",
+    "emptySubtext": "Add things you need to get done for this trip.",
+    "loading": "Loading your tasks…",
+    "errorHeadline": "Couldn't load tasks",
+    "errorSubtext": "Check your connection and try again."
   },
   "packing": {
     "title": "Packing list",
