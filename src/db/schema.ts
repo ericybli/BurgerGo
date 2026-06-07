@@ -38,6 +38,7 @@ export const places = sqliteTable(
     durationMin: integer('duration_min'),
     cost: integer('cost'), // minor units, single currency
     notes: text('notes'),
+    aiSummary: text('ai_summary'), // OpenAI-generated intro; editable; null until generated
     orderIndex: integer('order_index').notNull(), // 0-based; pin label = orderIndex + 1
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -228,6 +229,7 @@ export const savedLinks = sqliteTable(
     title: text('title'), // editable; preview may prefill
     note: text('note'),
     thumbnail: text('thumbnail'), // relative derivative path; null if none
+    placeId: text('place_id').references(() => places.id, { onDelete: 'cascade' }), // null = trip reading list
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },
