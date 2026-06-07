@@ -60,9 +60,9 @@ const trip = {
   coverPhoto: null,
 };
 const places: PlaceDTO[] = [
-  { id: 'a', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-a', name: 'Stop A', address: 'X', lat: 1, lng: 2, category: 'sightseeing', scheduledTime: '09:00', durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [] },
-  { id: 'b', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-b', name: 'Stop B', address: 'Y', lat: 3, lng: 4, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 1, photoPath: null, photos: [], aiSummary: null, links: [] },
-  { id: 's', tripId: 't1', dayDate: null, googlePlaceId: null, name: 'Saved One', address: 'Z', lat: 5, lng: 6, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [] },
+  { id: 'a', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-a', name: 'Stop A', address: 'X', lat: 1, lng: 2, category: 'sightseeing', scheduledTime: '09:00', durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
+  { id: 'b', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-b', name: 'Stop B', address: 'Y', lat: 3, lng: 4, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 1, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
+  { id: 's', tripId: 't1', dayDate: null, googlePlaceId: null, name: 'Saved One', address: 'Z', lat: 5, lng: 6, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
 ];
 const legs: LegDTO[] = [
   { fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk', durationSeconds: 720, distanceMeters: 900, polyline: null },

@@ -39,6 +39,10 @@ export const places = sqliteTable(
     cost: integer('cost'), // minor units, single currency
     notes: text('notes'),
     aiSummary: text('ai_summary'), // OpenAI-generated intro; editable; null until generated
+    // Travel mode of the leg ARRIVING at this place (from the previous stop in the
+    // day). NULL = follow the day's default mode. The first stop of a day has no
+    // incoming leg, so its value is unused.
+    legMode: text('leg_mode', { enum: ['walk', 'drive', 'transit'] }),
     orderIndex: integer('order_index').notNull(), // 0-based; pin label = orderIndex + 1
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),

@@ -7,7 +7,8 @@ function p(id: string, orderIndex: number, lat: number, lng: number) {
   return { id, orderIndex, lat, lng, name: id, category: 'other' as const,
            tripId: 't', dayDate: '2026-06-04', googlePlaceId: null,
            address: null, scheduledTime: null, durationMin: null, cost: null,
-           notes: null, photoPath: null, photos: [], aiSummary: null, links: [] };
+           notes: null, photoPath: null, photos: [], aiSummary: null, links: [],
+           legMode: null as 'walk' | 'drive' | 'transit' | null };
 }
 
 function group(date: string, places: ReturnType<typeof p>[], colorIndex = 0): DayGroup {
@@ -48,6 +49,26 @@ describe('buildDayPaths', () => {
     expect(paths[0]!.path).toEqual([
       { lat: 38.5,  lng: -120.2  },
       { lat: 40.7,  lng: -120.95 },
+    ]);
+  });
+
+  it('uses each leg’s own mode: a stop’s legMode overrides the day default', () => {
+    const gMode = group('2026-06-04', [
+      p('a', 0, 38.5, -120.2),
+      { ...p('b', 1, 40.7, -120.95), legMode: 'drive' as const },
+    ]);
+    const legs: LegDTO[] = [
+      { fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk',
+        durationSeconds: 0, distanceMeters: 0, polyline: '_p~iF~ps|U_ulLnnqC' }, // 2 pts
+      { fromPlaceId: 'a', toPlaceId: 'b', mode: 'drive',
+        durationSeconds: 0, distanceMeters: 0, polyline: '_p~iF~ps|U_ulLnnqC_mqNvxq`@' }, // 3 pts
+    ];
+    // Day default is 'walk', but stop b pins 'drive' → the 3-point drive polyline wins.
+    const paths = buildDayPaths([gMode], legs, 'walk');
+    expect(paths[0]!.path).toEqual([
+      { lat: 38.5,   lng: -120.2   },
+      { lat: 40.7,   lng: -120.95  },
+      { lat: 43.252, lng: -126.453 },
     ]);
   });
 

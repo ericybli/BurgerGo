@@ -21,6 +21,7 @@ import {
   copyPlaceToDayAction,
   moveToSavedAction,
   recomputeDayLegsAction,
+  setLegModeAction,
   generatePlaceSummaryAction,
 } from '@/app/_actions/places';
 import { getPlace, listByDay } from '@/src/db/repos/places';
@@ -287,6 +288,37 @@ describe('recomputeDayLegsAction', () => {
     const legs = await recomputeDayLegsAction('trip-1', '2026-06-07', 'walk');
     expect(legs).toEqual([]);
     expect(getOrFetchLegMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the destination place’s legMode over the day default', async () => {
+    getOrFetchLegMock.mockResolvedValue({ id: 'l', tripId: 'trip-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'drive', durationSeconds: 1, distanceMeters: 1, polyline: null, computedAt: TS });
+    await setLegModeAction('b', 'drive'); // pin the a→b leg to drive
+    getOrFetchLegMock.mockClear();
+    await recomputeDayLegsAction('trip-1', '2026-06-05', 'walk'); // day default = walk
+    expect(getOrFetchLegMock).toHaveBeenCalledTimes(1);
+    expect(getOrFetchLegMock.mock.calls[0]![3]).toBe('drive'); // 4th arg is the mode
+  });
+});
+
+describe('setLegModeAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('sets the destination place’s legMode and revalidates the plan', async () => {
+    const updated = await setLegModeAction('b', 'transit');
+    expect(updated.legMode).toBe('transit');
+    expect(getPlace(testHandle.db, 'b')?.legMode).toBe('transit');
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('clears the override when passed null (leg follows the day default again)', async () => {
+    await setLegModeAction('b', 'drive');
+    const cleared = await setLegModeAction('b', null);
+    expect(cleared.legMode).toBeNull();
   });
 });
 

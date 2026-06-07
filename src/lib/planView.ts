@@ -28,6 +28,8 @@ export interface PlaceDTO {
   durationMin: number | null;
   cost: number | null; // minor units
   notes: string | null;
+  /** Mode of the leg arriving at this place (from the previous stop); null → follow the day default. */
+  legMode: TravelMode | null;
   orderIndex: number; // 0-based; pin label = orderIndex + 1
   photoPath: string | null; // place_details_cache.photoLocalPath, else null
   /** Personal photos for this place, ordered (Plan 2). First wins for the card thumb. */

@@ -40,7 +40,8 @@ export function TodayHero({ stops, legs, mode, nowHHMM }: TodayHeroProps) {
 
   const stop = stops[index]!;
   const prev = stops[index - 1];
-  const leg = prev ? legBetween(legs, prev.id, stop.id, mode) : undefined;
+  // The incoming leg uses this stop's own mode (or the day default).
+  const leg = prev ? legBetween(legs, prev.id, stop.id, stop.legMode ?? mode) : undefined;
   const canSkip = index < stops.length - 1;
 
   const href = placeUrl({

@@ -22,24 +22,27 @@ export function DayModeControl({ mode, disabled, onChange, onRecompute }: DayMod
   const t = useTranslations('plan');
   return (
     <div className="flex items-center justify-between gap-2">
-      <div role="group" className="flex rounded-control bg-card p-0.5 shadow-inset">
-        {MODES.map((m) => {
-          const active = m === mode;
-          return (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={active}
-              disabled={disabled}
-              onClick={() => onChange(m)}
-              className={`rounded-control px-3 py-1.5 text-caption font-medium disabled:opacity-40 ${
-                active ? 'bg-coral text-white' : 'text-ink-muted'
-              }`}
-            >
-              {t(LABEL_KEY[m])}
-            </button>
-          );
-        })}
+      <div className="flex items-center gap-2">
+        <span className="text-caption font-medium text-ink-muted">{t('defaultMode')}</span>
+        <div role="group" className="flex rounded-control bg-card p-0.5 shadow-inset">
+          {MODES.map((m) => {
+            const active = m === mode;
+            return (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={active}
+                disabled={disabled}
+                onClick={() => onChange(m)}
+                className={`rounded-control px-3 py-1.5 text-caption font-medium disabled:opacity-40 ${
+                  active ? 'bg-coral text-white' : 'text-ink-muted'
+                }`}
+              >
+                {t(LABEL_KEY[m])}
+              </button>
+            );
+          })}
+        </div>
       </div>
       {disabled ? null : (
         <button type="button" onClick={onRecompute} className="text-caption font-medium text-teal">

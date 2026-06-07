@@ -29,6 +29,7 @@ import {
   moveToSavedAction,
   deletePlaceAction,
   recomputeDayLegsAction,
+  setLegModeAction,
 } from '@/app/_actions/places';
 import { EmptyState } from '@/components/EmptyState';
 import { DayStrip } from '@/components/plan/DayStrip';
@@ -424,6 +425,7 @@ export function PlanClient({
             onCopyToDay={(id) => setDayPicker({ mode: 'copy', placeId: id })}
             onDelete={(id) => mutateDay(params.date, () => deletePlaceAction(id))}
             onModeChange={onModeChange}
+            onLegModeChange={(placeId, m) => mutateDay(params.date, () => setLegModeAction(placeId, m))}
             onRecompute={() => mutateDay(params.date, async () => undefined)}
           />
         </>

@@ -152,6 +152,7 @@
     "travelModeWalk": "Walk",
     "travelModeDrive": "Drive",
     "travelModeTransit": "Transit",
+    "defaultMode": "Default",
     "legNeedsConnection": "needs connection",
     "openInGoogleMaps": "Open in Google Maps",
     "openDayRoute": "Open day route in Google Maps",

@@ -25,6 +25,7 @@ import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const timeStr = z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM');
+const travelMode = z.enum(['walk', 'drive', 'transit']);
 const category = z.enum([
   'sightseeing', 'lodging', 'transport', 'activity', 'other',
 ]);
@@ -231,7 +232,7 @@ export async function generatePlaceSummaryAction(placeId: string): Promise<Place
 export async function recomputeDayLegsAction(
   tripId: string,
   dayDate: string,
-  mode: TravelMode,
+  defaultMode: TravelMode,
 ): Promise<TravelLeg[]> {
   const parsedTrip = z.string().min(1).parse(tripId);
   const parsedDay = dateStr.parse(dayDate);
@@ -246,12 +247,15 @@ export async function recomputeDayLegsAction(
     if (from.lat == null || from.lng == null || to.lat == null || to.lng == null) {
       continue; // skip pairs missing coords
     }
+    // Each leg uses its own mode (stored on the destination place); legs that
+    // were never customized follow the day default.
+    const legMode = to.legMode ?? defaultMode;
     try {
       const leg = await getOrFetchLeg(
         db,
         { id: from.id, tripId: from.tripId, lat: from.lat, lng: from.lng },
         { id: to.id, tripId: to.tripId, lat: to.lat, lng: to.lng },
-        mode,
+        legMode,
         env.GOOGLE_MAPS_SERVER_KEY,
       );
       legs.push(leg);
@@ -261,4 +265,26 @@ export async function recomputeDayLegsAction(
     }
   }
   return legs;
+}
+
+// --- setLegModeAction -----------------------------------------------------
+
+/**
+ * Set the travel mode of the leg ARRIVING at `placeId` (from the previous stop).
+ * Persists it on the place; the caller then triggers a day recompute (which uses
+ * each leg's own mode). `null` clears the override → the leg follows the day
+ * default again.
+ */
+export async function setLegModeAction(
+  placeId: string,
+  mode: TravelMode | null,
+): Promise<Place> {
+  const id = z.string().min(1).parse(placeId);
+  const parsedMode = mode === null ? null : travelMode.parse(mode);
+  const existing = getPlace(db, id);
+  if (!existing) throw new Error('Place not found');
+  const updated = updatePlace(db, id, { legMode: parsedMode });
+  if (!updated) throw new Error('Place not found');
+  revalidatePath(`/trip/${existing.tripId}/plan`);
+  return updated;
 }

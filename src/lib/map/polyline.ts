@@ -65,10 +65,11 @@ function hasCoords(p: { lat: number | null; lng: number | null }): boolean {
  *   present; fall back to a straight 2-point segment otherwise.
  * - Days with fewer than two plottable stops produce no path.
  * - The shared vertex between consecutive segments is deduplicated.
- * - Only legs whose `mode` matches `mode` are used; non-matching pairs fall
- *   back to the straight line. This mirrors `legView.indexLegs`/`legBetween`.
+ * - Each leg uses its own mode (the destination place's `legMode`, falling back
+ *   to `defaultMode`); non-matching pairs fall back to the straight line. This
+ *   mirrors `legView.indexLegs`/`legBetween` + the day-default semantics.
  */
-export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], mode: TravelMode): DayPath[] {
+export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], defaultMode: TravelMode): DayPath[] {
   const byPair = new Map<string, LegDTO>();
   for (const leg of legs) {
     byPair.set(legKey(leg.fromPlaceId, leg.toPlaceId, leg.mode), leg);
@@ -82,7 +83,7 @@ export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], mode: TravelMo
     const plottable = group.places
       .slice()
       .sort((a, b) => a.orderIndex - b.orderIndex)
-      .filter(hasCoords) as Array<{ id: string; lat: number; lng: number }>;
+      .filter(hasCoords) as Array<{ id: string; lat: number; lng: number; legMode: TravelMode | null }>;
 
     if (plottable.length < 2) continue;
 
@@ -90,7 +91,7 @@ export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], mode: TravelMo
     for (let i = 0; i < plottable.length - 1; i += 1) {
       const from = plottable[i]!;
       const to = plottable[i + 1]!;
-      const leg = byPair.get(legKey(from.id, to.id, mode));
+      const leg = byPair.get(legKey(from.id, to.id, to.legMode ?? defaultMode));
       const decoded = leg?.polyline ? decodePolyline(leg.polyline) : [];
       const segment =
         decoded.length >= 2

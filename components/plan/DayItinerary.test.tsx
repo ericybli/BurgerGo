@@ -12,7 +12,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     id: 'a', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: null,
     name: 'A', address: null, lat: 0, lng: 0, category: 'other',
     scheduledTime: null, durationMin: null, cost: null, notes: null,
-    orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], ...over,
+    orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, ...over,
   };
 }
 
@@ -40,6 +40,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
   const onCopyToDay = vi.fn();
   const onDelete = vi.fn();
   const onModeChange = vi.fn();
+  const onLegModeChange = vi.fn();
   const onRecompute = vi.fn();
   render(
     <NextIntlClientProvider locale="en" messages={en}>
@@ -60,12 +61,13 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
         onCopyToDay={onCopyToDay}
         onDelete={onDelete}
         onModeChange={onModeChange}
+        onLegModeChange={onLegModeChange}
         onRecompute={onRecompute}
         {...props}
       />
     </NextIntlClientProvider>,
   );
-  return { onAddPlace, onAddFromSaved, onReorder, onModeChange, onViewPlace };
+  return { onAddPlace, onAddFromSaved, onReorder, onModeChange, onLegModeChange, onViewPlace };
 }
 
 describe('DayItinerary', () => {
@@ -76,10 +78,18 @@ describe('DayItinerary', () => {
     expect(screen.getByText('🚶 12 min · 0.9 km')).toBeInTheDocument();
   });
 
-  it('shows the day mode control and forwards a mode change', async () => {
+  it('shows the day default mode control and forwards a mode change', async () => {
     const { onModeChange } = renderDay();
-    await userEvent.click(screen.getByRole('button', { name: en.plan.travelModeDrive }));
+    // The day-default toggle is the first Drive button (per-leg connectors add more).
+    await userEvent.click(screen.getAllByRole('button', { name: en.plan.travelModeDrive })[0]!);
     expect(onModeChange).toHaveBeenCalledWith('drive');
+  });
+
+  it('forwards a per-leg mode change for the destination stop', async () => {
+    const { onLegModeChange } = renderDay();
+    // The per-leg connector before stop "b" carries its own toggle (after the day default).
+    await userEvent.click(screen.getAllByRole('button', { name: en.plan.travelModeTransit })[1]!);
+    expect(onLegModeChange).toHaveBeenCalledWith('b', 'transit');
   });
 
   it('forwards Add place / Add from Saved', async () => {

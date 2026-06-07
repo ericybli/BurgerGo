@@ -36,7 +36,10 @@ type DayItineraryProps = {
   onMoveToDay: (placeId: string) => void;
   onCopyToDay: (placeId: string) => void;
   onDelete: (placeId: string) => void;
+  /** Day default mode change (top toggle). */
   onModeChange: (mode: TravelMode) => void;
+  /** Per-leg mode change: sets the mode of the leg arriving at `placeId`. */
+  onLegModeChange: (placeId: string, mode: TravelMode) => void;
   onRecompute: () => void;
 };
 
@@ -57,6 +60,7 @@ export function DayItinerary({
   onCopyToDay,
   onDelete,
   onModeChange,
+  onLegModeChange,
   onRecompute,
 }: DayItineraryProps) {
   const t = useTranslations('plan');
@@ -89,7 +93,14 @@ export function DayItinerary({
             const prev = stops[i - 1];
             return (
               <li key={stop.id}>
-                {prev ? <LegConnector leg={legBetween(legs, prev.id, stop.id, mode)} /> : null}
+                {prev ? (
+                  <LegConnector
+                    leg={legBetween(legs, prev.id, stop.id, stop.legMode ?? mode)}
+                    mode={stop.legMode ?? mode}
+                    disabled={disabled}
+                    onModeChange={(m) => onLegModeChange(stop.id, m)}
+                  />
+                ) : null}
                 <PlaceCard
                   place={stop}
                   pinNumber={pinLabel(stop)}

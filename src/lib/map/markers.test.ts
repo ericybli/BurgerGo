@@ -16,7 +16,7 @@ function p(id: string, orderIndex: number, lat: number | null, lng: number | nul
     id, orderIndex, lat, lng,
     name: id, category: 'other', tripId: 't', dayDate: '2026-06-04',
     googlePlaceId: null, address: null, scheduledTime: null, durationMin: null,
-    cost: null, notes: null, photoPath: null, photos: [], aiSummary: null, links: [], ...extra,
+    cost: null, notes: null, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, ...extra,
   };
 }
 
