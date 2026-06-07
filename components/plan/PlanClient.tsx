@@ -353,6 +353,7 @@ export function PlanClient({
             onAddFromSaved={() => setParams({ bucket: 'saved' })}
             onReorder={(ids) => mutateDay(params.date, () => reorderDayAction(tripId, params.date, ids))}
             onTapPlace={(id) => setDetailFor(placeById(id))}
+            onViewPlace={(id) => setViewPlace(placeById(id))}
             onMoveToSaved={(id) => mutateDay(params.date, () => moveToSavedAction(id))}
             onMoveToDay={(id) => setDetailFor(placeById(id))}
             onDelete={(id) => mutateDay(params.date, () => deletePlaceAction(id))}
