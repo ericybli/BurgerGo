@@ -73,6 +73,7 @@ export function PlanClient({
   const [dayMode, setDayMode] = useState<TravelMode>('walk');
   const [addOpen, setAddOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
+  const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
   // FIX I2+I5: track in-flight mutations to prevent double-fire
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -238,13 +239,11 @@ export function PlanClient({
     if (coords.length === 0) return;
     window.open(dayRouteUrl(coords, dayMode), '_blank', 'noopener,noreferrer');
   }
-  function onToggleDate(date: string) {
-    setVisibleDates((cur) => {
-      const next = new Set(cur);
-      if (next.has(date)) next.delete(date);
-      else next.add(date);
-      return next;
-    });
+  function showOnlyDate(date: string) {
+    setVisibleDates(new Set([date]));
+  }
+  function showAllDays() {
+    setVisibleDates(new Set(days.map((d) => d.date)));
   }
 
   // FIX I2+I5: buttons are disabled both when offline AND when a mutation is in-flight
@@ -316,9 +315,11 @@ export function PlanClient({
           legs={legs}
           mode={dayMode}
           visibleDates={visibleDates}
-          onToggleDate={onToggleDate}
+          onShowOnlyDate={showOnlyDate}
+          onShowAllDays={showAllDays}
           onSelectPlace={(id) => setDetailFor(placeById(id))}
           onOpenDayRoute={onOpenDayRoute}
+          onViewPlace={(id) => setViewPlace(placeById(id))}
           online={online}
           savedPlaces={saved}
           restaurants={restaurants}

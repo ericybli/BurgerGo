@@ -19,12 +19,12 @@ export interface LegendEntry {
 export function MapLegend({
   entries,
   allVisible,
-  onToggleDay,
+  onSelectDay,
   onToggleAll,
 }: {
   entries: LegendEntry[];
   allVisible: boolean;
-  onToggleDay: (date: string) => void;
+  onSelectDay: (date: string) => void;
   onToggleAll: () => void;
 }) {
   const t = useTranslations('planMap');
@@ -54,7 +54,7 @@ export function MapLegend({
           key={e.date}
           type="button"
           aria-pressed={e.visible}
-          onClick={() => onToggleDay(e.date)}
+          onClick={() => onSelectDay(e.date)}
           className={`flex shrink-0 items-center gap-1.5 rounded-chip border px-3 py-1.5 text-caption font-medium transition-colors ${
             e.visible ? 'border-line bg-card text-ink' : 'border-line bg-card text-ink-faint'
           }`}

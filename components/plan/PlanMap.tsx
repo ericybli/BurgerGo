@@ -27,9 +27,11 @@ export interface PlanMapProps {
   legs: LegDTO[];
   mode: TravelMode;
   visibleDates: Set<string>;
-  onToggleDate: (date: string) => void;
+  onShowOnlyDate: (date: string) => void;
+  onShowAllDays: () => void;
   onSelectPlace: (placeId: string) => void;
   onOpenDayRoute: (date: string) => void;
+  onViewPlace: (placeId: string) => void;
   online: boolean;
   /** Saved-bucket places, shown as an optional teal overlay in the days view. */
   savedPlaces?: PlaceDTO[];
@@ -54,9 +56,11 @@ export function PlanMap({
   legs,
   mode,
   visibleDates,
-  onToggleDate,
+  onShowOnlyDate,
+  onShowAllDays,
   onSelectPlace,
   onOpenDayRoute,
+  onViewPlace,
   online,
   savedPlaces = [],
   restaurants = [],
@@ -250,22 +254,8 @@ export function PlanMap({
         <MapLegend
           entries={legend}
           allVisible={allVisible}
-          onToggleDay={onToggleDate}
-          onToggleAll={() => {
-            // When all are visible, hide all; when any are hidden, show all.
-            const allDates = dayGroups
-              .filter((g) => g.date !== null)
-              .map((g) => g.date!);
-            if (allVisible) {
-              allDates.forEach((d) => {
-                if (visibleDates.has(d)) onToggleDate(d);
-              });
-            } else {
-              allDates.forEach((d) => {
-                if (!visibleDates.has(d)) onToggleDate(d);
-              });
-            }
-          }}
+          onSelectDay={onShowOnlyDate}
+          onToggleAll={onShowAllDays}
         />
         </div>
       ) : null}
@@ -280,7 +270,7 @@ export function PlanMap({
         <MapCanvas
           markers={activeMarkers}
           paths={dayPaths}
-          onMarkerClick={(id) => setSelectedId(id)}
+          onMarkerClick={(id) => (bucket === 'saved' ? setSelectedId(id) : onViewPlace(id))}
         />
 
         {bucket === 'days' ? (

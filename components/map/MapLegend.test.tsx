@@ -23,7 +23,7 @@ function renderLegend(props: Partial<React.ComponentProps<typeof MapLegend>> = {
       <MapLegend
         entries={ENTRIES}
         allVisible={false}
-        onToggleDay={vi.fn()}
+        onSelectDay={vi.fn()}
         onToggleAll={vi.fn()}
         {...props}
       />
@@ -54,12 +54,12 @@ describe('MapLegend', () => {
     ).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('calls onToggleDay with the date when a day chip is tapped', async () => {
-    const onToggleDay = vi.fn();
+  it('calls onSelectDay with the date when a day chip is tapped', async () => {
+    const onSelectDay = vi.fn();
     const user = userEvent.setup();
-    renderLegend({ onToggleDay });
+    renderLegend({ onSelectDay });
     await user.click(screen.getByRole('button', { name: 'Day 2' }));
-    expect(onToggleDay).toHaveBeenCalledWith('2026-06-05');
+    expect(onSelectDay).toHaveBeenCalledWith('2026-06-05');
   });
 
   it('calls onToggleAll when the "All days" chip is tapped', async () => {

@@ -52,9 +52,11 @@ const DAY_GROUPS: DayGroup[] = [
 const LEGS: LegDTO[] = [];
 const ALL_DATES = new Set(['2026-06-04', '2026-06-05']);
 
-const onToggleDate = vi.fn();
+const onShowOnlyDate = vi.fn();
+const onShowAllDays = vi.fn();
 const onSelectPlace = vi.fn();
 const onOpenDayRoute = vi.fn();
+const onViewPlace = vi.fn();
 
 function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}) {
   return render(
@@ -65,9 +67,11 @@ function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}
         legs={LEGS}
         mode="walk"
         visibleDates={ALL_DATES}
-        onToggleDate={onToggleDate}
+        onShowOnlyDate={onShowOnlyDate}
+        onShowAllDays={onShowAllDays}
         onSelectPlace={onSelectPlace}
         onOpenDayRoute={onOpenDayRoute}
+        onViewPlace={onViewPlace}
         online={true}
         {...overrides}
       />
@@ -77,6 +81,9 @@ function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}
 
 beforeEach(() => {
   vi.clearAllMocks();
+  onShowOnlyDate.mockClear();
+  onShowAllDays.mockClear();
+  onViewPlace.mockClear();
 });
 afterEach(() => vi.clearAllMocks());
 
@@ -96,11 +103,11 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.getByRole('button', { name: 'pin:c' })).toBeInTheDocument();
   });
 
-  it('calls onToggleDate when a day chip is clicked', async () => {
+  it('calls onShowOnlyDate when a day chip is clicked', async () => {
     const user = userEvent.setup();
     renderMap();
     await user.click(screen.getByRole('button', { name: 'Day 1' }));
-    expect(onToggleDate).toHaveBeenCalledWith('2026-06-04');
+    expect(onShowOnlyDate).toHaveBeenCalledWith('2026-06-04');
   });
 
   it('hides pins for dates not in visibleDates', () => {
@@ -109,12 +116,11 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.getByRole('button', { name: 'pin:c' })).toBeInTheDocument();
   });
 
-  it('opens the info card on pin tap with the correct place data', async () => {
+  it('calls onViewPlace when a day-bucket pin is tapped', async () => {
     const user = userEvent.setup();
     renderMap();
     await user.click(screen.getByRole('button', { name: 'pin:a' }));
-    expect(screen.getByRole('dialog', { name: en.planMap.infoCardLabel })).toBeInTheDocument();
-    expect(screen.getByText('a')).toBeInTheDocument();
+    expect(onViewPlace).toHaveBeenCalledWith('a');
   });
 
   it('calls onSelectPlace when the Saved-bucket "Add to day" is tapped', async () => {
