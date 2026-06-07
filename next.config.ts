@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import withSerwistInit from '@serwist/next';
 import createNextIntlPlugin from 'next-intl/plugin';
+import pkg from './package.json' with { type: 'json' };
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -23,6 +24,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   basePath,
   assetPrefix: basePath,
+  // Inlined as a string literal at build time (read via src/lib/appVersion.ts).
+  // No runtime I/O, so the static settings route stays static (`○`).
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+  },
   eslint: {
     // Lint is run explicitly via `npm run lint`; don't fail the standalone build on it.
     ignoreDuringBuilds: true,
