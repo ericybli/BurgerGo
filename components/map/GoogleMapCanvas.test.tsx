@@ -61,11 +61,11 @@ function renderCanvas(
 const MARKERS: PlaceMarker[] = [
   {
     id: 'a', name: 'Senso-ji', category: 'sightseeing', googlePlaceId: 'ga',
-    photoPath: null, position: { lat: 35.0, lng: 139.0 }, label: '1', color: '#EE5B3C', glyph: '🏛️',
+    photoPath: null, position: { lat: 35.0, lng: 139.0 }, label: '1', color: '#EE5B3C', glyph: '🏛️', scheduledTime: null,
   },
   {
     id: 'b', name: 'Skytree', category: 'activity', googlePlaceId: 'gb',
-    photoPath: null, position: { lat: 35.1, lng: 139.1 }, label: '2', color: '#EE5B3C', glyph: '🎟️',
+    photoPath: null, position: { lat: 35.1, lng: 139.1 }, label: '2', color: '#EE5B3C', glyph: '🎟️', scheduledTime: null,
   },
 ];
 const PATHS: DayPath[] = [
@@ -107,7 +107,7 @@ describe('GoogleMapCanvas', () => {
   it('labels Saved pins (label null) with the category glyph too', async () => {
     const savedMarkers: PlaceMarker[] = [
       { id: 's', name: 'Wish', category: 'other', googlePlaceId: null,
-        photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null, glyph: '📍' },
+        photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null, glyph: '📍', scheduledTime: null },
     ];
     renderCanvas({ markers: savedMarkers, paths: [], onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.markers).toHaveLength(1));

@@ -46,8 +46,8 @@ import { MapboxCanvas } from '@/components/map/MapboxCanvas';
 import type { PlaceMarker } from '@/src/lib/map/markers';
 
 const markers: PlaceMarker[] = [
-  { id: 'a', name: 'A', position: { lat: 1, lng: 2 }, label: '1', color: '#ee5b3c', category: 'sightseeing', googlePlaceId: null, photoPath: null, glyph: '🏛️' },
-  { id: 'b', name: 'B', position: { lat: 3, lng: 4 }, label: '2', color: '#4f8a86', category: 'lodging', googlePlaceId: null, photoPath: null, glyph: '🛏️' },
+  { id: 'a', name: 'A', position: { lat: 1, lng: 2 }, label: '1', color: '#ee5b3c', category: 'sightseeing', googlePlaceId: null, photoPath: null, glyph: '🏛️', scheduledTime: '09:00' },
+  { id: 'b', name: 'B', position: { lat: 3, lng: 4 }, label: '2', color: '#4f8a86', category: 'lodging', googlePlaceId: null, photoPath: null, glyph: '🛏️', scheduledTime: null },
 ];
 const paths = [{ date: '2026-06-10', color: '#4f8a86', path: [{ lat: 1, lng: 2 }, { lat: 3, lng: 4 }] }];
 

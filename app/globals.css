@@ -46,3 +46,18 @@ body {
 .tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* iOS Safari sizes time/date inputs to their intrinsic content and ignores
+   width:100%, so they render narrower than text inputs. Strip the native
+   appearance so they honor `w-full` + the shared border/padding, and left-align
+   the value to match. */
+input[type='time'],
+input[type='date'] {
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type='time']::-webkit-date-and-time-value,
+input[type='date']::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}

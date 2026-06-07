@@ -233,11 +233,12 @@ export function PlaceDetailSheet({
           {t('addPhoto')}
         </label>
         {disabled ? <p className="text-caption text-ink-muted">{t('addPhotoOffline')}</p> : null}
+        {/* No `capture` attribute → the OS picker offers Photo Library *and*
+            Camera (capture would force camera-only on iOS). */}
         <input
           id="pd-photo"
           type="file"
           accept="image/*"
-          capture="environment"
           disabled={disabled || uploading}
           onChange={handlePhotoChange}
           className="mt-1 w-full text-body text-ink disabled:opacity-60"

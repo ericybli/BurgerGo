@@ -62,6 +62,18 @@ export function TripShellClient({
     router.replace(`/trip/${tripId}/plan?view=list&bucket=days&date=${date}`);
   }, [state, pathname, searchParams, router, tripId]);
 
+  // Lock the document to the viewport while a trip is open so only the inner
+  // region scrolls (the shell is a fixed-height column; the body must not scroll
+  // or rubber-band — `min-h-screen`/100vh overflows the visible area on iOS).
+  // Restored on unmount so Home/Settings scroll normally.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {

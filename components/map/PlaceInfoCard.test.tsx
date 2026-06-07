@@ -16,6 +16,7 @@ const DAY_MARKER: PlaceMarker = {
   label: '1',
   color: '#EE5B3C',
   glyph: '🏛️',
+  scheduledTime: null,
 };
 
 function renderCard(

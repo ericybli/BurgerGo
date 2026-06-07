@@ -29,30 +29,40 @@ type StyleId = keyof typeof STYLES;
 const SAVED_COLOR = '#4F8A86';
 
 /**
- * Build the DOM element for one marker: a colored disc (day color, or teal for
- * saved/layer pins) showing the place's category glyph. Day stops also get a
- * small numbered badge in the corner so list/map stop numbering stays legible
- * without hiding the category icon.
+ * Build the DOM element for one marker. The element itself is a 0×0 anchor point
+ * (so Mapbox places the geographic coordinate exactly at the origin regardless of
+ * how/when it measures the node — this is what keeps the pin from drifting as you
+ * zoom). The visible disc is an absolutely-positioned child centred on that origin
+ * via `translate(-50%,-50%)`, so the disc centre always sits on the coordinate.
+ * Day stops get a corner order-number badge and, when scheduled, a small time
+ * label below the disc.
  */
 function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButtonElement {
+  const isDay = m.label != null;
+  const bg = m.color ?? SAVED_COLOR;
+  const size = isDay ? 30 : 26;
+
   const el = document.createElement('button');
   el.type = 'button';
   el.setAttribute('aria-label', m.name);
-  const isDay = m.label != null;
-  const bg = m.color ?? SAVED_COLOR;
-  el.style.cssText = [
-    'position:relative',
+  el.style.cssText = 'position:relative;width:0;height:0;padding:0;border:0;background:none;cursor:pointer';
+
+  const disc = document.createElement('span');
+  disc.style.cssText = [
+    'position:absolute',
+    'left:0',
+    'top:0',
+    'transform:translate(-50%,-50%)',
+    'box-sizing:border-box',
     'display:flex',
     'align-items:center',
     'justify-content:center',
-    'padding:0',
     'border:2px solid #fff',
     'border-radius:9999px',
     'box-shadow:0 1px 3px rgba(0,0,0,0.35)',
-    'cursor:pointer',
     'line-height:1',
-    `width:${isDay ? '30px' : '26px'}`,
-    `height:${isDay ? '30px' : '26px'}`,
+    `width:${size}px`,
+    `height:${size}px`,
     `background-color:${bg}`,
   ].join(';');
 
@@ -60,7 +70,7 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
   glyph.textContent = m.glyph;
   glyph.setAttribute('aria-hidden', 'true');
   glyph.style.cssText = 'pointer-events:none;font-size:15px;line-height:1';
-  el.appendChild(glyph);
+  disc.appendChild(glyph);
 
   if (isDay) {
     const badge = document.createElement('span');
@@ -68,9 +78,8 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
     badge.setAttribute('aria-hidden', 'true');
     badge.style.cssText = [
       'position:absolute',
-      'bottom:-8px',
-      'left:50%',
-      'transform:translateX(-50%)',
+      'top:-7px',
+      'right:-7px',
       'min-width:16px',
       'height:16px',
       'padding:0 4px',
@@ -86,7 +95,31 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
       'line-height:1',
       'box-shadow:0 1px 2px rgba(0,0,0,0.3)',
     ].join(';');
-    el.appendChild(badge);
+    disc.appendChild(badge);
+  }
+
+  el.appendChild(disc);
+
+  if (isDay && m.scheduledTime) {
+    const time = document.createElement('span');
+    time.textContent = m.scheduledTime;
+    time.setAttribute('aria-hidden', 'true');
+    time.style.cssText = [
+      'position:absolute',
+      `top:${size / 2 + 3}px`,
+      'left:0',
+      'transform:translateX(-50%)',
+      'padding:1px 4px',
+      'border-radius:9999px',
+      'background:#fff',
+      `color:${bg}`,
+      'font-size:9px',
+      'font-weight:700',
+      'line-height:1.2',
+      'white-space:nowrap',
+      'box-shadow:0 1px 2px rgba(0,0,0,0.3)',
+    ].join(';');
+    el.appendChild(time);
   }
 
   el.addEventListener('click', (e) => {

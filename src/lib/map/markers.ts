@@ -22,6 +22,8 @@ export interface PlaceMarker {
   color: string | null;
   /** Category icon (emoji) shown on the pin so categories are distinguishable. */
   glyph: string;
+  /** Scheduled time (HH:MM) shown beneath day pins; null when unset / non-day. */
+  scheduledTime: string | null;
 }
 
 /** Teal used for non-day pins (Saved bucket / saved-places layer). */
@@ -70,6 +72,7 @@ export function buildMarkers(group: DayGroup): PlaceMarker[] {
       label: String(p.orderIndex + 1),
       color,
       glyph: categoryGlyph(p.category),
+      scheduledTime: p.scheduledTime,
     }));
 }
 
@@ -92,6 +95,7 @@ export function buildSavedMarkers(places: PlaceDTO[]): PlaceMarker[] {
       label: null,
       color: null,
       glyph: categoryGlyph(p.category),
+      scheduledTime: null,
     }));
 }
 
@@ -117,5 +121,6 @@ export function buildRestaurantMarkers(restaurants: RestaurantMarkerInput[]): Pl
       label: null,
       color: RESTAURANT_PIN_COLOR,
       glyph: RESTAURANT_GLYPH,
+      scheduledTime: null,
     }));
 }

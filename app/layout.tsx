@@ -49,7 +49,7 @@ export default async function RootLayout({
   const messages = await getMessages();
   return (
     <html lang="en" className={`${inter.variable} ${notoSansSC.variable}`}>
-      <body className="min-h-screen bg-paper font-sans text-ink antialiased">
+      <body className="min-h-[100dvh] bg-paper font-sans text-ink antialiased">
         <NextIntlClientProvider messages={messages}>
           <OfflineBanner />
           {children}
