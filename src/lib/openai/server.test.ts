@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { generatePlaceSummary } from '@/src/lib/openai/server';
 
 const OLD = process.env.OPENAI_API_KEY;
