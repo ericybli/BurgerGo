@@ -25,6 +25,9 @@
     "next-intl": "^3",
     "react": "^19",
     "react-dom": "^19",
+    "react-markdown": "^9.1.0",
+    "rehype-sanitize": "^6.0.0",
+    "remark-gfm": "^4.0.1",
     "serwist": "^9",
     "zod": "^3"
   },
