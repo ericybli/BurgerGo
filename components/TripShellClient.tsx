@@ -100,7 +100,7 @@ export function TripShellClient({
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="flex min-h-[100dvh] flex-col pb-20">
       {state.status === 'loading' ? (
         <header className="flex items-center gap-2 px-2 py-3" aria-busy="true">
           <div className="h-11 w-11 rounded-chip" />
@@ -110,13 +110,15 @@ export function TripShellClient({
           </div>
         </header>
       ) : (
-        <TripHeader
-          tripId={state.trip.id}
-          name={state.trip.name}
-          dateSubtitle={formatSubtitle(state.trip.startDate, state.trip.endDate)}
-        />
+        <div className="shrink-0">
+          <TripHeader
+            tripId={state.trip.id}
+            name={state.trip.name}
+            dateSubtitle={formatSubtitle(state.trip.startDate, state.trip.endDate)}
+          />
+        </div>
       )}
-      {children}
+      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       <BottomTabBar tripId={tripId} />
     </div>
   );

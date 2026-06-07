@@ -226,7 +226,11 @@ export function PlanClient({
   const actionDisabled = !online || isPending;
 
   return (
-    <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
+    <main
+      className={`mx-auto flex w-full max-w-md flex-col px-4 pt-2 ${
+        params.view === 'map' ? 'min-h-0 flex-1 pb-2' : 'pb-24'
+      }`}
+    >
       {/* FIX I2: transient mutation error banner */}
       {mutationError ? (
         <p role="alert" className="mb-2 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">

@@ -64,6 +64,20 @@ export function GoogleMapCanvas({
         zoom: 12,
         disableDefaultUI: false,
         clickableIcons: false,
+        // Compact dropdown map-type control, pinned top-left so it never collides
+        // with our custom fullscreen button (top-right) or zoom (bottom-right).
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: maps.MapTypeControlStyle?.DROPDOWN_MENU ?? 2,
+          position: maps.ControlPosition?.TOP_LEFT ?? 1,
+        },
+        // PlanMap provides its own full-viewport overlay; the native control calls
+        // the Fullscreen API, which iOS Safari does not support for divs.
+        fullscreenControl: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: maps.ControlPosition?.RIGHT_BOTTOM ?? 9,
+        },
       });
       // Signal that overlays can now be drawn.
       setMapReady((n) => n + 1);
@@ -141,13 +155,50 @@ export function GoogleMapCanvas({
     }
   }, [mapReady, markers, paths]);
 
+  // Effect 3: keep the map sized to its container. Flex-fill height varies per
+  // device/orientation and the fullscreen toggle changes the container size after
+  // creation; Google caches size at init, so we must trigger 'resize' + re-fit or
+  // tiles render grey / mis-centered.
+  useEffect(() => {
+    const el = containerRef.current;
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!el || !maps || !map || typeof ResizeObserver === 'undefined') return;
+
+    let raf = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
+        maps.event?.trigger?.(map, 'resize');
+        const bounds = computeBounds(markers.map((m) => m.position));
+        if (bounds) {
+          map.fitBounds(
+            new maps.LatLngBounds(
+              new maps.LatLng(bounds.south, bounds.west),
+              new maps.LatLng(bounds.north, bounds.east),
+            ),
+          );
+        }
+      });
+    });
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [mapReady, markers]);
+
   return (
     <div
       ref={containerRef}
       role="application"
       aria-label={t('mapAriaLabel')}
       data-testid="google-map-canvas"
-      className="h-full w-full"
+      // absolute inset-0 fills the positioned parent (PlanMap wraps this in a
+      // `relative` flex-fill div, or `fixed` in fullscreen). This avoids the
+      // percentage-height-in-a-flex-item collapse that `h-full` hits when the
+      // parent's height comes from flex-grow rather than an explicit height.
+      className="absolute inset-0 h-full w-full"
     />
   );
 }

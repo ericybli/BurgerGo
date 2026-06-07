@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlanBucket, DayGroup } from '@/src/lib/planUrl';
 import type { LegDTO } from '@/src/lib/planView';
@@ -52,6 +52,24 @@ export function PlanMap({
   const t = useTranslations('planMap');
   const tm = useTranslations('mascot');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Body scroll-lock + Escape while the fullscreen map overlay is open. No-op
+  // until isFullscreen is true (offline/saved/tests unaffected); the toggle
+  // button only renders in the online branch so it can't become true offline.
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isFullscreen]);
 
   // --- Days bucket: filter groups to visible, build markers + polylines. ---
   const visibleDayGroups = useMemo(
@@ -192,8 +210,9 @@ export function PlanMap({
 
   // --- Online branch. ---
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {bucket === 'days' ? (
+        <div className="shrink-0">
         <MapLegend
           entries={legend}
           allVisible={allVisible}
@@ -214,17 +233,41 @@ export function PlanMap({
             }
           }}
         />
+        </div>
       ) : null}
 
-      <div className="relative h-[52vh] w-full overflow-hidden rounded-card">
+      <div
+        className={
+          isFullscreen
+            ? 'fixed inset-0 z-50 w-full overflow-hidden bg-card pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
+            : 'relative min-h-[40dvh] w-full flex-1 overflow-hidden rounded-card'
+        }
+      >
         <GoogleMapCanvas
           markers={activeMarkers}
           paths={dayPaths}
           onMarkerClick={(id) => setSelectedId(id)}
         />
 
+        <button
+          type="button"
+          onClick={() => setIsFullscreen((v) => !v)}
+          aria-label={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
+          className="absolute right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[2] flex h-10 w-10 items-center justify-center rounded-control bg-card/95 text-ink shadow-card backdrop-blur"
+        >
+          {isFullscreen ? (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 3v6H3M21 9h-6V3M3 15h6v6M15 21v-6h6" />
+            </svg>
+          ) : (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
+            </svg>
+          )}
+        </button>
+
         {selectedMarker ? (
-          <div className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[2] flex justify-center">
             <PlaceInfoCard
               marker={selectedMarker}
               bucket={bucket}
@@ -239,7 +282,7 @@ export function PlanMap({
       </div>
 
       {bucket === 'days' && routeLinks.length > 0 ? (
-        <ul className="space-y-2 px-3 py-3">
+        <ul className="shrink-0 space-y-2 px-3 py-3">
           {routeLinks.map((r) => (
             <li key={r.date}>
               <a

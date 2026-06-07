@@ -72,7 +72,9 @@
     "offlineHeadline": "Map needs a connection",
     "offlineSubtext": "Tap any place to open Google Maps.",
     "infoCardLabel": "Place",
-    "mapAriaLabel": "Trip map"
+    "mapAriaLabel": "Trip map",
+    "enterFullscreen": "View map full screen",
+    "exitFullscreen": "Exit full screen"
   },
   "category": {
     "sightseeing": "Sightseeing",
