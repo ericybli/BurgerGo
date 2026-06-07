@@ -295,6 +295,20 @@ describe('places repo — promoteToDay', () => {
   });
 });
 
+describe('places repo — aiSummary patch', () => {
+  let db: Db;
+  beforeEach(() => {
+    db = makeTestDb().db;
+    seedTrip(db);
+  });
+
+  it('updatePlace persists aiSummary', () => {
+    const p = addPlace(db, { tripId: 'trip-1', name: 'X', category: 'other', dayDate: '2026-06-02' });
+    const updated = updatePlace(db, p.id, { aiSummary: 'A lovely spot.' });
+    expect(updated?.aiSummary).toBe('A lovely spot.');
+  });
+});
+
 describe('places repo — moveToSaved', () => {
   let db: Db;
   beforeEach(() => {

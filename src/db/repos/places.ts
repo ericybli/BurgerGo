@@ -100,6 +100,7 @@ export function addPlace(db: Db, input: AddPlaceInput): Place {
     durationMin: input.durationMin ?? null,
     cost: input.cost ?? null,
     notes: input.notes ?? null,
+    aiSummary: null,
     orderIndex: maxOrderIndex(db, input.tripId, dayDate) + 1,
     createdAt: ts,
     updatedAt: ts,
@@ -122,6 +123,7 @@ export type PlacePatch = Partial<
     | 'durationMin'
     | 'cost'
     | 'notes'
+    | 'aiSummary'
   >
 >;
 
