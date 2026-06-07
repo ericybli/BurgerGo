@@ -37,6 +37,9 @@ const config: Config = {
       },
       backgroundImage: {
         'cover-gradient': 'linear-gradient(135deg, #F2C879 0%, #EE5B3C 100%)',
+        // Soft diagonal stripes for the no-photo card placeholder (tone-on-tone ink over paper).
+        'card-placeholder':
+          'repeating-linear-gradient(135deg, rgb(110 85 68 / 0.05) 0px, rgb(110 85 68 / 0.05) 10px, rgb(110 85 68 / 0.11) 10px, rgb(110 85 68 / 0.11) 20px)',
       },
     },
   },

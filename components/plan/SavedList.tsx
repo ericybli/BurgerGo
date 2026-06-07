@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import type { DerivedDay } from '@/src/lib/days';
 import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
+import { PhotoPlaceholder } from '@/components/plan/PhotoPlaceholder';
 import { EmptyState } from '@/components/EmptyState';
 import { DayPickerSheet } from '@/components/plan/DayPickerSheet';
 
@@ -60,7 +61,9 @@ export function SavedList({
                     alt={p.name}
                     className="mb-2 h-40 w-full rounded-control object-cover"
                   />
-                ) : null}
+                ) : (
+                  <PhotoPlaceholder category={p.category} />
+                )}
                 <span className="block min-w-0">
                   <span className="flex items-center gap-1">
                     <span aria-hidden="true">{categoryGlyph(p.category)}</span>

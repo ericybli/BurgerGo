@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
+import { PhotoPlaceholder } from '@/components/plan/PhotoPlaceholder';
 
 type PlaceCardProps = {
   place: PlaceDTO;
@@ -94,7 +95,9 @@ export function PlaceCard({
               alt={place.name}
               className="mb-2 h-40 w-full rounded-control object-cover"
             />
-          ) : null}
+          ) : (
+            <PhotoPlaceholder category={place.category} />
+          )}
           <span className="block min-w-0">
             <span className="flex items-center gap-1">
               <span aria-hidden="true">{categoryGlyph(place.category)}</span>
