@@ -34,6 +34,8 @@
 
 html,
 body {
+  height: 100%;
+  overscroll-behavior: none;
   background-color: var(--paper);
   color: var(--ink);
   font-family: var(--font-sans, system-ui, sans-serif);

@@ -121,7 +121,7 @@ export function TripShellClient({
       {/* The single scroll region: the page itself never scrolls (shell is a
           fixed-height overflow-hidden column); inner content scrolls here, and
           map view fills it (flex-1) so the map drags instead of scrolling. */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">{children}</div>
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden overscroll-contain">{children}</div>
       <BottomTabBar tripId={tripId} />
     </div>
   );
