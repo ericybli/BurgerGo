@@ -122,11 +122,18 @@ server.tool(
     address: z.string().optional().describe('Street address or place location; geocoded for the map'),
     about: z.string().optional().describe('A description / intro (stored as the place’s About)'),
     notes: z.string().optional().describe('Personal notes'),
+    category: z
+      .enum([
+        'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+        'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
+      ])
+      .optional()
+      .describe('Place category (controls the map pin glyph). Defaults to "other" when omitted.'),
     imageUrl: z.string().url().optional().describe('Image URL to attach as the place photo'),
   },
-  async ({ tripId, name, address, about, notes, imageUrl }) => {
+  async ({ tripId, name, address, about, notes, category, imageUrl }) => {
     try {
-      const { place } = await apiPost(`/api/trips/${tripId}/places`, { name, address, about, notes });
+      const { place } = await apiPost(`/api/trips/${tripId}/places`, { name, address, about, notes, category });
       let photo = 'no photo';
       if (imageUrl) photo = await uploadPhoto({ tripId, ownerType: 'place', ownerId: place.id, imageUrl });
       return ok({ created: { id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng }, photo });

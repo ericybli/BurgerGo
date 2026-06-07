@@ -27,7 +27,8 @@ const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const timeStr = z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM');
 const travelMode = z.enum(['walk', 'drive', 'transit']);
 const category = z.enum([
-  'sightseeing', 'lodging', 'transport', 'activity', 'other',
+  'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+  'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
 ]);
 
 function revalidatePlan(tripId: string): void {

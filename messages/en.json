@@ -141,8 +141,16 @@
   "category": {
     "sightseeing": "Sightseeing",
     "lodging": "Lodging",
+    "hotel": "Hotel",
+    "airbnb": "Airbnb",
+    "airport": "Airport",
     "transport": "Transport",
     "activity": "Activity",
+    "shopping": "Shopping",
+    "parking": "Parking",
+    "entrance": "Entrance",
+    "museum": "Museum",
+    "event": "Event",
     "other": "Other"
   },
   "settings": {
@@ -305,8 +313,16 @@
   "placeCategory": {
     "sightseeing": "Sightseeing",
     "lodging": "Lodging",
+    "hotel": "Hotel",
+    "airbnb": "Airbnb",
+    "airport": "Airport",
     "transport": "Transport",
     "activity": "Activity",
+    "shopping": "Shopping",
+    "parking": "Parking",
+    "entrance": "Entrance",
+    "museum": "Museum",
+    "event": "Event",
     "other": "Other"
   },
   "journal": {

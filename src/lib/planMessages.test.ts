@@ -22,7 +22,10 @@ describe('en.plan messages', () => {
   });
 
   it('contains the place category labels', () => {
-    for (const c of ['sightseeing', 'lodging', 'transport', 'activity', 'other']) {
+    for (const c of [
+      'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+      'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
+    ]) {
       expect(en.placeCategory, `missing placeCategory.${c}`).toHaveProperty(c);
     }
   });

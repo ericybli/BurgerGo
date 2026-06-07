@@ -37,7 +37,7 @@ describe('normalizeDetails', () => {
     });
   });
 
-  it('maps lodging types to lodging and unknown to other; tolerates no photo', () => {
+  it('maps lodging types to hotel and unknown to other; tolerates no photo', () => {
     expect(
       normalizeDetails({
         status: 'OK',
@@ -47,7 +47,7 @@ describe('normalizeDetails', () => {
           types: ['lodging'],
         },
       }).categoryGuess,
-    ).toBe('lodging');
+    ).toBe('hotel');
     expect(
       normalizeDetails({
         status: 'OK',

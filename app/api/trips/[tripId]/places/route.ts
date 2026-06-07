@@ -116,7 +116,10 @@ export async function GET(
   return NextResponse.json({ places: placesResult, legs });
 }
 
-const CATEGORY = z.enum(['sightseeing', 'lodging', 'transport', 'activity', 'other']);
+const CATEGORY = z.enum([
+  'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+  'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
+]);
 
 const createPlaceSchema = z.object({
   name: z.string().trim().min(1).max(200),

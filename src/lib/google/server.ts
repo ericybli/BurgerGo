@@ -33,7 +33,20 @@ export class GoogleApiError extends Error {
   }
 }
 
-export type CategoryGuess = 'sightseeing' | 'lodging' | 'transport' | 'activity' | 'other';
+export type CategoryGuess =
+  | 'sightseeing'
+  | 'lodging'
+  | 'hotel'
+  | 'airbnb'
+  | 'airport'
+  | 'transport'
+  | 'activity'
+  | 'shopping'
+  | 'parking'
+  | 'entrance'
+  | 'museum'
+  | 'event'
+  | 'other';
 
 /** Normalized Place Details — written into `place_details_cache`. */
 export interface NormalizedDetails {
@@ -75,13 +88,21 @@ export interface NormalizedDirections {
 
 function guessCategory(types: string[] | undefined): CategoryGuess {
   const t = new Set(types ?? []);
-  if (t.has('lodging')) return 'lodging';
+  // Google has no Airbnb signal — generic 'lodging' is overwhelmingly hotels.
+  if (t.has('lodging')) return 'hotel';
+  if (t.has('airport')) return 'airport';
   if (
-    t.has('airport') || t.has('train_station') || t.has('subway_station') ||
+    t.has('train_station') || t.has('subway_station') ||
     t.has('bus_station') || t.has('transit_station')
   ) return 'transport';
+  if (t.has('parking')) return 'parking';
+  if (t.has('museum')) return 'museum';
   if (
-    t.has('tourist_attraction') || t.has('museum') || t.has('place_of_worship') ||
+    t.has('shopping_mall') || t.has('department_store') ||
+    t.has('store') || t.has('clothing_store') || t.has('shoe_store')
+  ) return 'shopping';
+  if (
+    t.has('tourist_attraction') || t.has('place_of_worship') ||
     t.has('park') || t.has('art_gallery')
   ) return 'sightseeing';
   if (

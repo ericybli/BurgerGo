@@ -32,7 +32,10 @@ export const places = sqliteTable(
     lat: real('lat'),
     lng: real('lng'),
     category: text('category', {
-      enum: ['sightseeing', 'lodging', 'transport', 'activity', 'other'],
+      enum: [
+        'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+        'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
+      ],
     }).notNull(),
     scheduledTime: text('scheduled_time'), // HH:MM
     durationMin: integer('duration_min'),

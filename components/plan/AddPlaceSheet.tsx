@@ -10,8 +10,16 @@ import { forwardGeocode } from '@/components/plan/googleClient';
 const CATEGORIES: PlaceDTO['category'][] = [
   'sightseeing',
   'lodging',
+  'hotel',
+  'airbnb',
+  'airport',
   'transport',
   'activity',
+  'shopping',
+  'parking',
+  'entrance',
+  'museum',
+  'event',
   'other',
 ];
 

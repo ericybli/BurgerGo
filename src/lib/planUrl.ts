@@ -23,10 +23,18 @@ export interface PlanParams {
 type Category = PlaceDTO['category'];
 
 const CATEGORY_GLYPH: Record<Category, string> = {
-  sightseeing: '🏛️',
+  sightseeing: '🏞️',
   lodging: '🛏️',
+  hotel: '🏨',
+  airbnb: '🏠',
+  airport: '✈️',
   transport: '🚆',
   activity: '🎟️',
+  shopping: '🛍️',
+  parking: '🅿️',
+  entrance: '🚪',
+  museum: '🏛️',
+  event: '🎉',
   other: '📍',
 };
 

@@ -23,7 +23,20 @@ export interface PlaceDTO {
   address: string | null;
   lat: number | null;
   lng: number | null;
-  category: 'sightseeing' | 'lodging' | 'transport' | 'activity' | 'other';
+  category:
+    | 'sightseeing'
+    | 'lodging'
+    | 'hotel'
+    | 'airbnb'
+    | 'airport'
+    | 'transport'
+    | 'activity'
+    | 'shopping'
+    | 'parking'
+    | 'entrance'
+    | 'museum'
+    | 'event'
+    | 'other';
   scheduledTime: string | null; // HH:MM
   durationMin: number | null;
   cost: number | null; // minor units

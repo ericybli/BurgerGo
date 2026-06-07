@@ -11,7 +11,8 @@ import { deletePhotoAction } from '@/app/_actions/photos';
 import { PlaceLinks } from '@/components/plan/PlaceLinks';
 
 const CATEGORIES: PlaceDTO['category'][] = [
-  'sightseeing', 'lodging', 'transport', 'activity', 'other',
+  'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+  'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
 ];
 
 type PlaceDetailSheetProps = {
