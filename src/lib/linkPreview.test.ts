@@ -78,6 +78,16 @@ describe('isBlockedAddress', () => {
     expect(isBlockedAddress('100.128.0.1')).toBe(false);
   });
 
+  it('blocks RFC1122 "this host" 0.0.0.0/8', () => {
+    expect(isBlockedAddress('0.0.0.0')).toBe(true);
+    expect(isBlockedAddress('0.0.0.1')).toBe(true);
+    expect(isBlockedAddress('0.255.255.255')).toBe(true);
+  });
+
+  it('blocks broadcast address 255.255.255.255', () => {
+    expect(isBlockedAddress('255.255.255.255')).toBe(true);
+  });
+
   it('allows ordinary public IPv4 addresses', () => {
     expect(isBlockedAddress('8.8.8.8')).toBe(false);
     expect(isBlockedAddress('1.1.1.1')).toBe(false);
@@ -93,6 +103,19 @@ describe('isBlockedAddress', () => {
     expect(isBlockedAddress('::ffff:192.168.1.1')).toBe(true);
     expect(isBlockedAddress('::ffff:169.254.169.254')).toBe(true);
     expect(isBlockedAddress('::ffff:8.8.8.8')).toBe(false);
+  });
+
+  it('blocks IPv4-mapped IPv6 in hex notation (::ffff:7f00:1 → 127.0.0.1)', () => {
+    expect(isBlockedAddress('::ffff:7f00:1')).toBe(true);    // 127.0.0.1
+    expect(isBlockedAddress('::ffff:a00:1')).toBe(true);     // 10.0.0.1
+  });
+
+  it('blocks IPv4-mapped IPv6 in fully-expanded notation', () => {
+    expect(isBlockedAddress('0:0:0:0:0:ffff:7f00:1')).toBe(true); // 127.0.0.1
+  });
+
+  it('allows public IPv4-mapped IPv6 in hex notation', () => {
+    expect(isBlockedAddress('::ffff:0808:0808')).toBe(false); // 8.8.8.8
   });
 
   it('treats unparseable input as blocked (fail closed)', () => {

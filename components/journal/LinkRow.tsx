@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
-import { linkDomain } from '@/src/lib/linkPreview';
+import { linkDomain } from '@/src/lib/journalView';
 import type { SavedLink } from '@/src/db/repos/savedLinks';
 
 type Props = {
@@ -29,6 +29,7 @@ export function LinkRow({ link, onEdit, onDelete }: Props) {
         aria-label={heading}
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={thumbSrc}
           alt={heading}

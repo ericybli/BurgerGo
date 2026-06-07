@@ -5,7 +5,6 @@ describe('en.json journal namespace', () => {
   const required = [
     // load + segmented control
     'loading', 'errorHeadline', 'errorSubtext', 'entries', 'readingList',
-    'readingListComingSoon',
     // entries feed
     'newEntry', 'emptyHeadline', 'emptySubtext',
     // reader
@@ -30,11 +29,10 @@ describe('en.json journal namespace', () => {
 
 describe('en.json journal namespace — reading list', () => {
   const required = [
-    'readingListTab',
     'addLink', 'editLink',
     'urlLabel', 'titleLabel', 'noteLabel',
     'previewFetching', 'previewFailed',
-    'openLink', 'edit', 'delete', 'save', 'cancel',
+    'edit', 'delete', 'save', 'cancel',
     'linksEmptyHeadline', 'linksEmptySubtext',
     'invalidUrl', 'saveFailed', 'mutationFailed', 'offlineHint',
   ];

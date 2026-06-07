@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
@@ -45,7 +46,7 @@ describe('LinkSheet', () => {
     renderWith(
       <LinkSheet open tripId="trip-1" disabled={false} onClose={vi.fn()} onSaved={vi.fn()} />,
     );
-    screen.getByRole('button', { name: en.journal.save }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(en.journal.invalidUrl));
     expect(addLinkAction).not.toHaveBeenCalled();
   });
@@ -85,7 +86,7 @@ describe('LinkSheet', () => {
     await waitFor(() =>
       expect((screen.getByLabelText(en.journal.titleLabel) as HTMLInputElement).value).toBe('T'),
     );
-    screen.getByRole('button', { name: en.journal.save }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(addLinkAction).toHaveBeenCalledTimes(1));
     expect(addLinkAction).toHaveBeenCalledWith({
       tripId: 'trip-1',
@@ -110,7 +111,7 @@ describe('LinkSheet', () => {
     // No preview fetch in edit mode.
     expect(fetchMock).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText(en.journal.titleLabel), { target: { value: 'New' } });
-    screen.getByRole('button', { name: en.journal.save }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.save }));
     await waitFor(() => expect(updateLinkAction).toHaveBeenCalledTimes(1));
     expect(updateLinkAction).toHaveBeenCalledWith('link-1', expect.objectContaining({ title: 'New' }));
     expect(screen.getByRole('button', { name: en.journal.delete })).toBeInTheDocument();
@@ -125,7 +126,7 @@ describe('LinkSheet', () => {
     renderWith(
       <LinkSheet open tripId="trip-1" link={link} disabled={false} onClose={vi.fn()} onSaved={onSaved} />,
     );
-    screen.getByRole('button', { name: en.journal.delete }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.delete }));
     await waitFor(() => expect(deleteLinkAction).toHaveBeenCalledWith('link-1'));
     expect(onSaved).toHaveBeenCalled();
   });

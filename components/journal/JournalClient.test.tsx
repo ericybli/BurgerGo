@@ -10,9 +10,13 @@ vi.mock('@/components/journal/EntrySheet', () => ({
 vi.mock('@/components/journal/EntryReader', () => ({
   EntryReader: ({ entry }: { entry: { title: string } }) => <div data-testid="entry-reader">{entry.title}</div>,
 }));
-vi.mock('@/src/lib/journalView', () => ({
-  entrySnippet: (body: string) => `snippet:${body}`,
-}));
+vi.mock('@/src/lib/journalView', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/src/lib/journalView')>();
+  return {
+    ...actual,
+    entrySnippet: (body: string) => `snippet:${body}`,
+  };
+});
 
 import { JournalClient } from '@/components/journal/JournalClient';
 
@@ -130,22 +134,22 @@ describe('JournalClient — reading list', () => {
     mockJournalFetch({ links });
     renderWith(<JournalClient tripId="trip-1" />);
     // Switch to the reading-list sub-view.
-    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
+    await userEvent.click(await screen.findByRole('button', { name: en.journal.readingList }));
     expect(await screen.findByText('Article A')).toBeInTheDocument();
   });
 
   it('shows the links empty state when there are no links', async () => {
     mockJournalFetch({ links: [] });
     renderWith(<JournalClient tripId="trip-1" />);
-    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
+    await userEvent.click(await screen.findByRole('button', { name: en.journal.readingList }));
     expect(await screen.findByText(en.journal.linksEmptyHeadline)).toBeInTheDocument();
   });
 
   it('opens the LinkSheet from the Add link button (online)', async () => {
     mockJournalFetch({ links: [] });
     renderWith(<JournalClient tripId="trip-1" />);
-    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
-    (await screen.findByRole('button', { name: en.journal.addLink })).click();
+    await userEvent.click(await screen.findByRole('button', { name: en.journal.readingList }));
+    await userEvent.click(await screen.findByRole('button', { name: en.journal.addLink }));
     expect(await screen.findByRole('dialog', { name: en.journal.addLink })).toBeInTheDocument();
   });
 });

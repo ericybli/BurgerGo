@@ -1,13 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
-// linkDomain is a D0 pure helper; mock it so this test is isolated from D0.
-vi.mock('@/src/lib/linkPreview', () => ({
-  linkDomain: (url: string) => new URL(url).hostname.replace(/^www\./, ''),
-  isHttpUrl: () => true,
-}));
+// linkDomain is a trivial pure function — let it run for real.
+// isHttpUrl lives in linkPreview and is not used by LinkRow, so no mock needed.
 
 import { LinkRow } from '@/components/journal/LinkRow';
 import type { SavedLink } from '@/src/db/repos/savedLinks';
@@ -58,13 +56,13 @@ describe('LinkRow', () => {
     expect(img.getAttribute('src')).toBe('/burgergo-logo.png');
   });
 
-  it('fires onEdit and onDelete from the overflow menu', () => {
+  it('fires onEdit and onDelete from the overflow menu', async () => {
     const onEdit = vi.fn();
     const onDelete = vi.fn();
     renderWith(<LinkRow link={base} onEdit={onEdit} onDelete={onDelete} />);
-    screen.getByRole('button', { name: en.journal.edit }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.edit }));
     expect(onEdit).toHaveBeenCalledWith('link-1');
-    screen.getByRole('button', { name: en.journal.delete }).click();
+    await userEvent.click(screen.getByRole('button', { name: en.journal.delete }));
     expect(onDelete).toHaveBeenCalledWith('link-1');
   });
 });
