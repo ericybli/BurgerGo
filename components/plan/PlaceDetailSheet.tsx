@@ -9,6 +9,7 @@ import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/pl
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
 import { deletePhotoAction } from '@/app/_actions/photos';
+import { PlaceLinks } from '@/components/plan/PlaceLinks';
 
 const CATEGORIES: PlaceDTO['category'][] = [
   'sightseeing', 'lodging', 'transport', 'activity', 'other',
@@ -244,6 +245,14 @@ export function PlaceDetailSheet({
         {uploading ? (
           <p className="mt-1 text-caption text-ink-muted">{t('uploadingPhoto')}</p>
         ) : null}
+
+        <PlaceLinks
+          tripId={place.tripId}
+          placeId={place.id}
+          links={place.links}
+          disabled={disabled}
+          onChanged={onSaved}
+        />
 
         <a
           href={mapsHref}
