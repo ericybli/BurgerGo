@@ -10,6 +10,7 @@ function r(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
   return {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4,
     status: 'been', priceLevel: 2, notes: 'Tonkotsu', linkedPlaceId: 'p1',
+    address: null, lat: null, lng: null, googlePlaceId: null,
     createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: '2026-06-06', ...over,
   };
 }

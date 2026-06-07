@@ -25,6 +25,11 @@ function revalidateEats(tripId: string): void {
 
 // --- addRestaurantAction --------------------------------------------------
 
+const address = z.string().trim().max(500).nullish();
+const lat = z.number().min(-90).max(90).nullish();
+const lng = z.number().min(-180).max(180).nullish();
+const googlePlaceId = z.string().trim().min(1).max(300).nullish();
+
 const addSchema = z.object({
   tripId: z.string().min(1),
   name: z.string().trim().min(1, 'Name is required').max(200),
@@ -33,6 +38,10 @@ const addSchema = z.object({
   status,
   priceLevel: priceLevel.nullish(),
   notes: z.string().max(2000).nullish(),
+  address,
+  lat,
+  lng,
+  googlePlaceId,
   linkedPlaceId: z.string().min(1).nullish(),
 });
 
@@ -48,6 +57,10 @@ export async function addRestaurantAction(input: AddRestaurantActionInput): Prom
     status: data.status,
     priceLevel: data.priceLevel ?? null,
     notes: data.notes ?? null,
+    address: data.address ?? null,
+    lat: data.lat ?? null,
+    lng: data.lng ?? null,
+    googlePlaceId: data.googlePlaceId ?? null,
     linkedPlaceId: data.linkedPlaceId ?? null,
   });
   revalidateEats(data.tripId);
@@ -63,6 +76,10 @@ const updateSchema = z.object({
   status: status.optional(),
   priceLevel: priceLevel.nullish(),
   notes: z.string().max(2000).nullish(),
+  address,
+  lat,
+  lng,
+  googlePlaceId,
 });
 
 export type UpdateRestaurantActionPatch = z.input<typeof updateSchema>;

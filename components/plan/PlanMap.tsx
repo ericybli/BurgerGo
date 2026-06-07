@@ -7,7 +7,13 @@ import type { LegDTO, PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import { dayRouteUrl, placeUrl } from '@/src/lib/googleMapsUrl';
 import type { LatLngLiteral } from '@/src/lib/map/types';
-import { buildMarkers, buildSavedMarkers, type PlaceMarker } from '@/src/lib/map/markers';
+import {
+  buildMarkers,
+  buildSavedMarkers,
+  buildRestaurantMarkers,
+  type PlaceMarker,
+  type RestaurantMarkerInput,
+} from '@/src/lib/map/markers';
 import { buildDayPaths } from '@/src/lib/map/polyline';
 import { colorForGroup } from '@/src/lib/map/colors';
 import { MapCanvas } from '@/components/map/MapCanvas';
@@ -27,6 +33,8 @@ export interface PlanMapProps {
   online: boolean;
   /** Saved-bucket places, shown as an optional teal overlay in the days view. */
   savedPlaces?: PlaceDTO[];
+  /** Trip restaurants, shown as an optional amber overlay in the days view. */
+  restaurants?: RestaurantMarkerInput[];
 }
 
 /**
@@ -51,6 +59,7 @@ export function PlanMap({
   onOpenDayRoute,
   online,
   savedPlaces = [],
+  restaurants = [],
 }: PlanMapProps) {
   const t = useTranslations('planMap');
   const tm = useTranslations('mascot');
@@ -59,6 +68,7 @@ export function PlanMap({
   // Secondary "Layers" menu (days bucket): overlay extra pin sets onto the map.
   const [layersOpen, setLayersOpen] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const [showRestaurants, setShowRestaurants] = useState(false);
 
   // Body scroll-lock + Escape while the fullscreen map overlay is open. No-op
   // until isFullscreen is true (offline/saved/tests unaffected); the toggle
@@ -105,16 +115,24 @@ export function PlanMap({
     [bucket, dayGroups],
   );
 
-  // Saved-places overlay (days bucket only): teal, un-numbered pins layered on
-  // top of the day stops when the Layers menu's "Saved places" toggle is on.
+  // Optional overlays (days bucket only), toggled from the Layers menu:
+  // saved places (teal) and restaurants (amber), layered over the day stops.
   const savedLayerMarkers = useMemo(
     () => (bucket === 'days' && showSaved ? buildSavedMarkers(savedPlaces) : []),
     [bucket, showSaved, savedPlaces],
   );
 
+  const restaurantLayerMarkers = useMemo(
+    () => (bucket === 'days' && showRestaurants ? buildRestaurantMarkers(restaurants) : []),
+    [bucket, showRestaurants, restaurants],
+  );
+
   const activeMarkers: PlaceMarker[] = useMemo(
-    () => (bucket === 'days' ? [...dayMarkers, ...savedLayerMarkers] : savedMarkers),
-    [bucket, dayMarkers, savedLayerMarkers, savedMarkers],
+    () =>
+      bucket === 'days'
+        ? [...dayMarkers, ...savedLayerMarkers, ...restaurantLayerMarkers]
+        : savedMarkers,
+    [bucket, dayMarkers, savedLayerMarkers, restaurantLayerMarkers, savedMarkers],
   );
 
   // --- Legend (days bucket only): all day groups flagged by visibleDates. ---
@@ -291,6 +309,15 @@ export function PlanMap({
                     type="checkbox"
                     checked={showSaved}
                     onChange={(e) => setShowSaved(e.target.checked)}
+                    className="h-4 w-4 accent-teal"
+                  />
+                </label>
+                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-line">
+                  <span>{t('layerRestaurants')}</span>
+                  <input
+                    type="checkbox"
+                    checked={showRestaurants}
+                    onChange={(e) => setShowRestaurants(e.target.checked)}
                     className="h-4 w-4 accent-teal"
                   />
                 </label>

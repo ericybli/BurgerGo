@@ -29,6 +29,13 @@
       "when": 1780792599494,
       "tag": "0003_friendly_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1780810047577,
+      "tag": "0004_tranquil_fallen_one",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,7 @@ import {
   type LegDTO,
 } from '@/src/lib/planView';
 import { indexLegs } from '@/src/lib/legView';
+import type { RestaurantMarkerInput } from '@/src/lib/map/markers';
 import {
   reorderDayAction,
   promoteToDayAction,
@@ -38,7 +39,7 @@ import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
 import { PlanMap } from '@/components/plan/PlanMap';
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
-type PlanData = { trip: TripLite; places: PlaceDTO[]; legs: LegDTO[] };
+type PlanData = { trip: TripLite; places: PlaceDTO[]; legs: LegDTO[]; restaurants: RestaurantMarkerInput[] };
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'loaded'; data: PlanData };
 
 /** Current wall-clock HH:MM in the trip timezone (for next-stop selection). */
@@ -104,15 +105,39 @@ export function PlanClient({
 
   const load = useCallback(async () => {
     try {
-      const [tripRes, placesRes] = await Promise.all([
+      const [tripRes, placesRes, restaurantsRes] = await Promise.all([
         fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' }),
         fetch(withBase(`/api/trips/${tripId}/places`), { credentials: 'same-origin' }),
+        // Restaurants power the optional map overlay only — non-critical, so a
+        // failure here must not error the whole plan (`.catch` → null below).
+        fetch(withBase(`/api/trips/${tripId}/restaurants`), { credentials: 'same-origin' }).catch(
+          () => null,
+        ),
       ]);
       if (!tripRes.ok || !placesRes.ok) throw new Error('load failed');
       const { trip } = (await tripRes.json()) as { trip: TripLite };
       const { places, legs } = (await placesRes.json()) as { places: PlaceDTO[]; legs: LegDTO[] };
+      let restaurants: RestaurantMarkerInput[] = [];
+      if (restaurantsRes && restaurantsRes.ok) {
+        const { restaurants: rows } = (await restaurantsRes.json()) as {
+          restaurants: Array<{
+            id: string;
+            name: string;
+            lat: number | null;
+            lng: number | null;
+            googlePlaceId: string | null;
+          }>;
+        };
+        restaurants = rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          lat: r.lat,
+          lng: r.lng,
+          googlePlaceId: r.googlePlaceId,
+        }));
+      }
       // FIX C1: only setState if still mounted
-      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs } });
+      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
     }
@@ -147,7 +172,7 @@ export function PlanClient({
     );
   }
 
-  const { trip, places, legs } = state.data;
+  const { trip, places, legs, restaurants } = state.data;
   const days: DerivedDay[] = deriveDays(trip, tz);
   const landing = landingDate(trip, tz);
   const range = { startDate: trip.startDate, endDate: trip.endDate };
@@ -296,6 +321,7 @@ export function PlanClient({
           onOpenDayRoute={onOpenDayRoute}
           online={online}
           savedPlaces={saved}
+          restaurants={restaurants}
         />
       ) : params.bucket === 'days' ? (
         <>

@@ -4,6 +4,8 @@ import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
 import { addRestaurantAction, updateRestaurantAction } from '@/app/_actions/restaurants';
+import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
+import { forwardGeocode } from '@/components/plan/googleClient';
 
 type RestaurantStatus = RestaurantDTO['status'];
 
@@ -30,14 +32,19 @@ export function RestaurantFormSheet({
 }: RestaurantFormSheetProps) {
   const t = useTranslations('eats');
   const isEdit = restaurant !== null;
+  const initialAddress = restaurant?.address ?? '';
   const [name, setName] = useState(restaurant?.name ?? '');
   const [cuisine, setCuisine] = useState(restaurant?.cuisine ?? '');
+  const [address, setAddress] = useState(initialAddress);
   const [status, setStatus] = useState<RestaurantStatus>(restaurant?.status ?? 'want-to-try');
   const [rating, setRating] = useState(restaurant?.rating != null ? String(restaurant.rating) : '');
   const [price, setPrice] = useState(restaurant?.priceLevel != null ? String(restaurant.priceLevel) : '');
   const [notes, setNotes] = useState(restaurant?.notes ?? '');
+  /** Coordinates + place id captured when a Google suggestion is picked. */
+  const [picked, setPicked] = useState<{ lat: number; lng: number; googlePlaceId: string } | null>(null);
   const [isPending, startTransition] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
+  const { predictions, search, select, clear } = usePlacesAutocomplete();
 
   if (!open) return null;
 
@@ -45,20 +52,59 @@ export function RestaurantFormSheet({
     if (e.key === 'Escape') onClose();
   }
 
+  function handleAddressChange(value: string) {
+    setAddress(value);
+    setPicked(null); // editing the text invalidates any prior suggestion pick
+    void search(value);
+  }
+
+  async function handlePick(placeId: string) {
+    const filled = await select(placeId);
+    if (!filled) return;
+    if (!name.trim() && filled.name) setName(filled.name);
+    if (filled.address) setAddress(filled.address);
+    if (typeof filled.lat === 'number' && typeof filled.lng === 'number') {
+      setPicked({ lat: filled.lat, lng: filled.lng, googlePlaceId: filled.googlePlaceId });
+    }
+    clear(); // hide the suggestion list once one is chosen
+  }
+
   function handleSave() {
     const trimmed = name.trim();
     if (trimmed === '') return; // client guard; server re-validates
-    const payload = {
-      name: trimmed,
-      cuisine: cuisine.trim() || null,
-      status,
-      rating: rating === '' ? null : Number(rating),
-      priceLevel: price === '' ? null : Number(price),
-      notes: notes.trim() || null,
-    };
+    const trimmedAddress = address.trim();
     setSaveError(null);
     startTransition(async () => {
       try {
+        // Resolve coordinates: a picked suggestion already carries them; an
+        // empty address clears any prior location; a changed free-text address
+        // is best-effort forward-geocoded. An unchanged address keeps the
+        // existing coords so editing other fields never drops the pin.
+        let lat: number | null = picked?.lat ?? restaurant?.lat ?? null;
+        let lng: number | null = picked?.lng ?? restaurant?.lng ?? null;
+        let gpid: string | null = picked?.googlePlaceId ?? restaurant?.googlePlaceId ?? null;
+        if (!trimmedAddress) {
+          lat = null;
+          lng = null;
+          gpid = null;
+        } else if (!picked && trimmedAddress !== initialAddress) {
+          const geo = await forwardGeocode(trimmedAddress);
+          lat = geo ? geo.lat : null;
+          lng = geo ? geo.lng : null;
+          gpid = null;
+        }
+        const payload = {
+          name: trimmed,
+          cuisine: cuisine.trim() || null,
+          status,
+          rating: rating === '' ? null : Number(rating),
+          priceLevel: price === '' ? null : Number(price),
+          notes: notes.trim() || null,
+          address: trimmedAddress || null,
+          lat,
+          lng,
+          googlePlaceId: gpid,
+        };
         if (isEdit && restaurant) {
           await updateRestaurantAction(restaurant.id, payload);
         } else {
@@ -105,6 +151,33 @@ export function RestaurantFormSheet({
           onChange={(e) => setCuisine(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
         />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="rf-address">{t('addressLabel')}</label>
+        <input
+          id="rf-address" type="text" value={address} disabled={disabled}
+          placeholder={t('addressSearchPlaceholder')}
+          autoComplete="off"
+          onChange={(e) => handleAddressChange(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+        <p className="mt-1 text-caption text-ink-muted">{t('addressSearchHint')}</p>
+
+        {predictions.length > 0 ? (
+          <ul className="mt-2 flex flex-col rounded-control border border-line bg-paper">
+            {predictions.map((p) => (
+              <li key={p.placeId}>
+                <button
+                  type="button"
+                  disabled={disabled || isPending}
+                  onClick={() => void handlePick(p.placeId)}
+                  className="w-full px-3 py-2 text-left text-body text-ink hover:bg-card disabled:opacity-40"
+                >
+                  {p.description}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="rf-status">{t('statusLabel')}</label>
         <select

@@ -68,11 +68,17 @@ const legs: LegDTO[] = [
   { fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk', durationSeconds: 720, distanceMeters: 900, polyline: null },
 ];
 
-/** Route fetch by URL: /api/trips/t1 → {trip}; /places → {places,legs}. */
+/**
+ * Route fetch by URL: /api/trips/t1 → {trip}; /places → {places,legs};
+ * /restaurants → {restaurants} (empty by default; the map overlay reads it).
+ */
 function mockFetch() {
   const f = vi.fn(async (url: string) => {
     if (url.endsWith('/places')) {
       return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs })) };
+    }
+    if (url.endsWith('/restaurants')) {
+      return { ok: true, json: async () => ({ restaurants: [] }) };
     }
     return { ok: true, json: async () => JSON.parse(JSON.stringify({ trip })) };
   });

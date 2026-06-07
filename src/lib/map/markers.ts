@@ -27,6 +27,21 @@ export interface PlaceMarker {
 /** Teal used for non-day pins (Saved bucket / saved-places layer). */
 export const SAVED_PIN_COLOR = '#4F8A86';
 
+/** Amber used for the Restaurants layer, distinct from day + saved pins. */
+export const RESTAURANT_PIN_COLOR = '#E8902E';
+
+/** Glyph shown on Restaurants-layer pins. */
+export const RESTAURANT_GLYPH = '🍽️';
+
+/** Minimal restaurant shape the Restaurants map layer needs. */
+export interface RestaurantMarkerInput {
+  id: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+  googlePlaceId: string | null;
+}
+
 function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {
   return typeof p.lat === 'number' && typeof p.lng === 'number';
 }
@@ -77,5 +92,30 @@ export function buildSavedMarkers(places: PlaceDTO[]): PlaceMarker[] {
       label: null,
       color: null,
       glyph: categoryGlyph(p.category),
+    }));
+}
+
+/**
+ * Build amber, un-numbered markers for the Restaurants layer. Restaurants
+ * without coordinates (no address, or geocoding failed) are dropped — they list
+ * fine in Eats, they just can't be pinned. Category is fixed to 'other' (the
+ * info card shows the dining glyph regardless).
+ */
+export function buildRestaurantMarkers(restaurants: RestaurantMarkerInput[]): PlaceMarker[] {
+  return restaurants
+    .filter(
+      (r): r is RestaurantMarkerInput & { lat: number; lng: number } =>
+        typeof r.lat === 'number' && typeof r.lng === 'number',
+    )
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      category: 'other',
+      googlePlaceId: r.googlePlaceId,
+      photoPath: null,
+      position: { lat: r.lat, lng: r.lng },
+      label: null,
+      color: RESTAURANT_PIN_COLOR,
+      glyph: RESTAURANT_GLYPH,
     }));
 }

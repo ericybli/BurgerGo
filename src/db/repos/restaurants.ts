@@ -48,6 +48,10 @@ export interface AddRestaurantInput {
   status?: RestaurantStatus; // defaults to 'want-to-try'
   priceLevel?: number | null;
   notes?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  googlePlaceId?: string | null;
   linkedPlaceId?: string | null;
 }
 
@@ -63,6 +67,10 @@ export function addRestaurant(db: Db, input: AddRestaurantInput): Restaurant {
     status: input.status ?? 'want-to-try',
     priceLevel: input.priceLevel ?? null,
     notes: input.notes ?? null,
+    address: input.address ?? null,
+    lat: input.lat ?? null,
+    lng: input.lng ?? null,
+    googlePlaceId: input.googlePlaceId ?? null,
     linkedPlaceId: input.linkedPlaceId ?? null,
     createdAt: ts,
     updatedAt: ts,
@@ -75,7 +83,17 @@ export function addRestaurant(db: Db, input: AddRestaurantInput): Restaurant {
 export type RestaurantPatch = Partial<
   Pick<
     Restaurant,
-    'name' | 'cuisine' | 'rating' | 'status' | 'priceLevel' | 'notes' | 'linkedPlaceId'
+    | 'name'
+    | 'cuisine'
+    | 'rating'
+    | 'status'
+    | 'priceLevel'
+    | 'notes'
+    | 'address'
+    | 'lat'
+    | 'lng'
+    | 'googlePlaceId'
+    | 'linkedPlaceId'
   >
 >;
 
@@ -104,9 +122,11 @@ export function listRestaurants(db: Db, tripId: string): Restaurant[] {
 
 /**
  * Schedule a restaurant onto `dayDate`: create a new category='other' Place
- * (copying name + notes once) and point restaurants.linked_place_id at it.
- * If the restaurant was already scheduled, delete the previous place first so
- * exactly one linked place exists at a time. Returns both rows.
+ * (copying name + notes + location once) and point restaurants.linked_place_id
+ * at it. Copying the address/coords/googlePlaceId means the scheduled stop maps
+ * and routes like any other place. If the restaurant was already scheduled,
+ * delete the previous place first so exactly one linked place exists at a time.
+ * Returns both rows.
  */
 export function scheduleRestaurantToDay(
   db: Db,
@@ -127,6 +147,10 @@ export function scheduleRestaurantToDay(
     name: existing.name,
     category: 'other',
     notes: existing.notes ?? null,
+    address: existing.address ?? null,
+    lat: existing.lat ?? null,
+    lng: existing.lng ?? null,
+    googlePlaceId: existing.googlePlaceId ?? null,
   });
 
   db.update(restaurants)

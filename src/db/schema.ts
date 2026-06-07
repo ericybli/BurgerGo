@@ -104,6 +104,13 @@ export const restaurants = sqliteTable(
     status: text('status', { enum: ['want-to-try', 'been'] }).notNull(),
     priceLevel: integer('price_level'), // 1–4 ($–$$$$); 1 is minimum
     notes: text('notes'),
+    // Location (Plan 3.x): a free-text address geocoded to coords on save so the
+    // restaurant can be pinned on the Plan▸Map "Restaurants" layer. googlePlaceId
+    // is captured when the address is picked from autocomplete (null otherwise).
+    address: text('address'),
+    lat: real('lat'),
+    lng: real('lng'),
+    googlePlaceId: text('google_place_id'),
     linkedPlaceId: text('linked_place_id').references(() => places.id, {
       onDelete: 'set null',
     }),

@@ -146,6 +146,22 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
   });
 
+  it('overlays Restaurant pins only after enabling the Layers toggle', async () => {
+    const user = userEvent.setup();
+    const restaurants = [
+      { id: 'rest1', name: 'Ichiran', lat: 35.8, lng: 139.8, googlePlaceId: null },
+    ];
+    renderMap({ restaurants });
+
+    expect(screen.queryByRole('button', { name: 'pin:Ichiran' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: en.planMap.layers }));
+    await user.click(screen.getByRole('checkbox', { name: en.planMap.layerRestaurants }));
+
+    expect(screen.getByRole('button', { name: 'pin:Ichiran' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
+  });
+
   it('does not show the Layers menu in the saved bucket', () => {
     const savedGroup: DayGroup = {
       date: null, dayNumber: null, colorIndex: 0,

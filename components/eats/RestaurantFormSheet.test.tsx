@@ -19,12 +19,25 @@ vi.mock('@/app/_actions/restaurants', () => ({
   unscheduleRestaurantAction: vi.fn(),
 }));
 
+// Stub the Places autocomplete so typing in the address field never loads the
+// real Google JS in jsdom; the geocode helper is mocked to return fixed coords.
+vi.mock('@/components/plan/useGooglePlaces', () => ({
+  usePlacesAutocomplete: () => ({
+    predictions: [], loading: false, search: vi.fn(), select: vi.fn(), clear: vi.fn(),
+  }),
+}));
+const forwardGeocode = vi.fn(async (_addr: string) => ({ lat: 35.0, lng: 139.0, address: '1 Test St' }));
+vi.mock('@/components/plan/googleClient', () => ({
+  forwardGeocode: (addr: string) => forwardGeocode(addr),
+}));
+
 import { RestaurantFormSheet } from './RestaurantFormSheet';
 
 function existing(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
   return {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4,
     status: 'been', priceLevel: 2, notes: 'Tonkotsu', linkedPlaceId: null,
+    address: null, lat: null, lng: null, googlePlaceId: null,
     createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, ...over,
   };
 }
@@ -51,6 +64,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof RestaurantFormSh
 beforeEach(() => {
   addRestaurantAction.mockClear();
   updateRestaurantAction.mockClear();
+  forwardGeocode.mockClear();
 });
 
 describe('RestaurantFormSheet', () => {
@@ -70,6 +84,18 @@ describe('RestaurantFormSheet', () => {
     renderSheet();
     await userEvent.click(screen.getByRole('button', { name: en.eats.save }));
     expect(addRestaurantAction).not.toHaveBeenCalled();
+  });
+
+  it('add mode: forward-geocodes a typed address and stores the coords', async () => {
+    renderSheet();
+    await userEvent.type(screen.getByLabelText(en.eats.nameLabel), 'Ichiran');
+    await userEvent.type(screen.getByLabelText(en.eats.addressLabel), '1 Test St');
+    await userEvent.click(screen.getByRole('button', { name: en.eats.save }));
+    await waitFor(() => expect(addRestaurantAction).toHaveBeenCalled());
+    expect(forwardGeocode).toHaveBeenCalledWith('1 Test St');
+    expect(addRestaurantAction).toHaveBeenCalledWith(
+      expect.objectContaining({ address: '1 Test St', lat: 35.0, lng: 139.0 }),
+    );
   });
 
   it('edit mode: pre-fills fields and calls updateRestaurantAction with the id', async () => {

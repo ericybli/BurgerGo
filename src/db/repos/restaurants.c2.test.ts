@@ -74,6 +74,18 @@ describe('C2.2: scheduleRestaurantToDay / unscheduleRestaurant', () => {
     expect(getPlace(h.db, place.id)?.name).toBe('Ichiran');
   });
 
+  it('scheduleRestaurantToDay copies the restaurant address/coords/googlePlaceId to the place', () => {
+    const r = addRestaurant(h.db, {
+      tripId: 't1', name: 'Ichiran', status: 'want-to-try',
+      address: '1-2-3 Shibuya', lat: 35.66, lng: 139.7, googlePlaceId: 'gx',
+    });
+    const { place } = scheduleRestaurantToDay(h.db, r.id, '2026-06-06');
+    expect(place.address).toBe('1-2-3 Shibuya');
+    expect(place.lat).toBe(35.66);
+    expect(place.lng).toBe(139.7);
+    expect(place.googlePlaceId).toBe('gx');
+  });
+
   it('scheduling a second time re-points the link to a new place (removes the old one)', () => {
     const r = addRestaurant(h.db, { tripId: 't1', name: 'A', status: 'want-to-try' });
     const first = scheduleRestaurantToDay(h.db, r.id, '2026-06-06');

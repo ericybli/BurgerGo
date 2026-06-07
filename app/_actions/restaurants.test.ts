@@ -48,6 +48,23 @@ describe('restaurant actions', () => {
     await expect(addRestaurantAction({ tripId: 't1', name: '   ', status: 'want-to-try' })).rejects.toThrow();
   });
 
+  it('addRestaurantAction stores address/coords/googlePlaceId', async () => {
+    const r = await addRestaurantAction({
+      tripId: 't1', name: 'Ichiran', status: 'want-to-try',
+      address: '1-2-3 Shibuya', lat: 35.66, lng: 139.7, googlePlaceId: 'gx',
+    });
+    expect(r.address).toBe('1-2-3 Shibuya');
+    expect(r.lat).toBe(35.66);
+    expect(r.lng).toBe(139.7);
+    expect(r.googlePlaceId).toBe('gx');
+  });
+
+  it('addRestaurantAction rejects out-of-range coordinates', async () => {
+    await expect(
+      addRestaurantAction({ tripId: 't1', name: 'A', status: 'been', lat: 999, lng: 0 }),
+    ).rejects.toThrow();
+  });
+
   it('addRestaurantAction rejects rating out of 1–5 and price out of 1–4', async () => {
     await expect(addRestaurantAction({ tripId: 't1', name: 'A', status: 'been', rating: 6 })).rejects.toThrow();
     await expect(addRestaurantAction({ tripId: 't1', name: 'A', status: 'been', priceLevel: 5 })).rejects.toThrow();

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { buildMarkers, buildSavedMarkers } from '@/src/lib/map/markers';
+import {
+  buildMarkers,
+  buildSavedMarkers,
+  buildRestaurantMarkers,
+  RESTAURANT_PIN_COLOR,
+  RESTAURANT_GLYPH,
+  type RestaurantMarkerInput,
+} from '@/src/lib/map/markers';
 import { DAY_COLORS } from '@/src/lib/map/colors';
 import type { DayGroup, PlaceDTO } from '@/src/lib/map/types';
 
@@ -91,5 +98,31 @@ describe('buildSavedMarkers', () => {
     expect(markers.map((m) => m.id)).toEqual(['s1', 's2']);
     expect(markers.every((m) => m.label === null)).toBe(true);
     expect(markers.every((m) => m.color === null)).toBe(true);
+  });
+});
+
+describe('buildRestaurantMarkers', () => {
+  function rest(id: string, lat: number | null, lng: number | null,
+                extra: Partial<RestaurantMarkerInput> = {}): RestaurantMarkerInput {
+    return { id, name: id, lat, lng, googlePlaceId: null, ...extra };
+  }
+
+  it('returns only restaurants with coords, amber + dining glyph, un-numbered', () => {
+    const markers = buildRestaurantMarkers([
+      rest('r1', 35.0, 139.0, { name: 'Ichiran', googlePlaceId: 'gx' }),
+      rest('no-coords', null, null),
+    ]);
+    expect(markers.map((m) => m.id)).toEqual(['r1']);
+    const m = markers[0]!;
+    expect(m.name).toBe('Ichiran');
+    expect(m.color).toBe(RESTAURANT_PIN_COLOR);
+    expect(m.glyph).toBe(RESTAURANT_GLYPH);
+    expect(m.label).toBeNull();
+    expect(m.googlePlaceId).toBe('gx');
+    expect(m.position).toEqual({ lat: 35.0, lng: 139.0 });
+  });
+
+  it('returns an empty array when no restaurant has coords', () => {
+    expect(buildRestaurantMarkers([rest('a', null, null)])).toEqual([]);
   });
 });
