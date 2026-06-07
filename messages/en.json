@@ -415,5 +415,31 @@
       "shopping": "Shopping",
       "other": "Other"
     }
+  },
+  "aiImport": {
+    "openAria": "AI import",
+    "title": "AI import",
+    "subtitle": "Add screenshots of a guide — or paste text — and AI pulls out the places & restaurants.",
+    "addImages": "Add images",
+    "imagesHint": "{count}/{max} images",
+    "textPlaceholder": "Paste text from a guide, article, or message…",
+    "extract": "Extract places",
+    "extracting": "Reading…",
+    "nothingFound": "Couldn't find any places. Try clearer images or more text.",
+    "extractError": "Something went wrong. Please try again.",
+    "reviewTitle": "Found {count} — review & create",
+    "typeRestaurant": "Restaurant",
+    "typePlace": "Saved place",
+    "namePlaceholder": "Name",
+    "addressPlaceholder": "Address",
+    "unmatched": "Not found on Google — won't show on the map",
+    "removeItem": "Remove",
+    "back": "Back",
+    "create": "Create {count}",
+    "creating": "Creating…",
+    "createError": "Couldn't create those. Please try again.",
+    "doneTitle": "Imported!",
+    "doneSummary": "Added {restaurants} to Eats and {places} to Saved.",
+    "close": "Close"
   }
 }

@@ -8,6 +8,7 @@ import { dayRouteUrl, DEFAULT_DAY_MODE, type TravelMode } from '@/src/lib/google
 import { landingDate } from '@/src/lib/landingDate';
 import { withBase } from '@/src/lib/basePath';
 import { fetchTripData } from '@/src/lib/tripData';
+import { TRIP_DATA_CHANGED } from '@/src/lib/events';
 import {
   parsePlanParams,
   buildPlanQuery,
@@ -225,6 +226,13 @@ export function PlanClient({
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // Re-fetch when another part of the shell (e.g. AI import) adds places.
+  useEffect(() => {
+    const onChanged = () => void load();
+    window.addEventListener(TRIP_DATA_CHANGED, onChanged);
+    return () => window.removeEventListener(TRIP_DATA_CHANGED, onChanged);
   }, [load]);
 
   // Escape closes the place read-card / restaurant info overlays.

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { fetchTripData } from '@/src/lib/tripData';
+import { TRIP_DATA_CHANGED } from '@/src/lib/events';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
 import { filterByStatus, type EatsStatusFilter } from '@/src/lib/eatsView';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
@@ -77,6 +78,13 @@ export function EatsClient({
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // Re-fetch when another part of the shell (e.g. AI import) adds restaurants.
+  useEffect(() => {
+    const onChanged = () => void load();
+    window.addEventListener(TRIP_DATA_CHANGED, onChanged);
+    return () => window.removeEventListener(TRIP_DATA_CHANGED, onChanged);
   }, [load]);
 
   const days: DerivedDay[] = useMemo(

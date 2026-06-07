@@ -15,6 +15,10 @@ vi.mock('@/app/_actions/trips', () => ({
   createTripAction: vi.fn(),
   renameTripAction: vi.fn(),
 }));
+// Stub the import sheet so this test doesn't pull server-action deps into jsdom.
+vi.mock('@/components/ai/AiImportSheet', () => ({
+  AiImportSheet: ({ open }: { open: boolean }) => (open ? <div role="dialog" aria-label="AI import" /> : null),
+}));
 
 import { TripHeader } from './TripHeader';
 
@@ -40,5 +44,12 @@ describe('TripHeader', () => {
     renderHeader();
     await userEvent.click(screen.getByRole('button', { name: 'Tokyo adventure' }));
     expect(screen.getByRole('dialog', { name: en.renameSheet.title })).toBeInTheDocument();
+  });
+
+  it('opens the AI import sheet from the sparkle button', async () => {
+    renderHeader();
+    expect(screen.queryByRole('dialog', { name: en.aiImport.title })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: en.aiImport.openAria }));
+    expect(screen.getByRole('dialog', { name: en.aiImport.title })).toBeInTheDocument();
   });
 });

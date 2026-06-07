@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
     // Lint is run explicitly via `npm run lint`; don't fail the standalone build on it.
     ignoreDuringBuilds: true,
   },
+  experimental: {
+    // AI-import sends downscaled screenshots through a Server Action; the 1 MB
+    // default is too small for several images. Client downscales to ~1024px.
+    serverActions: { bodySizeLimit: '12mb' },
+  },
   serverExternalPackages: ['better-sqlite3', 'undici'],
 };
 
