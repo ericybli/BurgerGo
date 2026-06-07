@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
 import { createTrip, deleteTrip } from '@/src/db/repos/trips';
+import { addPlace } from '@/src/db/repos/places';
 import {
   addLink,
   getLink,
   listLinksForTrip,
+  listLinksForPlace,
   updateLink,
   deleteLink,
 } from '@/src/db/repos/savedLinks';
@@ -127,5 +129,15 @@ describe('savedLinks repo', () => {
     const l = addLink(db, { tripId, url: 'https://example.com' });
     deleteTrip(db, tripId);
     expect(getLink(db, l.id)).toBeUndefined();
+  });
+
+  it('place links are excluded from the trip reading list and listed per place', () => {
+    const { db } = makeTestDb();
+    const trip = createTrip(db, { name: 'Tokyo', startDate: '2026-06-01', endDate: '2026-06-10' });
+    const place = addPlace(db, { tripId: trip.id, name: 'P', category: 'other', dayDate: '2026-06-02' });
+    addLink(db, { tripId: trip.id, url: 'https://a.example' });                         // reading list
+    addLink(db, { tripId: trip.id, url: 'https://b.example', placeId: place.id });      // place link
+    expect(listLinksForTrip(db, trip.id).map((l) => l.url)).toEqual(['https://a.example']);
+    expect(listLinksForPlace(db, place.id).map((l) => l.url)).toEqual(['https://b.example']);
   });
 });

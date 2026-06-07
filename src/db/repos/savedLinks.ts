@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import type { TestDb } from '@/src/db/testDb';
 import { savedLinks, type SavedLink } from '@/src/db/schema';
 import { newId } from '@/src/db/ids';
@@ -13,12 +13,22 @@ export function getLink(db: Db, id: string): SavedLink | undefined {
   return db.select().from(savedLinks).where(eq(savedLinks.id, id)).get();
 }
 
-/** All links for a trip, newest first (created_at desc). */
+/** Trip reading-list links (place_id IS NULL), newest first. */
 export function listLinksForTrip(db: Db, tripId: string): SavedLink[] {
   return db
     .select()
     .from(savedLinks)
-    .where(eq(savedLinks.tripId, tripId))
+    .where(and(eq(savedLinks.tripId, tripId), isNull(savedLinks.placeId)))
+    .orderBy(desc(savedLinks.createdAt))
+    .all();
+}
+
+/** Links attached to a place, newest first. */
+export function listLinksForPlace(db: Db, placeId: string): SavedLink[] {
+  return db
+    .select()
+    .from(savedLinks)
+    .where(eq(savedLinks.placeId, placeId))
     .orderBy(desc(savedLinks.createdAt))
     .all();
 }
@@ -29,6 +39,7 @@ export interface AddLinkInput {
   title?: string | null;
   note?: string | null;
   thumbnail?: string | null; // relative derivative path
+  placeId?: string | null;   // null = trip reading list
 }
 
 /** Insert a link; generates id + timestamps. */
@@ -41,6 +52,7 @@ export function addLink(db: Db, input: AddLinkInput): SavedLink {
     title: input.title ?? null,
     note: input.note ?? null,
     thumbnail: input.thumbnail ?? null,
+    placeId: input.placeId ?? null,
     createdAt: ts,
     updatedAt: ts,
   };
