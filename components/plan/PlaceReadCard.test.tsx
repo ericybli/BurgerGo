@@ -49,4 +49,14 @@ describe('PlaceReadCard', () => {
     await userEvent.click(toggle);
     expect(screen.getByRole('button', { name: en.plan.showLess })).toBeInTheDocument();
   });
+
+  it('shows an "Add to day" button only when onAddToDay is provided, and calls it', async () => {
+    const onAddToDay = vi.fn();
+    const { unmount } = renderCard(place(), { onAddToDay });
+    await userEvent.click(screen.getByRole('button', { name: en.plan.addToDay }));
+    expect(onAddToDay).toHaveBeenCalled();
+    unmount();
+    renderCard(); // no onAddToDay → no button
+    expect(screen.queryByRole('button', { name: en.plan.addToDay })).not.toBeInTheDocument();
+  });
 });

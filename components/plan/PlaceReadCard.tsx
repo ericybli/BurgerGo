@@ -28,10 +28,13 @@ export function PlaceReadCard({
   place,
   onClose,
   onEdit,
+  onAddToDay,
 }: {
   place: PlaceDTO;
   onClose: () => void;
   onEdit: () => void;
+  /** Saved-bucket places only: opens the day picker to schedule this place. */
+  onAddToDay?: () => void;
 }) {
   const t = useTranslations('plan');
   const tCat = useTranslations('placeCategory');
@@ -95,6 +98,16 @@ export function PlaceReadCard({
         <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-control bg-teal px-3 py-2 text-center text-caption font-medium text-white">{tMap('openInMaps')}</a>
         <button type="button" onClick={onEdit} className="rounded-control border border-coral px-3 py-2 text-caption font-medium text-coral active:bg-coral-tint">{t('edit')}</button>
       </div>
+
+      {onAddToDay ? (
+        <button
+          type="button"
+          onClick={onAddToDay}
+          className="mt-2 w-full rounded-control bg-coral px-3 py-2 text-center text-caption font-medium text-white shadow-card active:bg-coral-press"
+        >
+          {t('addToDay')}
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -54,7 +54,6 @@ const ALL_DATES = new Set(['2026-06-04', '2026-06-05']);
 
 const onShowOnlyDate = vi.fn();
 const onShowAllDays = vi.fn();
-const onSelectPlace = vi.fn();
 const onOpenDayRoute = vi.fn();
 const onViewPlace = vi.fn();
 const onViewRestaurant = vi.fn();
@@ -70,7 +69,6 @@ function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}
         visibleDates={ALL_DATES}
         onShowOnlyDate={onShowOnlyDate}
         onShowAllDays={onShowAllDays}
-        onSelectPlace={onSelectPlace}
         onOpenDayRoute={onOpenDayRoute}
         onViewPlace={onViewPlace}
         onViewRestaurant={onViewRestaurant}
@@ -125,7 +123,7 @@ describe('PlanMap (online, days bucket)', () => {
     expect(onViewPlace).toHaveBeenCalledWith('a');
   });
 
-  it('calls onSelectPlace when the Saved-bucket "Add to day" is tapped', async () => {
+  it('calls onViewPlace when a Saved-bucket pin is tapped (opens the rich read card)', async () => {
     const user = userEvent.setup();
     const savedGroup: DayGroup = {
       date: null, dayNumber: null, colorIndex: 0,
@@ -133,9 +131,7 @@ describe('PlanMap (online, days bucket)', () => {
     };
     renderMap({ bucket: 'saved', dayGroups: [savedGroup], visibleDates: new Set() });
     await user.click(screen.getByRole('button', { name: 'pin:s' }));
-    const addBtn = screen.getByRole('button', { name: en.planMap.addToDay });
-    await user.click(addBtn);
-    expect(onSelectPlace).toHaveBeenCalledWith('s');
+    expect(onViewPlace).toHaveBeenCalledWith('s');
   });
 
   it('overlays Saved-places pins only after enabling the Layers toggle', async () => {

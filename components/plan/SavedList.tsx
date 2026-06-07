@@ -98,6 +98,15 @@ export function SavedList({
         })}
       </ul>
 
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={onAddPlace}
+        className="mt-3 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset disabled:opacity-40"
+      >
+        {t('addPlace')}
+      </button>
+
       <DayPickerSheet
         open={pickerFor !== null}
         title={t('dayPickerTitle')}

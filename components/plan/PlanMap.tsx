@@ -18,7 +18,6 @@ import { buildDayPaths } from '@/src/lib/map/polyline';
 import { colorForGroup } from '@/src/lib/map/colors';
 import { MapCanvas } from '@/components/map/MapCanvas';
 import { MapLegend, type LegendEntry } from '@/components/map/MapLegend';
-import { PlaceInfoCard } from '@/components/map/PlaceInfoCard';
 import { EmptyState } from '@/components/EmptyState';
 
 export interface PlanMapProps {
@@ -29,7 +28,6 @@ export interface PlanMapProps {
   visibleDates: Set<string>;
   onShowOnlyDate: (date: string) => void;
   onShowAllDays: () => void;
-  onSelectPlace: (placeId: string) => void;
   onOpenDayRoute: (date: string) => void;
   onViewPlace: (placeId: string) => void;
   /** Tapping a restaurant-layer pin opens its info card (name/cuisine/address/notes). */
@@ -46,8 +44,9 @@ export interface PlanMapProps {
  * Receives everything via props — never fetches, never imports PlanClient.
  * B2's PlanClient owns dayGroups/visibleDates/handlers; B3 consumes them.
  *
- * Online: renders GoogleMapCanvas + MapLegend + per-day "Open day route" links
- *         + PlaceInfoCard on pin tap.
+ * Online: renders GoogleMapCanvas + MapLegend + per-day "Open day route" links;
+ *         a pin tap routes to onViewPlace (the rich read card) — or
+ *         onViewRestaurant for restaurant-layer pins.
  * Offline: renders the mascot EmptyState + each visible place as a placeUrl
  *          deep-link (constructible offline from cached coords).
  * Saved bucket: un-routed pins (no polylines, no legend).
@@ -60,7 +59,6 @@ export function PlanMap({
   visibleDates,
   onShowOnlyDate,
   onShowAllDays,
-  onSelectPlace,
   onOpenDayRoute,
   onViewPlace,
   onViewRestaurant,
@@ -70,7 +68,6 @@ export function PlanMap({
 }: PlanMapProps) {
   const t = useTranslations('planMap');
   const tm = useTranslations('mascot');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   // Secondary "Layers" menu (days bucket): overlay extra pin sets onto the map.
   const [layersOpen, setLayersOpen] = useState(false);
@@ -201,15 +198,6 @@ export function PlanMap({
     [bucket, visibleDayGroups, mode],
   ) as Array<{ date: string; color: string; url: string }>;
 
-  // --- Marker id → place lookup for the info card. ---
-  const markerById = useMemo(() => {
-    const m = new Map<string, PlaceMarker>();
-    for (const mk of activeMarkers) m.set(mk.id, mk);
-    return m;
-  }, [activeMarkers]);
-
-  const selectedMarker = selectedId ? (markerById.get(selectedId) ?? null) : null;
-
   // --- Offline branch. ---
   if (!online) {
     // Collect all plottable visible places as deep-links (works offline).
@@ -289,11 +277,7 @@ export function PlanMap({
           fitMarkers={baseMarkers}
           paths={dayPaths}
           onMarkerClick={(id) =>
-            restaurantMarkerIds.has(id)
-              ? onViewRestaurant(id)
-              : bucket === 'saved'
-                ? setSelectedId(id)
-                : onViewPlace(id)
+            restaurantMarkerIds.has(id) ? onViewRestaurant(id) : onViewPlace(id)
           }
         />
 
@@ -357,19 +341,6 @@ export function PlanMap({
           )}
         </button>
 
-        {selectedMarker ? (
-          <div className="pointer-events-none absolute inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[2] flex justify-center">
-            <PlaceInfoCard
-              marker={selectedMarker}
-              bucket={bucket}
-              onClose={() => setSelectedId(null)}
-              onSelectPlace={(id) => {
-                onSelectPlace(id);
-                setSelectedId(null);
-              }}
-            />
-          </div>
-        ) : null}
       </div>
 
       {bucket === 'days' && routeLinks.length > 0 ? (

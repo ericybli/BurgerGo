@@ -76,7 +76,7 @@ export function PlanClient({
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
   const [viewRestaurant, setViewRestaurant] = useState<RestaurantMarkerInput | null>(null);
   // Day picker for moving / copying a day place to another date.
-  const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy'; placeId: string } | null>(null);
+  const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy' | 'promote'; placeId: string } | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
   // FIX I2+I5: track in-flight mutations to prevent double-fire
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -378,7 +378,6 @@ export function PlanClient({
           visibleDates={visibleDates}
           onShowOnlyDate={showOnlyDate}
           onShowAllDays={showAllDays}
-          onSelectPlace={(id) => setDetailFor(placeById(id))}
           onOpenDayRoute={onOpenDayRoute}
           onViewPlace={(id) => setViewPlace(placeById(id))}
           onViewRestaurant={(id) => setViewRestaurant(restaurants.find((r) => r.id === id) ?? null)}
@@ -457,6 +456,11 @@ export function PlanClient({
               place={viewPlace}
               onClose={() => setViewPlace(null)}
               onEdit={() => { setDetailFor(viewPlace); setViewPlace(null); }}
+              onAddToDay={
+                viewPlace.dayDate === null
+                  ? () => { const id = viewPlace.id; setViewPlace(null); setDayPicker({ mode: 'promote', placeId: id }); }
+                  : undefined
+              }
             />
           </div>
         </div>
@@ -478,11 +482,12 @@ export function PlanClient({
 
       <DayPickerSheet
         open={dayPicker !== null}
-        title={dayPicker?.mode === 'copy' ? t('copyToDayTitle') : t('moveToDayTitle')}
+        title={dayPicker?.mode === 'copy' ? t('copyToDayTitle') : dayPicker?.mode === 'promote' ? t('dayPickerTitle') : t('moveToDayTitle')}
         days={days}
         onPick={(date) => {
           if (!dayPicker) return;
           if (dayPicker.mode === 'copy') copyToDay(dayPicker.placeId, date);
+          else if (dayPicker.mode === 'promote') mutateDay(date, () => promoteToDayAction(dayPicker.placeId, date));
           else moveToDay(dayPicker.placeId, date);
         }}
         onClose={() => setDayPicker(null)}

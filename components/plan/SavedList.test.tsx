@@ -61,6 +61,17 @@ describe('SavedList', () => {
     expect(screen.getByRole('button', { name: en.plan.addToDay })).toBeDisabled();
   });
 
+  it('shows an Add place button when populated and calls onAddPlace', async () => {
+    const { onAddPlace } = renderSaved();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.addPlace }));
+    expect(onAddPlace).toHaveBeenCalled();
+  });
+
+  it('disables the Add place button offline', () => {
+    renderSaved({ disabled: true });
+    expect(screen.getByRole('button', { name: en.plan.addPlace })).toBeDisabled();
+  });
+
   it('shows the empty state when there are no saved places', () => {
     renderSaved({ saved: [] });
     expect(screen.getByText(en.plan.emptySavedHeadline)).toBeInTheDocument();
