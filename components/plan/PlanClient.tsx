@@ -221,6 +221,20 @@ export function PlanClient({
   const placeById = (id: string) => places.find((p) => p.id === id) ?? null;
 
   /**
+   * Optimistically merge an edited place's fields into local state so a reopen
+   * reflects the change immediately — the async `load()` below reconciles it,
+   * but this closes the window where reopening before the reload landed showed
+   * stale (e.g. empty) values.
+   */
+  const applyPlacePatch = (placeId: string, patch: Partial<PlaceDTO>) => {
+    setState((s) =>
+      s.status === 'loaded'
+        ? { ...s, data: { ...s.data, places: s.data.places.map((p) => (p.id === placeId ? { ...p, ...patch } : p)) } }
+        : s,
+    );
+  };
+
+  /**
    * Run a mutation, recompute that day's legs (online only; saved bucket / null
    * date skips recompute), then re-fetch. `mode` defaults to the current day
    * mode but is passed explicitly on a mode change (state is stale in-closure).
@@ -436,7 +450,8 @@ export function PlanClient({
           place={detailFor}
           disabled={!online}
           onClose={() => setDetailFor(null)}
-          onSaved={() => {
+          onSaved={(placeId, patch) => {
+            if (placeId && patch) applyPlacePatch(placeId, patch);
             setDetailFor(null);
             void load();
           }}

@@ -19,7 +19,13 @@ type PlaceDetailSheetProps = {
   place: PlaceDTO;
   disabled: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  /**
+   * Called after a successful save (or photo change). On a field save it passes
+   * the place id + the edited fields so the parent can optimistically update its
+   * local copy — this makes a just-saved note/edit show immediately on reopen,
+   * without waiting for the async reload (which the photo path triggers too).
+   */
+  onSaved: (placeId?: string, patch?: Partial<PlaceDTO>) => void;
 };
 
 export function PlaceDetailSheet({
@@ -97,17 +103,18 @@ export function PlaceDetailSheet({
   // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function handleSave() {
     setSaveError(null);
+    const patch = {
+      name: name.trim(),
+      address: address.trim() || null,
+      category,
+      scheduledTime: time || null,
+      notes: notes.trim() || null,
+      aiSummary: aiSummary.trim() || null,
+    };
     startTransition(async () => {
       try {
-        await updatePlaceAction(place.id, {
-          name: name.trim(),
-          address: address.trim() || null,
-          category,
-          scheduledTime: time || null,
-          notes: notes.trim() || null,
-          aiSummary: aiSummary.trim() || null,
-        });
-        onSaved();
+        await updatePlaceAction(place.id, patch);
+        onSaved(place.id, patch);
         onClose();
       } catch {
         setSaveError(t('saveFailed'));

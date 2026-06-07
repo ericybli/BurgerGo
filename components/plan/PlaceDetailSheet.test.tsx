@@ -93,7 +93,18 @@ describe('PlaceDetailSheet', () => {
     await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
     await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
     expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ name: 'Senso-ji Temple' }));
-    expect(onSaved).toHaveBeenCalled();
+    // onSaved gets the id + patch so the parent can optimistically update (reopen shows fresh data).
+    expect(onSaved).toHaveBeenCalledWith('p1', expect.objectContaining({ name: 'Senso-ji Temple' }));
+  });
+
+  it('saves an added note and reports it to onSaved for optimistic refresh', async () => {
+    const { onSaved } = renderSheet({ place: place({ notes: null }) });
+    const notesField = screen.getByLabelText(en.plan.notesLabel);
+    await userEvent.type(notesField, 'Bring sunscreen');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
+    expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ notes: 'Bring sunscreen' }));
+    expect(onSaved).toHaveBeenCalledWith('p1', expect.objectContaining({ notes: 'Bring sunscreen' }));
   });
 
   it('clears the scheduled time via the Clear button (saves scheduledTime: null)', async () => {
