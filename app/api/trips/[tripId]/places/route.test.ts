@@ -10,7 +10,8 @@ vi.mock('@/src/db/client', () => ({
   sqlite: {},
 }));
 
-import { GET } from '@/app/api/trips/[tripId]/places/route';
+import { GET, POST } from '@/app/api/trips/[tripId]/places/route';
+import { listAllForTrip } from '@/src/db/repos/places';
 
 const TS = new Date('2026-06-08T12:00:00.000Z');
 
@@ -152,5 +153,49 @@ describe('GET /api/trips/[tripId]/places', () => {
     const p = body.places.find((x: { id: string }) => x.id === 'p1');
     expect(p.aiSummary).toBe('Hi');
     expect(p.links).toEqual([{ id: expect.any(String), url: 'https://x.example', title: null, thumbnail: null }]);
+  });
+});
+
+function postReq(tripId: string, body: unknown, headers: Record<string, string> = {}) {
+  return new Request(`http://x/api/trips/${tripId}/places`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
+describe('POST /api/trips/[tripId]/places', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    delete process.env.BURGERGO_API_KEY;
+  });
+
+  it('creates a Saved place (dayDate null) with about→aiSummary + notes', async () => {
+    const res = await POST(
+      postReq('trip-1', { name: 'Green Sand Beach', address: 'Naalehu HI', about: 'Olivine beach', notes: 'bring water' }),
+      ctx('trip-1'),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json() as { place: { id: string; dayDate: string | null; name: string; aiSummary: string | null; notes: string | null; category: string } };
+    expect(body.place.dayDate).toBeNull(); // Saved bucket
+    expect(body.place.name).toBe('Green Sand Beach');
+    expect(body.place.aiSummary).toBe('Olivine beach');
+    expect(body.place.notes).toBe('bring water');
+    expect(body.place.category).toBe('other');
+    // Persisted in the Saved bucket.
+    expect(listAllForTrip(testHandle.db, 'trip-1').some((p) => p.id === body.place.id && p.dayDate === null)).toBe(true);
+  });
+
+  it('rejects an unknown trip and invalid input', async () => {
+    expect((await POST(postReq('nope', { name: 'X' }), ctx('nope'))).status).toBe(404);
+    expect((await POST(postReq('trip-1', { name: '' }), ctx('trip-1'))).status).toBe(400);
+  });
+
+  it('requires x-api-key when BURGERGO_API_KEY is configured', async () => {
+    process.env.BURGERGO_API_KEY = 'secret';
+    expect((await POST(postReq('trip-1', { name: 'X' }), ctx('trip-1'))).status).toBe(401);
+    const ok = await POST(postReq('trip-1', { name: 'X' }, { 'x-api-key': 'secret' }), ctx('trip-1'));
+    expect(ok.status).toBe(201);
   });
 });

@@ -8,7 +8,8 @@ vi.mock('@/src/db/client', () => ({
   sqlite: {},
 }));
 
-import { GET } from '@/app/api/trips/[tripId]/restaurants/route';
+import { GET, POST } from '@/app/api/trips/[tripId]/restaurants/route';
+import { listRestaurants } from '@/src/db/repos/restaurants';
 
 const TS = new Date('2026-06-08T12:00:00.000Z');
 
@@ -103,5 +104,47 @@ describe('GET /api/trips/[tripId]/restaurants', () => {
     const res = await GET(new Request('http://x/api/trips/empty/restaurants'), ctx('empty'));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toEqual({ restaurants: [] });
+  });
+});
+
+function postReq(tripId: string, body: unknown, headers: Record<string, string> = {}) {
+  return new Request(`http://x/api/trips/${tripId}/restaurants`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
+describe('POST /api/trips/[tripId]/restaurants', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    delete process.env.BURGERGO_API_KEY;
+  });
+
+  it('creates a restaurant, folding about + notes into notes', async () => {
+    const res = await POST(
+      postReq('t1', { name: 'Da Poke Shack', address: 'Kailua-Kona', cuisine: 'Hawaiian', about: 'Famous poke', notes: 'cash only' }),
+      ctx('t1'),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json() as { restaurant: { id: string; name: string; cuisine: string | null; status: string; notes: string | null } };
+    expect(body.restaurant.name).toBe('Da Poke Shack');
+    expect(body.restaurant.cuisine).toBe('Hawaiian');
+    expect(body.restaurant.status).toBe('want-to-try');
+    expect(body.restaurant.notes).toBe('Famous poke\n\ncash only');
+    expect(listRestaurants(testHandle.db, 't1').some((r) => r.id === body.restaurant.id)).toBe(true);
+  });
+
+  it('rejects an unknown trip and invalid input', async () => {
+    expect((await POST(postReq('nope', { name: 'X' }), ctx('nope'))).status).toBe(404);
+    expect((await POST(postReq('t1', { rating: 9 }), ctx('t1'))).status).toBe(400);
+  });
+
+  it('requires x-api-key when BURGERGO_API_KEY is configured', async () => {
+    process.env.BURGERGO_API_KEY = 'secret';
+    expect((await POST(postReq('t1', { name: 'X' }), ctx('t1'))).status).toBe(401);
+    const ok = await POST(postReq('t1', { name: 'X' }, { 'x-api-key': 'secret' }), ctx('t1'));
+    expect(ok.status).toBe(201);
   });
 });

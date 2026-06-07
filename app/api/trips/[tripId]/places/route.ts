@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
+import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
-import { listAllForTrip } from '@/src/db/repos/places';
+import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
+import { fetchForwardGeocode } from '@/src/lib/google/server';
+import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -110,4 +114,77 @@ export async function GET(
     .all();
 
   return NextResponse.json({ places: placesResult, legs });
+}
+
+const CATEGORY = z.enum(['sightseeing', 'lodging', 'transport', 'activity', 'other']);
+
+const createPlaceSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  address: z.string().trim().max(500).optional(),
+  about: z.string().max(4000).optional(), // → aiSummary
+  notes: z.string().max(2000).optional(),
+  category: CATEGORY.optional(),
+});
+
+/**
+ * Create a Saved place (dayDate = null) for a trip — the write side used by the
+ * BurgerGo MCP. Best-effort forward-geocodes the address to coordinates (so it
+ * maps) and captures the Google place id. Photos are attached separately via
+ * POST /api/photos. Protected by isWriteAuthorized (x-api-key when configured).
+ */
+export async function POST(
+  req: Request,
+  ctx: { params: Promise<{ tripId: string }> },
+) {
+  const { tripId } = await ctx.params;
+  if (!isWriteAuthorized(req)) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  const trip = getTrip(db, tripId);
+  if (!trip) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'bad_request' }, { status: 400 });
+  }
+  const parsed = createPlaceSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'invalid_input', issues: parsed.error.issues }, { status: 400 });
+  }
+  const { name, address, about, notes, category } = parsed.data;
+
+  // Best-effort geocode so the place maps + gets a Google place id.
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let googlePlaceId: string | null = null;
+  if (address && env.GOOGLE_MAPS_SERVER_KEY) {
+    try {
+      const geo = await fetchForwardGeocode({ address, apiKey: env.GOOGLE_MAPS_SERVER_KEY });
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+        googlePlaceId = geo.googlePlaceId;
+      }
+    } catch {
+      // geocode unavailable → save without coordinates (still lists)
+    }
+  }
+
+  const place = addPlace(db, {
+    tripId,
+    dayDate: null, // Saved bucket
+    name,
+    address: address ?? null,
+    lat,
+    lng,
+    googlePlaceId,
+    category: category ?? 'other',
+    notes: notes ?? null,
+  });
+  // "about" maps to the editable AI-summary field.
+  const finalPlace = about ? (updatePlace(db, place.id, { aiSummary: about }) ?? place) : place;
+
+  return NextResponse.json({ place: finalPlace }, { status: 201 });
 }

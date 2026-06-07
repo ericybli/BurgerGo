@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 import { and, asc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
+import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
-import { listRestaurants } from '@/src/db/repos/restaurants';
+import { listRestaurants, addRestaurant } from '@/src/db/repos/restaurants';
+import { fetchForwardGeocode } from '@/src/lib/google/server';
+import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { places, placeDetailsCache, photos as photosTable, type Restaurant } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -99,4 +103,79 @@ export async function GET(
   }));
 
   return NextResponse.json({ restaurants: restaurantsResult });
+}
+
+const createRestaurantSchema = z.object({
+  name: z.string().trim().min(1).max(200),
+  address: z.string().trim().max(500).optional(),
+  about: z.string().max(2000).optional(), // folded into notes (restaurants have no separate field)
+  notes: z.string().max(2000).optional(),
+  cuisine: z.string().trim().max(100).optional(),
+  status: z.enum(['want-to-try', 'been']).optional(),
+  rating: z.number().int().min(1).max(5).optional(),
+  priceLevel: z.number().int().min(1).max(4).optional(),
+});
+
+/**
+ * Create a restaurant for a trip — the write side used by the BurgerGo MCP.
+ * Best-effort forward-geocodes the address so the restaurant pins on the map.
+ * `about` + `notes` fold into the notes field (restaurants have no AI-summary
+ * field). Photos are attached separately via POST /api/photos. Protected by
+ * isWriteAuthorized (x-api-key when configured).
+ */
+export async function POST(
+  req: Request,
+  ctx: { params: Promise<{ tripId: string }> },
+) {
+  const { tripId } = await ctx.params;
+  if (!isWriteAuthorized(req)) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  const trip = getTrip(db, tripId);
+  if (!trip) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'bad_request' }, { status: 400 });
+  }
+  const parsed = createRestaurantSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'invalid_input', issues: parsed.error.issues }, { status: 400 });
+  }
+  const { name, address, about, notes, cuisine, status, rating, priceLevel } = parsed.data;
+
+  let lat: number | null = null;
+  let lng: number | null = null;
+  let googlePlaceId: string | null = null;
+  if (address && env.GOOGLE_MAPS_SERVER_KEY) {
+    try {
+      const geo = await fetchForwardGeocode({ address, apiKey: env.GOOGLE_MAPS_SERVER_KEY });
+      if (geo) {
+        lat = geo.lat;
+        lng = geo.lng;
+        googlePlaceId = geo.googlePlaceId;
+      }
+    } catch {
+      // geocode unavailable → save without coordinates (still lists in Eats)
+    }
+  }
+
+  const combinedNotes = [about, notes].filter(Boolean).join('\n\n') || null;
+  const restaurant = addRestaurant(db, {
+    tripId,
+    name,
+    address: address ?? null,
+    lat,
+    lng,
+    googlePlaceId,
+    cuisine: cuisine ?? null,
+    status: status ?? 'want-to-try',
+    rating: rating ?? null,
+    priceLevel: priceLevel ?? null,
+    notes: combinedNotes,
+  });
+
+  return NextResponse.json({ restaurant }, { status: 201 });
 }
