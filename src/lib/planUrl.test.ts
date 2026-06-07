@@ -63,10 +63,18 @@ describe('planUrl URL state', () => {
 
 describe('planUrl thumbnails', () => {
   it('categoryGlyph maps each enum to a glyph', () => {
-    expect(categoryGlyph('sightseeing')).toBe('🏛️');
+    expect(categoryGlyph('sightseeing')).toBe('🏞️');
     expect(categoryGlyph('lodging')).toBe('🛏️');
+    expect(categoryGlyph('hotel')).toBe('🏨');
+    expect(categoryGlyph('airbnb')).toBe('🏠');
+    expect(categoryGlyph('airport')).toBe('✈️');
     expect(categoryGlyph('transport')).toBe('🚆');
     expect(categoryGlyph('activity')).toBe('🎟️');
+    expect(categoryGlyph('shopping')).toBe('🛍️');
+    expect(categoryGlyph('parking')).toBe('🅿️');
+    expect(categoryGlyph('entrance')).toBe('🚪');
+    expect(categoryGlyph('museum')).toBe('🏛️');
+    expect(categoryGlyph('event')).toBe('🎉');
     expect(categoryGlyph('other')).toBe('📍');
   });
 

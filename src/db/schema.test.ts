@@ -34,8 +34,16 @@ describe('schema: places', () => {
     expect(places.category.enumValues).toEqual([
       'sightseeing',
       'lodging',
+      'hotel',
+      'airbnb',
+      'airport',
       'transport',
       'activity',
+      'shopping',
+      'parking',
+      'entrance',
+      'museum',
+      'event',
       'other',
     ]);
   });
