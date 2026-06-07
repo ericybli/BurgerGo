@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
 import { createTrip, deleteTrip } from '@/src/db/repos/trips';
-import { addPlace } from '@/src/db/repos/places';
+import { addPlace, deletePlace } from '@/src/db/repos/places';
 import {
   addLink,
   getLink,
@@ -139,5 +139,16 @@ describe('savedLinks repo', () => {
     addLink(db, { tripId: trip.id, url: 'https://b.example', placeId: place.id });      // place link
     expect(listLinksForTrip(db, trip.id).map((l) => l.url)).toEqual(['https://a.example']);
     expect(listLinksForPlace(db, place.id).map((l) => l.url)).toEqual(['https://b.example']);
+  });
+
+  it('deleting a place cascades to its attached links (FK ON DELETE CASCADE)', () => {
+    const { db } = makeTestDb();
+    const trip = createTrip(db, { name: 'Tokyo', startDate: '2026-06-01', endDate: '2026-06-10' });
+    const place = addPlace(db, { tripId: trip.id, name: 'P', category: 'other', dayDate: '2026-06-02' });
+    const link = addLink(db, { tripId: trip.id, url: 'https://g.example', placeId: place.id });
+    // Must not throw on FK; the link row is removed with the place.
+    expect(() => deletePlace(db, place.id)).not.toThrow();
+    expect(getLink(db, link.id)).toBeUndefined();
+    expect(listLinksForPlace(db, place.id)).toEqual([]);
   });
 });

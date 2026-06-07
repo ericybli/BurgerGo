@@ -92,5 +92,7 @@ export async function deleteLinkAction(id: string): Promise<void> {
   }
 
   deleteLink(db, id);
-  revalidateJournal(existing.tripId);
+  // Place-scoped links surface in the Plan tab; reading-list links in Journal.
+  if (existing.placeId) revalidatePath(`/trip/${existing.tripId}/plan`);
+  else revalidateJournal(existing.tripId);
 }

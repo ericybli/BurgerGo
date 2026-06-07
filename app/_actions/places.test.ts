@@ -273,5 +273,6 @@ describe('generatePlaceSummaryAction', () => {
   it('generatePlaceSummaryAction stores the AI summary on the place', async () => {
     const updated = await generatePlaceSummaryAction('a');
     expect(updated?.aiSummary).toBe('Generated blurb.');
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
   });
 });

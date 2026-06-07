@@ -137,7 +137,17 @@ describe('saved-link actions', () => {
   });
 
   it('addLinkAction stores placeId and revalidates the plan', async () => {
+    revalidatePath.mockClear();
     const link = await addLinkAction({ tripId: 'trip-1', url: 'https://g.example', placeId: 'place-1' });
     expect(link.placeId).toBe('place-1');
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('deleting a place-scoped link revalidates the plan (not the journal)', async () => {
+    const link = await addLinkAction({ tripId: 'trip-1', url: 'https://g.example', placeId: 'place-1' });
+    revalidatePath.mockClear();
+    await deleteLinkAction(link.id);
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+    expect(revalidatePath).not.toHaveBeenCalledWith('/trip/trip-1/journal');
   });
 });
