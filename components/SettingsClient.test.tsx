@@ -85,6 +85,26 @@ describe('SettingsClient', () => {
     expect(screen.getByText('USD')).toBeInTheDocument();
   });
 
+  it('renders the AI model as a dropdown with the four options, defaulting to gpt-5.4-mini', async () => {
+    mockFetchSettings({ language: 'en', currency: 'USD' });
+    renderSettings();
+    const select = (await screen.findByRole('combobox', { name: en.settings.aiModelLabel })) as HTMLSelectElement;
+    expect(select.value).toBe('gpt-5.4-mini');
+    expect([...select.querySelectorAll('option')].map((o) => o.value)).toEqual([
+      'gpt-5.5-pro', 'gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano',
+    ]);
+  });
+
+  it('selects a stored model that is one of the options', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true, json: async () => ({ language: 'en', currency: 'USD', aiPrompt: null, aiModel: 'gpt-5.5-pro' }),
+    })) as unknown as typeof fetch);
+    renderSettings();
+    const select = (await screen.findByRole('combobox', { name: en.settings.aiModelLabel })) as HTMLSelectElement;
+    await screen.findByText('en');
+    expect(select.value).toBe('gpt-5.5-pro');
+  });
+
   it('renders the About block: wordmark, tagline, version, and both info rows', () => {
     process.env.NEXT_PUBLIC_APP_VERSION = '9.9.9';
     mockFetchSettings({ language: 'en', currency: 'USD' });

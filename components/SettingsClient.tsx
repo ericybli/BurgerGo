@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { APP_VERSION } from '@/src/lib/appVersion';
-import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT } from '@/src/lib/openai/defaults';
+import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT, AI_MODELS } from '@/src/lib/openai/defaults';
 import { updateAiSettingsAction } from '@/app/_actions/settings';
 
 type SettingsRow = {
@@ -26,7 +26,7 @@ export function SettingsClient() {
   const [settings, setSettings] = useState<SettingsRow>(null);
   const [online, setOnline] = useState(true);
   const [aiPrompt, setAiPrompt] = useState('');
-  const [aiModel, setAiModel] = useState('');
+  const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
   const [aiStatus, setAiStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [isPending, startTransition] = useTransition();
 
@@ -51,7 +51,8 @@ export function SettingsClient() {
         if (!cancelled) {
           setSettings(row);
           setAiPrompt(row?.aiPrompt ?? '');
-          setAiModel(row?.aiModel ?? '');
+          // Coerce any stored value to one of the dropdown options (else default).
+          setAiModel(row?.aiModel && AI_MODELS.includes(row.aiModel) ? row.aiModel : DEFAULT_AI_MODEL);
         }
       } catch {
         // Offline with no cached settings → keep the en/USD placeholder defaults.
@@ -76,7 +77,7 @@ export function SettingsClient() {
 
   function resetAi() {
     setAiPrompt('');
-    setAiModel('');
+    setAiModel(DEFAULT_AI_MODEL);
     setAiStatus('idle');
   }
 
@@ -118,15 +119,17 @@ export function SettingsClient() {
         <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-model">
           {t('settings.aiModelLabel')}
         </label>
-        <input
+        <select
           id="ai-model"
-          type="text"
           value={aiModel}
           disabled={!online || isPending}
-          placeholder={DEFAULT_AI_MODEL}
           onChange={(e) => { setAiModel(e.target.value); setAiStatus('idle'); }}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
-        />
+        >
+          {AI_MODELS.map((m) => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
 
         <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-prompt">
           {t('settings.aiPromptLabel')}

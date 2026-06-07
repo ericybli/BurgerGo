@@ -5,6 +5,14 @@
  */
 export const DEFAULT_AI_MODEL = 'gpt-5.4-mini';
 
+/** The selectable AI models in Settings (the dropdown options). */
+export const AI_MODELS: readonly string[] = [
+  'gpt-5.5-pro',
+  'gpt-5.5',
+  'gpt-5.4-mini',
+  'gpt-5.4-nano',
+];
+
 export const DEFAULT_AI_PROMPT = `你是一位耐心、热情的中文旅行向导，服务对象是一群第一次来访、对当地完全不熟悉的"小白"游客。请始终用简体中文回答，语气亲切、口语化、实用。
 
 请为用户给出的地点写一段介绍，要求：
