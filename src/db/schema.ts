@@ -188,6 +188,47 @@ export const photos = sqliteTable(
   }),
 );
 
+// Plan 3 §3.1 — free-form trip journal entries (markdown body + photos via the
+// shared `photos` table, owner_type='journal'). Listed newest-written first.
+export const journalEntries = sqliteTable(
+  'journal_entries',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(), // required (spec resolves master ambiguity to required)
+    body: text('body').notNull(), // markdown source; may be ''
+    entryDate: text('entry_date'), // YYYY-MM-DD, nullable display metadata
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTripCreated: index('idx_journal_trip_created').on(t.tripId, t.createdAt),
+  }),
+);
+
+// Plan 3 §3.2 — reading-list saved links. thumbnail is a relative path on the
+// uploads volume of the downloaded OG-image derivative (null if none).
+export const savedLinks = sqliteTable(
+  'saved_links',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    title: text('title'), // editable; preview may prefill
+    note: text('note'),
+    thumbnail: text('thumbnail'), // relative derivative path; null if none
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTripCreated: index('idx_links_trip').on(t.tripId, t.createdAt),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -196,6 +237,8 @@ export const tripsRelations = relations(trips, ({ many }) => ({
   expenses: many(expenses),
   budgetTargets: many(budgetTargets),
   photos: many(photos),
+  journalEntries: many(journalEntries),
+  savedLinks: many(savedLinks),
 }));
 
 export const placesRelations = relations(places, ({ one, many }) => ({
@@ -242,6 +285,14 @@ export const photosRelations = relations(photos, ({ one }) => ({
   trip: one(trips, { fields: [photos.tripId], references: [trips.id] }),
 }));
 
+export const journalEntriesRelations = relations(journalEntries, ({ one }) => ({
+  trip: one(trips, { fields: [journalEntries.tripId], references: [trips.id] }),
+}));
+
+export const savedLinksRelations = relations(savedLinks, ({ one }) => ({
+  trip: one(trips, { fields: [savedLinks.tripId], references: [trips.id] }),
+}));
+
 // Inferred row types (used by repos in later tasks).
 export type Trip = typeof trips.$inferSelect;
 export type NewTrip = typeof trips.$inferInsert;
@@ -258,3 +309,7 @@ export type BudgetTarget = typeof budgetTargets.$inferSelect;
 export type NewBudgetTarget = typeof budgetTargets.$inferInsert;
 export type Photo = typeof photos.$inferSelect;
 export type NewPhoto = typeof photos.$inferInsert;
+export type JournalEntry = typeof journalEntries.$inferSelect;
+export type NewJournalEntry = typeof journalEntries.$inferInsert;
+export type SavedLink = typeof savedLinks.$inferSelect;
+export type NewSavedLink = typeof savedLinks.$inferInsert;
