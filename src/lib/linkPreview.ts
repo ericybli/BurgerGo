@@ -6,6 +6,19 @@
  * cannot parse is treated as blocked.
  */
 
+/**
+ * Display domain for a saved link: the URL hostname without a leading `www.`,
+ * lowercased. Returns '' when the input is not a parseable absolute URL.
+ */
+export function linkDomain(url: string): string {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
+}
+
 /** True only for absolute http:/https: URLs. */
 export function isHttpUrl(raw: string): boolean {
   try {
