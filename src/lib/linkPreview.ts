@@ -63,9 +63,9 @@ export function isBlockedAddress(ip: string): boolean {
 
   // IPv4-mapped IPv6 (::ffff:a.b.c.d) — re-check the embedded IPv4.
   const mapped = lower.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
-  if (mapped) return isBlockedAddress(mapped[1]);
+  if (mapped && mapped[1]) return isBlockedAddress(mapped[1]);
 
-  const firstHextet = lower.split(':')[0];
+  const firstHextet = lower.split(':')[0] ?? ''; // '' → fails the test below → blocked
   if (!/^[0-9a-f]{1,4}$/.test(firstHextet)) return true; // unparseable → blocked
   const block = parseInt(firstHextet, 16);
 
