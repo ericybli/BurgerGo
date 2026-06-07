@@ -19,10 +19,12 @@ const RESTAURANTS = [
   {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4, status: 'been',
     priceLevel: 2, notes: null, linkedPlaceId: null, createdAt: 0, updatedAt: 0, scheduledDayDate: null,
+    photoPath: null, photos: [],
   },
   {
     id: 'r2', tripId: 't1', name: 'Kani', cuisine: null, rating: null, status: 'want-to-try',
     priceLevel: null, notes: null, linkedPlaceId: null, createdAt: 0, updatedAt: 0, scheduledDayDate: null,
+    photoPath: null, photos: [],
   },
 ];
 

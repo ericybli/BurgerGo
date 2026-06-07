@@ -91,7 +91,13 @@ export function RestaurantFormSheet({
           const geo = await forwardGeocode(trimmedAddress);
           lat = geo ? geo.lat : null;
           lng = geo ? geo.lng : null;
-          gpid = null;
+          gpid = geo?.googlePlaceId ?? null;
+          // When the address resolves to a Google place, pull Details so its
+          // photo is downloaded + cached (auto-fills the restaurant photo).
+          if (gpid) {
+            const details = await select(gpid);
+            gpid = details?.googlePlaceId || gpid;
+          }
         }
         const payload = {
           name: trimmed,

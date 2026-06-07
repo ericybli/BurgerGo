@@ -185,8 +185,8 @@ export const photos = sqliteTable(
     tripId: text('trip_id')
       .notNull()
       .references(() => trips.id, { onDelete: 'cascade' }),
-    ownerType: text('owner_type', { enum: ['place', 'journal'] }).notNull(),
-    ownerId: text('owner_id').notNull(), // places.id (or journal_entries.id later)
+    ownerType: text('owner_type', { enum: ['place', 'journal', 'restaurant'] }).notNull(),
+    ownerId: text('owner_id').notNull(), // places.id / journal_entries.id / restaurants.id
     path: text('path').notNull(), // base path `<tripId>/<photoId>`
     width: integer('width'), // of the `full` derivative
     height: integer('height'),

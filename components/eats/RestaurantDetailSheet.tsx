@@ -1,10 +1,14 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
 import type { DerivedDay } from '@/src/lib/days';
 import { priceLevelLabel, ratingStars } from '@/src/lib/eatsView';
+import { thumbForRestaurant } from '@/src/lib/planUrl';
+import { PhotoGallery } from '@/components/plan/PhotoGallery';
+import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
+import { deletePhotoAction } from '@/app/_actions/photos';
 import {
   updateRestaurantAction,
   deleteRestaurantAction,
@@ -32,10 +36,16 @@ export function RestaurantDetailSheet({
   onEdit,
 }: RestaurantDetailSheetProps) {
   const t = useTranslations('eats');
+  const tPlan = useTranslations('plan');
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [picking, setPicking] = useState(false);
+  const { upload, uploading } = usePhotoUpload();
+  const [photoError, setPhotoError] = useState<string | null>(null);
+
+  // Clear a stale photo error whenever the sheet opens for a different restaurant.
+  useEffect(() => { setPhotoError(null); }, [restaurant.id]);
 
   if (!open) return null;
 
@@ -43,9 +53,45 @@ export function RestaurantDetailSheet({
   const price = priceLevelLabel(restaurant.priceLevel);
   const nextStatus = restaurant.status === 'been' ? 'want-to-try' : 'been';
   const busy = disabled || isPending;
+  const thumb = thumbForRestaurant(restaurant);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (e.key === 'Escape') onClose();
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    setPhotoError(null);
+    if (!file.type.startsWith('image/')) { setPhotoError(tPlan('photoNotImage')); return; }
+    const { photo, errorCode } = await upload({
+      file,
+      tripId: restaurant.tripId,
+      ownerId: restaurant.id,
+      ownerType: 'restaurant',
+    });
+    if (photo) {
+      onChanged(); // reload → gallery + card thumb refresh
+    } else if (errorCode === 'too_large') {
+      setPhotoError(tPlan('photoTooLarge'));
+    } else if (errorCode === 'too_many') {
+      setPhotoError(tPlan('photoTooMany'));
+    } else {
+      setPhotoError(tPlan('photoUploadFailed'));
+    }
+  }
+
+  function handlePhotoDelete(photoId: string) {
+    setPhotoError(null);
+    startTransition(async () => {
+      try {
+        await deletePhotoAction(photoId);
+        onChanged();
+      } catch {
+        setPhotoError(tPlan('photoUploadFailed'));
+      }
+    });
   }
 
   function run(fn: () => Promise<unknown>) {
@@ -94,6 +140,40 @@ export function RestaurantDetailSheet({
           {restaurant.scheduledDayDate ? t('scheduledOn', { date: restaurant.scheduledDayDate }) : t('notScheduled')}
         </p>
         {restaurant.notes ? <p className="mt-2 text-body text-ink">{restaurant.notes}</p> : null}
+
+        {thumb.kind === 'photo' ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={thumb.src} alt={restaurant.name} className="mt-3 h-48 w-full rounded-control object-cover" />
+        ) : null}
+
+        {photoError ? (
+          <p role="alert" className="mt-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+            {photoError}
+          </p>
+        ) : null}
+
+        <PhotoGallery
+          photos={restaurant.photos}
+          placeName={restaurant.name}
+          disabled={disabled}
+          onDelete={handlePhotoDelete}
+        />
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="rd-photo">
+          {tPlan('addPhoto')}
+        </label>
+        {disabled ? <p className="text-caption text-ink-muted">{tPlan('addPhotoOffline')}</p> : null}
+        <input
+          id="rd-photo"
+          type="file"
+          accept="image/*"
+          disabled={disabled || uploading}
+          onChange={handlePhotoChange}
+          className="mt-1 w-full text-body text-ink disabled:opacity-60"
+        />
+        {uploading ? (
+          <p className="mt-1 text-caption text-ink-muted">{tPlan('uploadingPhoto')}</p>
+        ) : null}
 
         <button
           type="button" disabled={busy}

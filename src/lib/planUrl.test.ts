@@ -6,7 +6,9 @@ import {
   buildPlanQuery,
   categoryGlyph,
   thumbForPlace,
+  thumbForRestaurant,
   cardPhotoUrl,
+  restaurantCardPhotoUrl,
   personalPhotoUrl,
   buildDayGroups,
   type PlanParams,
@@ -97,6 +99,27 @@ describe('personalPhotoUrl', () => {
   it('builds the base-prefixed personal-photo serving URL for a size', () => {
     expect(personalPhotoUrl('photo-1', 'card')).toBe('/api/photos/p/photo-1/card');
     expect(personalPhotoUrl('photo-1', 'full')).toBe('/api/photos/p/photo-1/full');
+  });
+});
+
+describe('thumbForRestaurant', () => {
+  it('restaurantCardPhotoUrl points at the restaurant photo handler card variant', () => {
+    expect(restaurantCardPhotoUrl('r9')).toBe('/api/photos/r/r9/card');
+  });
+
+  it('prefers the first personal photo, then the cached Google photo, then the dining glyph', () => {
+    // personal wins
+    expect(
+      thumbForRestaurant({ id: 'r1', photoPath: 'gphotos/g1.webp', photos: [{ id: 'ph1' }] }),
+    ).toEqual({ kind: 'photo', src: '/api/photos/p/ph1/card' });
+    // else the cached Google photo (served via the restaurant handler)
+    expect(
+      thumbForRestaurant({ id: 'r1', photoPath: 'gphotos/g1.webp', photos: [] }),
+    ).toEqual({ kind: 'photo', src: '/api/photos/r/r1/card' });
+    // else the dining glyph
+    expect(
+      thumbForRestaurant({ id: 'r1', photoPath: null, photos: [] }),
+    ).toEqual({ kind: 'glyph', glyph: '🍽️' });
   });
 });
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, restaurants } from '@/src/db/schema';
+import { trips, places, restaurants, placeDetailsCache, photos } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -55,6 +55,37 @@ describe('GET /api/trips/[tripId]/restaurants', () => {
     expect(body.restaurants.map((r) => r.id)).toEqual(['r1', 'r2']); // createdAt desc
     expect(body.restaurants.find((r) => r.id === 'r1')?.scheduledDayDate).toBe('2026-06-06');
     expect(body.restaurants.find((r) => r.id === 'r2')?.scheduledDayDate).toBeNull();
+  });
+
+  it('resolves photoPath from place_details_cache + personal photos by owner', async () => {
+    const db = testHandle.db;
+    // A restaurant linked to a Google place that has a cached photo + one upload.
+    db.insert(restaurants).values({
+      id: 'r3', tripId: 't1', name: 'Sushi Dai', cuisine: null, rating: null,
+      status: 'want-to-try', priceLevel: null, notes: null, linkedPlaceId: null,
+      googlePlaceId: 'g3', createdAt: new Date(3000), updatedAt: TS,
+    }).run();
+    db.insert(placeDetailsCache).values({
+      googlePlaceId: 'g3', name: 'Sushi Dai', address: null, lat: null, lng: null,
+      categoryGuess: 'other', photoRef: 'ref', photoLocalPath: 'gphotos/g3.webp',
+      rawJson: '{}', fetchedAt: TS,
+    }).run();
+    db.insert(photos).values({
+      id: 'ph1', tripId: 't1', ownerType: 'restaurant', ownerId: 'r3',
+      path: 't1/ph1', width: 800, height: 600, orderIndex: 0, createdAt: TS,
+    }).run();
+
+    const res = await GET(new Request('http://x/api/trips/t1/restaurants'), ctx('t1'));
+    const body = (await res.json()) as {
+      restaurants: Array<{ id: string; photoPath: string | null; photos: { id: string }[] }>;
+    };
+    const r3 = body.restaurants.find((r) => r.id === 'r3')!;
+    expect(r3.photoPath).toBe('gphotos/g3.webp');
+    expect(r3.photos.map((p) => p.id)).toEqual(['ph1']);
+    // Restaurants without a Google place / uploads stay null + empty.
+    const r2 = body.restaurants.find((r) => r.id === 'r2')!;
+    expect(r2.photoPath).toBeNull();
+    expect(r2.photos).toEqual([]);
   });
 
   it('returns 404 for an unknown trip', async () => {

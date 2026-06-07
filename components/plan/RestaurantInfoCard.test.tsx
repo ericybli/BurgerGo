@@ -9,7 +9,7 @@ import type { RestaurantMarkerInput } from '@/src/lib/map/markers';
 function rest(over: Partial<RestaurantMarkerInput> = {}): RestaurantMarkerInput {
   return {
     id: 'r1', name: 'Ichiran', lat: 35.0, lng: 139.0, googlePlaceId: 'gx',
-    cuisine: 'Ramen', address: '1-2-3 Shibuya', notes: 'Tonkotsu', ...over,
+    cuisine: 'Ramen', address: '1-2-3 Shibuya', notes: 'Tonkotsu', photoPath: null, photos: [], ...over,
   };
 }
 
@@ -43,5 +43,17 @@ describe('RestaurantInfoCard', () => {
     renderCard(rest(), onClose);
     await userEvent.click(screen.getByRole('button', { name: en.planMap.closeInfoCard }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows the cached Google photo (and drops the glyph chip) when one exists', () => {
+    renderCard(rest({ photoPath: 'gphotos/gx.webp' }));
+    const img = screen.getByRole('img', { name: 'Ichiran' });
+    expect(img).toHaveAttribute('src', expect.stringContaining('/api/photos/r/r1/card'));
+  });
+
+  it('prefers a personal photo over the Google photo', () => {
+    renderCard(rest({ photoPath: 'gphotos/gx.webp', photos: [{ id: 'ph1', width: null, height: null }] }));
+    const img = screen.getByRole('img', { name: 'Ichiran' });
+    expect(img).toHaveAttribute('src', expect.stringContaining('/api/photos/p/ph1/card'));
   });
 });

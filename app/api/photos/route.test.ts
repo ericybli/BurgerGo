@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, journalEntries } from '@/src/db/schema';
+import { trips, places, journalEntries, restaurants } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -38,6 +38,11 @@ function seed(db: ReturnType<typeof makeTestDb>['db']) {
   }).run();
   db.insert(journalEntries).values({
     id: 'entry-1', tripId: 'trip-1', title: 'Day 1', body: '', entryDate: null,
+    createdAt: TS, updatedAt: TS,
+  }).run();
+  db.insert(restaurants).values({
+    id: 'rest-1', tripId: 'trip-1', name: 'Ichiran', cuisine: null, rating: null,
+    status: 'want-to-try', priceLevel: null, notes: null, linkedPlaceId: null,
     createdAt: TS, updatedAt: TS,
   }).run();
 }
@@ -128,6 +133,20 @@ describe('POST /api/photos', () => {
     const body = await res.json() as { photo: { ownerId: string } };
     expect(body.photo.ownerId).toBe('entry-1');
     expect(listByOwner(testHandle.db, 'journal', 'entry-1')).toHaveLength(1);
+  });
+
+  it('uploads a restaurant photo when the restaurant belongs to the trip', async () => {
+    const res = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'restaurant', ownerId: 'rest-1' }));
+    expect(res.status).toBe(201);
+    const body = await res.json() as { photo: { ownerId: string } };
+    expect(body.photo.ownerId).toBe('rest-1');
+    expect(listByOwner(testHandle.db, 'restaurant', 'rest-1')).toHaveLength(1);
+  });
+
+  it('returns 404 when the restaurant owner does not exist', async () => {
+    const res = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'restaurant', ownerId: 'nope' }));
+    expect(res.status).toBe(404);
+    expect(processPhoto).not.toHaveBeenCalled();
   });
 
   it('returns 404 when the journal owner does not exist', async () => {

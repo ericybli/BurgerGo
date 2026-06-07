@@ -104,7 +104,7 @@ describe('buildSavedMarkers', () => {
 describe('buildRestaurantMarkers', () => {
   function rest(id: string, lat: number | null, lng: number | null,
                 extra: Partial<RestaurantMarkerInput> = {}): RestaurantMarkerInput {
-    return { id, name: id, lat, lng, googlePlaceId: null, cuisine: null, address: null, notes: null, ...extra };
+    return { id, name: id, lat, lng, googlePlaceId: null, cuisine: null, address: null, notes: null, photoPath: null, photos: [], ...extra };
   }
 
   it('returns only restaurants with coords, amber + dining glyph, un-numbered', () => {

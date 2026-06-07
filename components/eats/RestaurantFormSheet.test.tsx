@@ -21,12 +21,18 @@ vi.mock('@/app/_actions/restaurants', () => ({
 
 // Stub the Places autocomplete so typing in the address field never loads the
 // real Google JS in jsdom; the geocode helper is mocked to return fixed coords.
+// `select` (the Details fetch) is captured so we can assert the photo auto-fill
+// chaining when a typed address resolves to a Google place.
+const selectFn = vi.fn(async (_id: string) => ({
+  googlePlaceId: 'g-canon', name: 'Resolved', address: null, lat: null, lng: null,
+  categoryGuess: null, photoRef: null, photoLocalPath: null, cached: false,
+}));
 vi.mock('@/components/plan/useGooglePlaces', () => ({
   usePlacesAutocomplete: () => ({
-    predictions: [], loading: false, search: vi.fn(), select: vi.fn(), clear: vi.fn(),
+    predictions: [], loading: false, search: vi.fn(), select: (id: string) => selectFn(id), clear: vi.fn(),
   }),
 }));
-const forwardGeocode = vi.fn(async (_addr: string) => ({ lat: 35.0, lng: 139.0, address: '1 Test St' }));
+const forwardGeocode = vi.fn(async (_addr: string) => ({ lat: 35.0, lng: 139.0, address: '1 Test St', googlePlaceId: null as string | null }));
 vi.mock('@/components/plan/googleClient', () => ({
   forwardGeocode: (addr: string) => forwardGeocode(addr),
 }));
@@ -38,7 +44,7 @@ function existing(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4,
     status: 'been', priceLevel: 2, notes: 'Tonkotsu', linkedPlaceId: null,
     address: null, lat: null, lng: null, googlePlaceId: null,
-    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, ...over,
+    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, photoPath: null, photos: [], ...over,
   };
 }
 
@@ -65,6 +71,7 @@ beforeEach(() => {
   addRestaurantAction.mockClear();
   updateRestaurantAction.mockClear();
   forwardGeocode.mockClear();
+  selectFn.mockClear();
 });
 
 describe('RestaurantFormSheet', () => {
@@ -95,6 +102,20 @@ describe('RestaurantFormSheet', () => {
     expect(forwardGeocode).toHaveBeenCalledWith('1 Test St');
     expect(addRestaurantAction).toHaveBeenCalledWith(
       expect.objectContaining({ address: '1 Test St', lat: 35.0, lng: 139.0 }),
+    );
+  });
+
+  it('add mode: auto-fills the Google photo via Details when a typed address resolves to a place', async () => {
+    forwardGeocode.mockResolvedValueOnce({ lat: 35.0, lng: 139.0, address: '1 Test St', googlePlaceId: 'g-geo' });
+    renderSheet();
+    await userEvent.type(screen.getByLabelText(en.eats.nameLabel), 'Ichiran');
+    await userEvent.type(screen.getByLabelText(en.eats.addressLabel), '1 Test St');
+    await userEvent.click(screen.getByRole('button', { name: en.eats.save }));
+    await waitFor(() => expect(addRestaurantAction).toHaveBeenCalled());
+    // Details pulled for the geocoded place id → downloads + caches the photo.
+    expect(selectFn).toHaveBeenCalledWith('g-geo');
+    expect(addRestaurantAction).toHaveBeenCalledWith(
+      expect.objectContaining({ googlePlaceId: 'g-canon', lat: 35.0, lng: 139.0 }),
     );
   });
 

@@ -11,7 +11,7 @@ function r(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4,
     status: 'been', priceLevel: 2, notes: 'Tonkotsu', linkedPlaceId: 'p1',
     address: null, lat: null, lng: null, googlePlaceId: null,
-    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: '2026-06-06', ...over,
+    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: '2026-06-06', photoPath: null, photos: [], ...over,
   };
 }
 
@@ -61,5 +61,19 @@ describe('RestaurantCard', () => {
     const { onTap } = renderCard();
     await userEvent.click(screen.getByRole('button', { name: /Ichiran/ }));
     expect(onTap).toHaveBeenCalledWith('r1');
+  });
+
+  it('shows a photo banner (Google photo) when one exists, and none otherwise', () => {
+    const { unmount } = render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <RestaurantCard restaurant={r({ photoPath: 'gphotos/g.webp' })} onTap={vi.fn()} />
+      </NextIntlClientProvider>,
+    );
+    expect(screen.getByRole('img', { name: 'Ichiran' })).toHaveAttribute(
+      'src', expect.stringContaining('/api/photos/r/r1/card'),
+    );
+    unmount();
+    renderCard(); // no photo
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 });

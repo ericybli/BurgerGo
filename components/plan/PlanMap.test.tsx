@@ -158,7 +158,7 @@ describe('PlanMap (online, days bucket)', () => {
     const user = userEvent.setup();
     const restaurants = [
       { id: 'rest1', name: 'Ichiran', lat: 35.8, lng: 139.8, googlePlaceId: null,
-        cuisine: 'Ramen', address: '1-2-3 Shibuya', notes: 'Tonkotsu' },
+        cuisine: 'Ramen', address: '1-2-3 Shibuya', notes: 'Tonkotsu', photoPath: null, photos: [] },
     ];
     renderMap({ restaurants });
 

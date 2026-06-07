@@ -67,6 +67,11 @@ export function personalPhotoUrl(photoId: string, size: 'thumb' | 'card' | 'full
   return withBase(`/api/photos/p/${photoId}/${size}`);
 }
 
+/** URL for a restaurant's cached Google card photo (restaurant photo handler). */
+export function restaurantCardPhotoUrl(restaurantId: string): string {
+  return withBase(`/api/photos/r/${restaurantId}/card`);
+}
+
 export type Thumb = { kind: 'photo'; src: string } | { kind: 'glyph'; glyph: string };
 
 /**
@@ -80,6 +85,20 @@ export function thumbForPlace(
   if (first) return { kind: 'photo', src: personalPhotoUrl(first.id, 'card') };
   if (place.photoPath) return { kind: 'photo', src: cardPhotoUrl(place.id) };
   return { kind: 'glyph', glyph: categoryGlyph(place.category) };
+}
+
+/**
+ * Canonical Restaurant-card thumbnail. Precedence mirrors thumbForPlace: first
+ * personal photo → cached Google photo → dining glyph (🍽️, the Restaurants-layer
+ * glyph from src/lib/map/markers; inlined here to avoid an import cycle).
+ */
+export function thumbForRestaurant(
+  restaurant: { id: string; photoPath: string | null; photos: { id: string }[] },
+): Thumb {
+  const first = restaurant.photos[0];
+  if (first) return { kind: 'photo', src: personalPhotoUrl(first.id, 'card') };
+  if (restaurant.photoPath) return { kind: 'photo', src: restaurantCardPhotoUrl(restaurant.id) };
+  return { kind: 'glyph', glyph: '🍽️' };
 }
 
 /** One PlanMap day group (locked B3 seam shape). */

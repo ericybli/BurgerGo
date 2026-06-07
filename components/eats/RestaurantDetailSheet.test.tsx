@@ -32,7 +32,7 @@ function r(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
     id: 'r1', tripId: 't1', name: 'Ichiran', cuisine: 'Ramen', rating: 4,
     status: 'want-to-try', priceLevel: 2, notes: null, linkedPlaceId: null,
     address: null, lat: null, lng: null, googlePlaceId: null,
-    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, ...over,
+    createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, photoPath: null, photos: [], ...over,
   };
 }
 
@@ -130,5 +130,23 @@ describe('RestaurantDetailSheet', () => {
     const { onClose } = renderSheet();
     await userEvent.type(screen.getByRole('dialog'), '{Escape}');
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows the add-photo input', () => {
+    renderSheet();
+    expect(screen.getByLabelText(en.plan.addPhoto)).toBeInTheDocument();
+  });
+
+  it('renders the cached Google photo as a banner when present', () => {
+    renderSheet({ restaurant: r({ photoPath: 'gphotos/g.webp' }) });
+    const img = screen.getByRole('img', { name: 'Ichiran' });
+    expect(img).toHaveAttribute('src', expect.stringContaining('/api/photos/r/r1/card'));
+  });
+
+  it('shows uploaded photos in the gallery, with the personal photo winning the banner', () => {
+    renderSheet({ restaurant: r({ photoPath: 'gphotos/g.webp', photos: [{ id: 'ph1', width: null, height: null }] }) });
+    const srcs = screen.getAllByRole('img').map((i) => i.getAttribute('src') ?? '');
+    expect(srcs.some((s) => s.includes('/api/photos/p/ph1/card'))).toBe(true); // banner
+    expect(srcs.some((s) => s.includes('/api/photos/p/ph1/thumb'))).toBe(true); // gallery thumb
   });
 });

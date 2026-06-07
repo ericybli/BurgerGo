@@ -137,6 +137,8 @@ export function PlanClient({
             cuisine: string | null;
             address: string | null;
             notes: string | null;
+            photoPath: string | null;
+            photos: { id: string; width: number | null; height: number | null }[];
           }>;
         };
         restaurants = rows.map((r) => ({
@@ -148,6 +150,8 @@ export function PlanClient({
           cuisine: r.cuisine,
           address: r.address,
           notes: r.notes,
+          photoPath: r.photoPath,
+          photos: r.photos,
         }));
       }
       // FIX C1: only setState if still mounted

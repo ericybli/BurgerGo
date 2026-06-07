@@ -45,6 +45,10 @@ export interface RestaurantMarkerInput {
   cuisine: string | null;
   address: string | null;
   notes: string | null;
+  /** Cached Google photo path (or null) — drives the tap info-card photo. */
+  photoPath: string | null;
+  /** Personal uploaded photos (ordered); first wins for the info-card photo. */
+  photos: { id: string; width: number | null; height: number | null }[];
 }
 
 function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {
@@ -119,7 +123,7 @@ export function buildRestaurantMarkers(restaurants: RestaurantMarkerInput[]): Pl
       name: r.name,
       category: 'other',
       googlePlaceId: r.googlePlaceId,
-      photoPath: null,
+      photoPath: r.photoPath,
       position: { lat: r.lat, lng: r.lng },
       label: null,
       color: RESTAURANT_PIN_COLOR,

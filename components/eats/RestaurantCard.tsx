@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
 import { priceLevelLabel, ratingStars } from '@/src/lib/eatsView';
+import { thumbForRestaurant } from '@/src/lib/planUrl';
 
 type RestaurantCardProps = {
   restaurant: RestaurantDTO;
@@ -14,6 +15,7 @@ export function RestaurantCard({ restaurant, onTap }: RestaurantCardProps) {
   const price = priceLevelLabel(restaurant.priceLevel);
   const stars = ratingStars(restaurant.rating);
   const statusLabel = restaurant.status === 'been' ? t('statusBeen') : t('statusWantToTry');
+  const thumb = thumbForRestaurant(restaurant);
 
   return (
     <button
@@ -22,6 +24,11 @@ export function RestaurantCard({ restaurant, onTap }: RestaurantCardProps) {
       aria-label={restaurant.name}
       className="flex w-full flex-col gap-1 rounded-card bg-card p-3 text-left shadow-card"
     >
+      {thumb.kind === 'photo' ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb.src} alt={restaurant.name} className="mb-1 h-32 w-full rounded-control object-cover" />
+      ) : null}
+
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-body font-bold text-ink">{restaurant.name}</span>
         <span

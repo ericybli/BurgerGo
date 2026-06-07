@@ -13,6 +13,8 @@ export interface UploadArgs {
   file: File;
   tripId: string;
   ownerId: string;
+  /** Photo owner type; defaults to 'place'. Restaurants pass 'restaurant'. */
+  ownerType?: 'place' | 'journal' | 'restaurant';
 }
 
 export type UploadResult =
@@ -35,7 +37,7 @@ export function usePhotoUpload() {
       const fd = new FormData();
       fd.set('image', args.file);
       fd.set('tripId', args.tripId);
-      fd.set('ownerType', 'place');
+      fd.set('ownerType', args.ownerType ?? 'place');
       fd.set('ownerId', args.ownerId);
 
       const res = await fetch(withBase('/api/photos'), { method: 'POST', body: fd });
