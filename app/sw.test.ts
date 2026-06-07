@@ -74,6 +74,20 @@ describe('buildRuntimeCaching', () => {
     expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(false);
   });
 
+  it('CacheFirst matches the link-thumbnail path /api/links/thumb/<id> (root + basePath)', () => {
+    const root = buildRuntimeCaching('').find((e) => e.name === 'photos')!;
+    const rootUrl = new URL('http://x/api/links/thumb/link-1');
+    expect(root.matcher({ url: rootUrl, request: new Request(rootUrl), sameOrigin: true })).toBe(true);
+
+    const sub = buildRuntimeCaching('/burgergo').find((e) => e.name === 'photos')!;
+    const subUrl = new URL('http://x/burgergo/api/links/thumb/link-1');
+    expect(sub.matcher({ url: subUrl, request: new Request(subUrl), sameOrigin: true })).toBe(true);
+
+    // The single-segment collection path must NOT match.
+    const collUrl = new URL('http://x/api/links/thumb');
+    expect(root.matcher({ url: collUrl, request: new Request(collUrl), sameOrigin: true })).toBe(false);
+  });
+
   it('NetworkOnly for the Google proxy and Google/Maps origins', () => {
     const entry = matcher('google');
     expect(entry.handler).toBe('NetworkOnly');

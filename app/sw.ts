@@ -72,7 +72,9 @@ export function buildRuntimeCaching(base: string = swBasePath()): CacheEntry[] {
           // 1B cached-Google photos: /api/photos/<placeId>/<variant>
           new RegExp(`^${base}/api/photos/[^/]+/[^/]+$`).test(url.pathname) ||
           // Plan-2 personal photos: /api/photos/p/<photoId>/<size>
-          new RegExp(`^${base}/api/photos/p/[^/]+/[^/]+$`).test(url.pathname)
+          new RegExp(`^${base}/api/photos/p/[^/]+/[^/]+$`).test(url.pathname) ||
+          // Plan-3 link thumbnails: /api/links/thumb/<linkId>
+          new RegExp(`^${base}/api/links/thumb/[^/]+$`).test(url.pathname)
         );
       },
       options: {
