@@ -1,16 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
-import { formatMoney } from '@/src/lib/currency';
 import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
 
 type PlaceCardProps = {
   place: PlaceDTO;
   pinNumber: number;
   pinColor: string;
-  currency: string;
-  locale: string;
   /** Offline → management actions disabled (mutations are online-only). */
   disabled: boolean;
   isFirst: boolean;
@@ -32,8 +30,6 @@ export function PlaceCard({
   place,
   pinNumber,
   pinColor,
-  currency,
-  locale,
   disabled,
   isFirst,
   isLast,
@@ -49,8 +45,8 @@ export function PlaceCard({
   const t = useTranslations('plan');
   const tCat = useTranslations('placeCategory');
   const thumb = thumbForPlace(place);
-  const hasMeta =
-    place.scheduledTime != null || place.durationMin != null || place.cost != null;
+  const [managing, setManaging] = useState(false);
+  const hasMeta = place.scheduledTime != null || place.durationMin != null;
 
   return (
     <div className="flex gap-3">
@@ -121,7 +117,6 @@ export function PlaceCard({
               <span className="mt-1 flex flex-wrap gap-2 text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
                 {place.scheduledTime ? <span>{place.scheduledTime}</span> : null}
                 {place.durationMin != null ? <span>{place.durationMin} min</span> : null}
-                {place.cost != null ? <span>{formatMoney(place.cost, currency, locale)}</span> : null}
               </span>
             ) : null}
           </span>
@@ -136,39 +131,53 @@ export function PlaceCard({
           >
             {t('view')}
           </button>
+          {/* Manage groups the secondary actions to keep the card clean */}
           <button
             type="button"
-            disabled={disabled}
-            onClick={() => onMoveToSaved(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+            aria-expanded={managing}
+            onClick={() => setManaging((v) => !v)}
+            className="rounded-control border border-line px-2.5 py-1 text-caption font-medium text-ink-muted active:bg-line"
           >
-            {t('moveToSaved')}
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onMoveToDay(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
-          >
-            {t('move')}
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onCopyToDay(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
-          >
-            {t('copy')}
-          </button>
-          <button
-            type="button"
-            disabled={disabled}
-            onClick={() => onDelete(place.id)}
-            className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger disabled:opacity-40"
-          >
-            {t('delete')}
+            {t('manage')}
           </button>
         </div>
+
+        {managing ? (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onMoveToSaved(place.id)}
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+            >
+              {t('moveToSaved')}
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onMoveToDay(place.id)}
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+            >
+              {t('move')}
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onCopyToDay(place.id)}
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+            >
+              {t('copy')}
+            </button>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onDelete(place.id)}
+              className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger disabled:opacity-40"
+            >
+              {t('delete')}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

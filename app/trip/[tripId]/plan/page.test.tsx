@@ -14,12 +14,12 @@ vi.mock('@/src/env', () => ({ env: { TZ: 'Asia/Tokyo', DEFAULT_CURRENCY: 'JPY' }
 import PlanPage from './page';
 
 describe('PlanPage', () => {
-  it('renders PlanClient with tripId, tz, currency, and locale', async () => {
+  it('renders PlanClient with tripId and tz', async () => {
     const ui = await PlanPage({ params: Promise.resolve({ tripId: 't1' }) });
     render(ui);
     expect(screen.getByTestId('plan-client')).toBeInTheDocument();
     expect(planClientSpy).toHaveBeenCalledWith(
-      expect.objectContaining({ tripId: 't1', tz: 'Asia/Tokyo', currency: 'JPY', locale: 'en' }),
+      expect.objectContaining({ tripId: 't1', tz: 'Asia/Tokyo' }),
     );
   });
 });

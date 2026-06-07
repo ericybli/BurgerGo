@@ -7,14 +7,14 @@ import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { thumbForPlace } from '@/src/lib/planUrl';
 import { withBase } from '@/src/lib/basePath';
 
-/** Collapsible long-text block with show more / show less (≈3 lines collapsed). */
+/** Collapsible long-text block with show more / show less (≈6 lines collapsed). */
 function Collapsible({ text }: { text: string }) {
   const t = useTranslations('plan');
   const [open, setOpen] = useState(false);
-  const long = text.length > 160;
+  const long = text.length > 400;
   return (
     <div>
-      <p className={`whitespace-pre-wrap text-body text-ink ${!open && long ? 'line-clamp-3' : ''}`}>{text}</p>
+      <p className={`whitespace-pre-wrap text-body text-ink ${!open && long ? 'line-clamp-6' : ''}`}>{text}</p>
       {long ? (
         <button type="button" onClick={() => setOpen((v) => !v)} className="mt-1 text-caption font-medium text-teal">
           {open ? t('showLess') : t('showMore')}

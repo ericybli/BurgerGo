@@ -89,7 +89,7 @@ function mockFetch() {
 function renderPlan() {
   return render(
     <NextIntlClientProvider locale="en" messages={en}>
-      <PlanClient tripId="t1" tz="UTC" currency="JPY" locale="en" />
+      <PlanClient tripId="t1" tz="UTC" />
     </NextIntlClientProvider>,
   );
 }
@@ -127,7 +127,7 @@ describe('PlanClient', () => {
     const f = mockFetch();
     render(
       <NextIntlClientProvider locale="en" messages={en}>
-        <Prefixed tripId="t1" tz="UTC" currency="JPY" locale="en" />
+        <Prefixed tripId="t1" tz="UTC" />
       </NextIntlClientProvider>,
     );
     await screen.findByText('Stop A');

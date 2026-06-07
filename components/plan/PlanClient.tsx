@@ -59,13 +59,9 @@ function nowHHMM(tz: string): string {
 export function PlanClient({
   tripId,
   tz,
-  currency,
-  locale = 'en',
 }: {
   tripId: string;
   tz: string;
-  currency: string;
-  locale?: string;
 }) {
   const t = useTranslations('plan');
   const router = useRouter();
@@ -401,8 +397,6 @@ export function PlanClient({
             legs={legLookup}
             mode={dayMode}
             dayColor={color}
-            currency={currency}
-            locale={locale}
             disabled={actionDisabled}
             onAddPlace={() => setAddOpen(true)}
             onAddFromSaved={() => setParams({ bucket: 'saved' })}
@@ -441,8 +435,6 @@ export function PlanClient({
         <PlaceDetailSheet
           open
           place={detailFor}
-          currency={currency}
-          locale={locale}
           disabled={!online}
           onClose={() => setDetailFor(null)}
           onSaved={() => {

@@ -10,7 +10,8 @@ describe('en.plan messages', () => {
       'addPlace', 'addFromSaved', 'addToDay', 'moveToSaved', 'moveToDay', 'delete',
       'emptyDayHeadline', 'emptyDaySubtext', 'emptySavedHeadline', 'emptySavedSubtext',
       'searchPlaceholder', 'addressSearchPlaceholder', 'addressSearchHint', 'nameRequired', 'confirm', 'cancel',
-      'nameLabel', 'addressLabel', 'categoryLabel', 'timeLabel', 'costLabel', 'notesLabel', 'save',
+      'nameLabel', 'addressLabel', 'categoryLabel', 'timeLabel', 'notesLabel', 'save',
+      'manage', 'clear',
       'upNext', 'noTimeSet', 'skip', 'dayPickerTitle', 'recompute',
       'loading', 'errorHeadline', 'errorSubtext', 'reorderHint',
     ];

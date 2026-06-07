@@ -30,8 +30,6 @@ function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {})
         place={place()}
         pinNumber={1}
         pinColor="#EE5B3C"
-        currency="JPY"
-        locale="en"
         disabled={false}
         isFirst={false}
         isLast={false}
@@ -58,7 +56,24 @@ describe('PlaceCard', () => {
     expect(screen.getByText(/Asakusa, Tokyo/)).toBeInTheDocument();
     expect(screen.getByText('09:30')).toBeInTheDocument();
     expect(screen.getByText('90 min')).toBeInTheDocument();
-    expect(screen.getByText('¥1,500')).toBeInTheDocument();
+  });
+
+  it('does not display cost', () => {
+    renderCard();
+    expect(screen.queryByText('¥1,500')).not.toBeInTheDocument();
+    expect(screen.queryByText(/1,500/)).not.toBeInTheDocument();
+  });
+
+  it('hides the secondary actions until Manage is tapped, then reveals them', async () => {
+    renderCard();
+    // Only View + Manage on the surface.
+    expect(screen.queryByRole('button', { name: en.plan.moveToSaved })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en.plan.view })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.manage }));
+    expect(screen.getByRole('button', { name: en.plan.moveToSaved })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en.plan.move })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en.plan.copy })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: en.plan.delete })).toBeInTheDocument();
   });
 
   it('shows the cached Google card photo via the photos handler when photoPath is set', () => {
@@ -100,6 +115,7 @@ describe('PlaceCard', () => {
 
   it('fires the management actions (Save/Move/Copy/Delete)', async () => {
     const { onMoveToSaved, onMoveToDay, onCopyToDay, onDelete } = renderCard();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.manage }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.moveToSaved }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.move }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.copy }));
@@ -110,8 +126,9 @@ describe('PlaceCard', () => {
     expect(onDelete).toHaveBeenCalledWith('p1');
   });
 
-  it('disables the management buttons when disabled (offline)', () => {
+  it('disables the management buttons when disabled (offline)', async () => {
     renderCard({ disabled: true });
+    await userEvent.click(screen.getByRole('button', { name: en.plan.manage }));
     expect(screen.getByRole('button', { name: en.plan.moveToSaved })).toBeDisabled();
     expect(screen.getByRole('button', { name: en.plan.delete })).toBeDisabled();
     // View should still be enabled even when offline

@@ -14,5 +14,5 @@ export default async function PlanPage({
   params: Promise<{ tripId: string }>;
 }) {
   const { tripId } = await params;
-  return <PlanClient tripId={tripId} tz={env.TZ} currency={env.DEFAULT_CURRENCY} locale="en" />;
+  return <PlanClient tripId={tripId} tz={env.TZ} />;
 }

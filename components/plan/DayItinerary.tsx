@@ -26,8 +26,6 @@ type DayItineraryProps = {
   legs: LegLookup;
   mode: TravelMode;
   dayColor: string;
-  currency: string;
-  locale: string;
   disabled: boolean;
   onAddPlace: () => void;
   onAddFromSaved: () => void;
@@ -48,8 +46,6 @@ export function DayItinerary({
   legs,
   mode,
   dayColor,
-  currency,
-  locale,
   disabled,
   onAddPlace,
   onAddFromSaved,
@@ -98,8 +94,6 @@ export function DayItinerary({
                   place={stop}
                   pinNumber={pinLabel(stop)}
                   pinColor={dayColor}
-                  currency={currency}
-                  locale={locale}
                   disabled={disabled}
                   isFirst={i === 0}
                   isLast={i === stops.length - 1}

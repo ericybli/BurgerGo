@@ -54,8 +54,6 @@ function renderSheet(props: Partial<React.ComponentProps<typeof PlaceDetailSheet
       <PlaceDetailSheet
         open
         place={place()}
-        currency="JPY"
-        locale="en"
         disabled={false}
         onClose={onClose}
         onSaved={onSaved}
@@ -96,6 +94,19 @@ describe('PlaceDetailSheet', () => {
     await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
     expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ name: 'Senso-ji Temple' }));
     expect(onSaved).toHaveBeenCalled();
+  });
+
+  it('clears the scheduled time via the Clear button (saves scheduledTime: null)', async () => {
+    renderSheet(); // place() has scheduledTime '09:30' → Clear is shown
+    await userEvent.click(screen.getByRole('button', { name: en.plan.clear }));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
+    expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ scheduledTime: null }));
+  });
+
+  it('does not render a cost field', () => {
+    renderSheet();
+    expect(screen.queryByLabelText('Cost')).not.toBeInTheDocument();
   });
 
   it('disables editable fields + Save when offline but keeps Open in Maps enabled', () => {

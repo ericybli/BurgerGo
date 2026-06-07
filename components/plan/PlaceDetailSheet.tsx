@@ -4,7 +4,6 @@ import { useState, useTransition, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
-import { currencyExponent } from '@/src/lib/currency';
 import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
@@ -18,8 +17,6 @@ const CATEGORIES: PlaceDTO['category'][] = [
 type PlaceDetailSheetProps = {
   open: boolean;
   place: PlaceDTO;
-  currency: string;
-  locale: string;
   disabled: boolean;
   onClose: () => void;
   onSaved: () => void;
@@ -28,21 +25,16 @@ type PlaceDetailSheetProps = {
 export function PlaceDetailSheet({
   open,
   place,
-  currency,
   disabled,
   onClose,
   onSaved,
 }: PlaceDetailSheetProps) {
   const t = useTranslations('plan');
   const tCat = useTranslations('placeCategory');
-  const exponent = currencyExponent(currency);
   const [name, setName] = useState(place.name);
   const [address, setAddress] = useState(place.address ?? '');
   const [category, setCategory] = useState<PlaceDTO['category']>(place.category);
   const [time, setTime] = useState(place.scheduledTime ?? '');
-  const [costMajor, setCostMajor] = useState(
-    place.cost != null ? String(place.cost / 10 ** exponent) : '',
-  );
   const [notes, setNotes] = useState(place.notes ?? '');
   const [aiSummary, setAiSummary] = useState(place.aiSummary ?? '');
   const [regenerating, setRegenerating] = useState(false);
@@ -104,8 +96,6 @@ export function PlaceDetailSheet({
 
   // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function handleSave() {
-    const costMinor =
-      costMajor.trim() === '' ? null : Math.round(Number(costMajor) * 10 ** exponent);
     setSaveError(null);
     startTransition(async () => {
       try {
@@ -114,7 +104,6 @@ export function PlaceDetailSheet({
           address: address.trim() || null,
           category,
           scheduledTime: time || null,
-          cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
           notes: notes.trim() || null,
           aiSummary: aiSummary.trim() || null,
         });
@@ -172,18 +161,23 @@ export function PlaceDetailSheet({
         </select>
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-time">{t('timeLabel')}</label>
-        <input
-          id="pd-time" type="time" value={time} disabled={disabled}
-          onChange={(e) => setTime(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
-        />
-
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-cost">{t('costLabel')}</label>
-        <input
-          id="pd-cost" type="number" inputMode="decimal" value={costMajor} disabled={disabled}
-          onChange={(e) => setCostMajor(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
-        />
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            id="pd-time" type="time" value={time} disabled={disabled}
+            onChange={(e) => setTime(e.target.value)}
+            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          />
+          {time ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => setTime('')}
+              className="shrink-0 rounded-control border border-line px-3 py-2 text-caption font-medium text-ink-muted active:bg-line disabled:opacity-40"
+            >
+              {t('clear')}
+            </button>
+          ) : null}
+        </div>
 
         <div className="mt-3 flex items-center justify-between">
           <label className="block text-label font-medium text-ink" htmlFor="pd-ai">{t('aiSummary')}</label>
