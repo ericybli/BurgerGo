@@ -80,7 +80,8 @@
     "styleSatellite": "Satellite",
     "layers": "Layers",
     "layerSaved": "Saved places",
-    "layerRestaurants": "Restaurants"
+    "layerRestaurants": "Restaurants",
+    "readCardLabel": "Place details"
   },
   "category": {
     "sightseeing": "Sightseeing",

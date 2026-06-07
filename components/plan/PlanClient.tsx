@@ -149,6 +149,16 @@ export function PlanClient({
     void load();
   }, [load]);
 
+  // Escape closes the place read-card overlay (matches the editor / add sheets).
+  useEffect(() => {
+    if (!viewPlace) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setViewPlace(null);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [viewPlace]);
+
   // Once trip data is loaded, seed visibleDates with every day so all pins show
   // on the map by default. Runs once per trip (ref guard) so user toggles and
   // post-mutation refetches don't reset it.
