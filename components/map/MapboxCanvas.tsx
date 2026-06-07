@@ -68,11 +68,12 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
     badge.setAttribute('aria-hidden', 'true');
     badge.style.cssText = [
       'position:absolute',
-      'top:-6px',
-      'right:-6px',
+      'bottom:-8px',
+      'left:50%',
+      'transform:translateX(-50%)',
       'min-width:16px',
       'height:16px',
-      'padding:0 3px',
+      'padding:0 4px',
       'box-sizing:border-box',
       'display:flex',
       'align-items:center',
