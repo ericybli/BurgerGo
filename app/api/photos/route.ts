@@ -3,10 +3,12 @@ import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { getPlace } from '@/src/db/repos/places';
+import { getEntry } from '@/src/db/repos/journalEntries';
 import {
   addPhoto,
   listByOwner,
   type Photo,
+  type PhotoOwnerType,
 } from '@/src/db/repos/photos';
 import {
   validateUpload,
@@ -16,10 +18,13 @@ import { newId } from '@/src/db/ids';
 
 export const dynamic = 'force-dynamic';
 
-/** Per-place max personal photos (Plan-2 public-app guard). */
+/** Per-owner max personal photos (Plan-2 public-app guard; reused for journal). */
 const MAX_PER_OWNER = 12;
 
-/** Photo DTO returned to the client (full row + relative-path base). */
+/** Owner types that may receive uploads (Plan 3 adds 'journal'). */
+const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal'];
+
+/** Photo DTO returned to the client (full row). */
 export type PhotoDTO = Photo;
 
 export async function POST(req: Request): Promise<Response> {
@@ -42,10 +47,10 @@ export async function POST(req: Request): Promise<Response> {
   if (typeof tripId !== 'string' || typeof ownerId !== 'string' || tripId === '' || ownerId === '') {
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   }
-  // Only 'place' is accepted in Plan 2.
-  if (ownerType !== 'place') {
+  if (typeof ownerType !== 'string' || !OWNER_TYPES.includes(ownerType as PhotoOwnerType)) {
     return NextResponse.json({ error: 'bad_owner_type' }, { status: 400 });
   }
+  const owner = ownerType as PhotoOwnerType;
 
   // Image guards (content type + size cap) before any decode/disk work.
   const guard = validateUpload({ contentType: image.type, byteLength: image.size });
@@ -57,18 +62,24 @@ export async function POST(req: Request): Promise<Response> {
   // Owner must exist and belong to the named trip.
   const trip = getTrip(db, tripId);
   if (!trip) return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  const place = getPlace(db, ownerId);
-  if (!place || place.tripId !== tripId) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  if (owner === 'place') {
+    const place = getPlace(db, ownerId);
+    if (!place || place.tripId !== tripId) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
+  } else {
+    const entry = getEntry(db, ownerId);
+    if (!entry || entry.tripId !== tripId) {
+      return NextResponse.json({ error: 'not_found' }, { status: 404 });
+    }
   }
 
   // Per-owner count cap.
-  if (listByOwner(db, 'place', ownerId).length >= MAX_PER_OWNER) {
+  if (listByOwner(db, owner, ownerId).length >= MAX_PER_OWNER) {
     return NextResponse.json({ error: 'too_many' }, { status: 409 });
   }
 
   // Pre-generate the id so the on-disk path base matches the DB row.
-  // We pass it to both processPhoto (for the directory name) and addPhoto.
   const photoId = newId();
   let result;
   try {
@@ -88,7 +99,7 @@ export async function POST(req: Request): Promise<Response> {
   const photo = addPhoto(db, {
     id: photoId,
     tripId,
-    ownerType: 'place',
+    ownerType: owner,
     ownerId,
     width: result.width,
     height: result.height,

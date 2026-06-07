@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places } from '@/src/db/schema';
+import { trips, places, journalEntries } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -35,6 +35,10 @@ function seed(db: ReturnType<typeof makeTestDb>['db']) {
     name: 'Castle', address: null, lat: null, lng: null, category: 'sightseeing',
     scheduledTime: null, durationMin: null, cost: null, notes: null,
     orderIndex: 0, createdAt: TS, updatedAt: TS,
+  }).run();
+  db.insert(journalEntries).values({
+    id: 'entry-1', tripId: 'trip-1', title: 'Day 1', body: '', entryDate: null,
+    createdAt: TS, updatedAt: TS,
   }).run();
 }
 
@@ -115,6 +119,38 @@ describe('POST /api/photos', () => {
       expect(r.status).toBe(201);
     }
     const over = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'place', ownerId: 'place-1' }));
+    expect(over.status).toBe(409);
+  });
+
+  it('uploads a journal photo when the entry belongs to the trip', async () => {
+    const res = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'journal', ownerId: 'entry-1' }));
+    expect(res.status).toBe(201);
+    const body = await res.json() as { photo: { ownerId: string } };
+    expect(body.photo.ownerId).toBe('entry-1');
+    expect(listByOwner(testHandle.db, 'journal', 'entry-1')).toHaveLength(1);
+  });
+
+  it('returns 404 when the journal owner does not exist', async () => {
+    const res = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'journal', ownerId: 'nope' }));
+    expect(res.status).toBe(404);
+    expect(processPhoto).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the journal owner belongs to another trip', async () => {
+    testHandle.db.insert(trips).values({
+      id: 'trip-2', name: 'Other', startDate: '2026-07-01', endDate: '2026-07-02',
+      coverPhoto: null, createdAt: TS, updatedAt: TS,
+    }).run();
+    const res = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-2', ownerType: 'journal', ownerId: 'entry-1' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('enforces the per-owner max for journal photos', async () => {
+    for (let i = 0; i < 12; i++) {
+      const r = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'journal', ownerId: 'entry-1' }));
+      expect(r.status).toBe(201);
+    }
+    const over = await POST(uploadReq({ image: imageBlob(), tripId: 'trip-1', ownerType: 'journal', ownerId: 'entry-1' }));
     expect(over.status).toBe(409);
   });
 });
