@@ -410,6 +410,7 @@ export function PlanClient({
           ) : null}
           <DayItinerary
             dayLabel={dayLabel}
+            dayDate={params.date}
             stops={stops}
             legs={legLookup}
             mode={dayMode}

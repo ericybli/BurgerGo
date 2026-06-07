@@ -51,26 +51,17 @@ export function SavedList({
               <button
                 type="button"
                 onClick={() => onTapPlace(p.id)}
-                className="flex w-full items-start gap-3 text-left"
+                className="block w-full text-left"
               >
                 {thumb.kind === 'photo' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={thumb.src}
                     alt={p.name}
-                    width={56}
-                    height={56}
-                    className="h-14 w-14 shrink-0 rounded-control object-cover"
+                    className="mb-2 h-40 w-full rounded-control object-cover"
                   />
-                ) : (
-                  <span
-                    aria-hidden="true"
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-control bg-paper text-2xl"
-                  >
-                    {thumb.glyph}
-                  </span>
-                )}
-                <span className="min-w-0 flex-1">
+                ) : null}
+                <span className="block min-w-0">
                   <span className="flex items-center gap-1">
                     <span aria-hidden="true">{categoryGlyph(p.category)}</span>
                     <span className="truncate text-body font-bold text-ink">{p.name}</span>

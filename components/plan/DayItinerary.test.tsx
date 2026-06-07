@@ -46,6 +46,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
     <NextIntlClientProvider locale="en" messages={en}>
       <DayItinerary
         dayLabel="Day 1"
+        dayDate="2026-05-03"
         stops={[place({ id: 'a', orderIndex: 0, name: 'A' }), place({ id: 'b', orderIndex: 1, name: 'B' })]}
         legs={indexLegs([walkLeg])}
         mode="walk"
@@ -83,6 +84,15 @@ describe('DayItinerary', () => {
     // The day-default toggle is the first Drive button (per-leg connectors add more).
     await userEvent.click(screen.getAllByRole('button', { name: en.plan.travelModeDrive })[0]!);
     expect(onModeChange).toHaveBeenCalledWith('drive');
+  });
+
+  it('exports the day as text (header + numbered stops)', async () => {
+    renderDay();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.exportDay }));
+    const textarea = screen.getByRole('textbox') as HTMLTextAreaElement;
+    expect(textarea.value).toContain('Day 1 · 2026-05-03');
+    expect(textarea.value).toContain('1. A');
+    expect(textarea.value).toContain('2. B');
   });
 
   it('forwards a per-leg mode change for the destination stop', async () => {

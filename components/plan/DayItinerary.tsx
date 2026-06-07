@@ -1,15 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import type { LegLookup } from '@/src/lib/legView';
 import { legBetween } from '@/src/lib/legView';
 import { pinLabel } from '@/src/lib/planView';
+import { formatDayItinerary } from '@/src/lib/exportDay';
 import { EmptyState } from '@/components/EmptyState';
 import { PlaceCard } from '@/components/plan/PlaceCard';
 import { LegConnector } from '@/components/plan/LegConnector';
 import { DayModeControl } from '@/components/plan/DayModeControl';
+import { ExportDaySheet } from '@/components/plan/ExportDaySheet';
 
 /** Pure reorder: move the item at `from` to `to`, preserving the rest. */
 export function reorderIds(ids: string[], from: number, to: number): string[] {
@@ -22,6 +25,8 @@ export function reorderIds(ids: string[], from: number, to: number): string[] {
 
 type DayItineraryProps = {
   dayLabel: string;
+  /** The day's calendar date (YYYY-MM-DD), used in the text export header. */
+  dayDate: string;
   stops: PlaceDTO[]; // already ordered by orderIndex
   legs: LegLookup;
   mode: TravelMode;
@@ -45,6 +50,7 @@ type DayItineraryProps = {
 
 export function DayItinerary({
   dayLabel,
+  dayDate,
   stops,
   legs,
   mode,
@@ -64,6 +70,8 @@ export function DayItinerary({
   onRecompute,
 }: DayItineraryProps) {
   const t = useTranslations('plan');
+  const tCat = useTranslations('placeCategory');
+  const [exportOpen, setExportOpen] = useState(false);
 
   function move(placeId: string, dir: 'up' | 'down') {
     const ids = stops.map((s) => s.id);
@@ -149,6 +157,26 @@ export function DayItinerary({
           </button>
         </div>
       )}
+
+      {stops.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => setExportOpen(true)}
+          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-ink-muted active:bg-line"
+        >
+          {t('exportDay')}
+        </button>
+      ) : null}
+
+      {exportOpen ? (
+        <ExportDaySheet
+          text={formatDayItinerary(
+            `${dayLabel} · ${dayDate}`,
+            stops.map((s) => ({ name: s.name, category: tCat(s.category), time: s.scheduledTime, address: s.address })),
+          )}
+          onClose={() => setExportOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
