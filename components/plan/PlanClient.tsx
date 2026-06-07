@@ -377,7 +377,10 @@ export function PlanClient({
         </div>
       </div>
 
-      {params.bucket === 'days' ? (
+      {/* The top day strip drives the LIST view's selected day. In map view the
+          map's own legend ("All days / Day N") is the day control, so the strip
+          is hidden there to avoid two redundant day selectors. */}
+      {params.bucket === 'days' && params.view === 'list' ? (
         <div className="mb-3">
           <DayStrip days={days} selectedDate={params.date} onSelect={(date) => setParams({ date })} />
         </div>

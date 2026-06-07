@@ -160,6 +160,21 @@ describe('PlanClient', () => {
     expect(map).toHaveAttribute('data-bucket', 'days');
   });
 
+  it('shows the day strip in list view but hides it in map view (map has its own legend)', async () => {
+    search = 'view=list&bucket=days&date=2026-05-03';
+    mockFetch();
+    const { unmount } = renderPlan();
+    await screen.findByText('Stop A');
+    expect(screen.getByRole('button', { name: /Day 1/ })).toBeInTheDocument();
+    unmount();
+
+    search = 'view=map&bucket=days&date=2026-05-03';
+    mockFetch();
+    renderPlan();
+    await screen.findByTestId('plan-map');
+    expect(screen.queryByRole('button', { name: /Day 1/ })).not.toBeInTheDocument();
+  });
+
   it('renders PlanMap with online=false when offline + map view (PlanMap owns offline branch)', async () => {
     vi.stubGlobal('navigator', { onLine: false });
     search = 'view=map&bucket=days&date=2026-05-03';
