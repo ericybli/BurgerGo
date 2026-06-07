@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { personalPhotoUrl } from '@/src/lib/planUrl';
 import { entrySnippet } from '@/src/lib/journalView';
+import { deleteLinkAction } from '@/app/_actions/savedLinks';
 import { EmptyState } from '@/components/EmptyState';
 import { EntrySheet } from '@/components/journal/EntrySheet';
 import { EntryReader } from '@/components/journal/EntryReader';
@@ -87,11 +88,9 @@ export function JournalClient({ tripId }: { tripId: string }) {
     setLinkSheetKey((k) => k + 1);
     setLinkSheetOpen(true);
   }
-  function handleLinkDelete(id: string) {
-    const found = state.status === 'loaded' ? state.data.links.find((l) => l.id === id) : undefined;
-    setEditingLink(found);
-    setLinkSheetKey((k) => k + 1);
-    setLinkSheetOpen(true);
+  async function handleLinkDelete(id: string) {
+    await deleteLinkAction(id);
+    void load();
   }
 
   if (state.status === 'loading') {

@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
     // Lint is run explicitly via `npm run lint`; don't fail the standalone build on it.
     ignoreDuringBuilds: true,
   },
-  serverExternalPackages: ['better-sqlite3'],
+  serverExternalPackages: ['better-sqlite3', 'undici'],
 };
 
 export default withSerwist(withNextIntl(nextConfig));

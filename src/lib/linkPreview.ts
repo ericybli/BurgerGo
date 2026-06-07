@@ -63,6 +63,9 @@ export function isBlockedAddress(ip: string): boolean {
   const hextets = expandIPv6(ip.toLowerCase());
   if (hextets === null) return true; // unparseable → fail closed
 
+  // :: / 0:0:0:0:0:0:0:0 — unspecified address; routes to loopback / all-interfaces.
+  if (hextets.every((h) => h === 0)) return true;
+
   // ::1 loopback (all-zero except last === 1).
   if (hextets.every((h, i) => (i === 7 ? h === 1 : h === 0))) return true;
 
@@ -81,6 +84,23 @@ export function isBlockedAddress(ip: string): boolean {
     const h7 = hextets[7]!;
     const embeddedIPv4 = `${h6 >> 8}.${h6 & 255}.${h7 >> 8}.${h7 & 255}`;
     return isBlockedAddress(embeddedIPv4);
+  }
+
+  // IPv4-compatible ::a.b.c.d (hextets[0..5] all zero, last 32 bits = IPv4).
+  // RFC 4291 §2.5.5.1 — deprecated but still handled by some stacks.
+  // hextets[5] !== 0xffff distinguishes this from the mapped form above.
+  if (
+    hextets[0] === 0 && hextets[1] === 0 && hextets[2] === 0 &&
+    hextets[3] === 0 && hextets[4] === 0 && hextets[5] === 0
+  ) {
+    // Re-check the embedded IPv4 (covers ::127.0.0.1, ::10.0.0.1, etc.).
+    const h6 = hextets[6]!;
+    const h7 = hextets[7]!;
+    // Skip the all-zeros case (::) — already blocked above.
+    if (h6 !== 0 || h7 !== 0) {
+      const embeddedIPv4 = `${h6 >> 8}.${h6 & 255}.${h7 >> 8}.${h7 & 255}`;
+      return isBlockedAddress(embeddedIPv4);
+    }
   }
 
   const block = hextets[0]!;

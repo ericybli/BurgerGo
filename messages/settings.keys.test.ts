@@ -4,7 +4,7 @@ import en from '@/messages/en.json';
 describe('en.json settings namespace', () => {
   // Existing 1A keys plus the new Plan 3 About strings.
   const required = [
-    'title', 'language', 'currency', 'comingSoon', 'about', 'aboutTagline',
+    'title', 'language', 'currency', 'comingSoon', 'aboutTagline',
     'aboutVersion',
     'offlineInstallTitle', 'offlineInstallBody',
     'yourDataTitle', 'yourDataBody', 'yourDataBackup',

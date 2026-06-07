@@ -84,6 +84,16 @@ describe('isBlockedAddress', () => {
     expect(isBlockedAddress('0.255.255.255')).toBe(true);
   });
 
+  it('blocks IPv6 unspecified address :: and all-zero form', () => {
+    expect(isBlockedAddress('::')).toBe(true);
+    expect(isBlockedAddress('0:0:0:0:0:0:0:0')).toBe(true);
+  });
+
+  it('blocks IPv4-compatible ::a.b.c.d (loopback, private)', () => {
+    expect(isBlockedAddress('::127.0.0.1')).toBe(true);   // loopback
+    expect(isBlockedAddress('::10.0.0.1')).toBe(true);    // private
+  });
+
   it('blocks broadcast address 255.255.255.255', () => {
     expect(isBlockedAddress('255.255.255.255')).toBe(true);
   });

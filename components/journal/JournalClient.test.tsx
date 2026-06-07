@@ -4,6 +4,11 @@ import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
+const deleteLinkActionMock = vi.fn();
+
+vi.mock('@/app/_actions/savedLinks', () => ({
+  deleteLinkAction: (...args: unknown[]) => deleteLinkActionMock(...args),
+}));
 vi.mock('@/components/journal/EntrySheet', () => ({
   EntrySheet: ({ open }: { open: boolean }) => (open ? <div data-testid="entry-sheet" /> : null),
 }));
@@ -128,6 +133,7 @@ describe('JournalClient — reading list', () => {
   beforeEach(() => {
     // Online by default for the gating assertions.
     Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+    deleteLinkActionMock.mockReset().mockResolvedValue(undefined);
   });
 
   it('renders saved links as rows under the reading-list tab', async () => {
@@ -151,5 +157,15 @@ describe('JournalClient — reading list', () => {
     await userEvent.click(await screen.findByRole('button', { name: en.journal.readingList }));
     await userEvent.click(await screen.findByRole('button', { name: en.journal.addLink }));
     expect(await screen.findByRole('dialog', { name: en.journal.addLink })).toBeInTheDocument();
+  });
+
+  it('calls deleteLinkAction when the delete button is clicked on a link row', async () => {
+    mockJournalFetch({ links });
+    renderWith(<JournalClient tripId="trip-1" />);
+    await userEvent.click(await screen.findByRole('button', { name: en.journal.readingList }));
+    // The LinkRow renders a Delete button via t('delete') → 'Delete entry'
+    const deleteBtn = await screen.findByRole('button', { name: en.journal.delete });
+    await userEvent.click(deleteBtn);
+    await waitFor(() => expect(deleteLinkActionMock).toHaveBeenCalledWith('link-1'));
   });
 });
