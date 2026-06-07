@@ -10,7 +10,7 @@ import type { LatLngLiteral } from '@/src/lib/map/types';
 import { buildMarkers, buildSavedMarkers, type PlaceMarker } from '@/src/lib/map/markers';
 import { buildDayPaths } from '@/src/lib/map/polyline';
 import { colorForGroup } from '@/src/lib/map/colors';
-import { GoogleMapCanvas } from '@/components/map/GoogleMapCanvas';
+import { MapCanvas } from '@/components/map/MapCanvas';
 import { MapLegend, type LegendEntry } from '@/components/map/MapLegend';
 import { PlaceInfoCard } from '@/components/map/PlaceInfoCard';
 import { EmptyState } from '@/components/EmptyState';
@@ -243,7 +243,7 @@ export function PlanMap({
             : 'relative min-h-[40dvh] w-full flex-1 overflow-hidden rounded-card'
         }
       >
-        <GoogleMapCanvas
+        <MapCanvas
           markers={activeMarkers}
           paths={dayPaths}
           onMarkerClick={(id) => setSelectedId(id)}

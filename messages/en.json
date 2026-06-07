@@ -74,7 +74,10 @@
     "infoCardLabel": "Place",
     "mapAriaLabel": "Trip map",
     "enterFullscreen": "View map full screen",
-    "exitFullscreen": "Exit full screen"
+    "exitFullscreen": "Exit full screen",
+    "toggleMapStyle": "Toggle map style",
+    "styleMap": "Map",
+    "styleSatellite": "Satellite"
   },
   "category": {
     "sightseeing": "Sightseeing",

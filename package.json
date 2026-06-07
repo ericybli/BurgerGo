@@ -21,6 +21,7 @@
     "@serwist/next": "^9",
     "better-sqlite3": "^11",
     "drizzle-orm": "^0.36",
+    "mapbox-gl": "^3.24.0",
     "next": "^15",
     "next-intl": "^3",
     "node-html-parser": "^6.1.13",

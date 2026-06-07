@@ -23,8 +23,12 @@ RUN npm install -g npm@11.5.2
 # path, assets/fetches 404 under a sub-path deploy. Pass via `--build-arg` / compose.
 ARG NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ARG NEXT_PUBLIC_BASE_PATH
+ARG NEXT_PUBLIC_MAP_PROVIDER
+ARG NEXT_PUBLIC_MAPBOX_TOKEN
 ENV NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=$NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 ENV NEXT_PUBLIC_BASE_PATH=$NEXT_PUBLIC_BASE_PATH
+ENV NEXT_PUBLIC_MAP_PROVIDER=$NEXT_PUBLIC_MAP_PROVIDER
+ENV NEXT_PUBLIC_MAPBOX_TOKEN=$NEXT_PUBLIC_MAPBOX_TOKEN
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # Bake SQL migrations into the image (committed under drizzle/, regenerate to be safe).

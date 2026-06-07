@@ -12,6 +12,11 @@ const envSchema = z.object({
   NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: z.string().default(''),
   // Server key optional in 1A dev (no Google proxy routes yet).
   GOOGLE_MAPS_SERVER_KEY: z.string().min(1).optional(),
+  // In-app map engine: 'mapbox' uses Mapbox GL (with NEXT_PUBLIC_MAPBOX_TOKEN);
+  // anything else uses Google Maps. Both NEXT_PUBLIC_* are inlined at build and
+  // must be passed as Docker build-args (see Dockerfile / docker-compose.yml).
+  NEXT_PUBLIC_MAP_PROVIDER: z.enum(['google', 'mapbox']).default('google'),
+  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().default(''),
   DEFAULT_CURRENCY: z
     .string()
     .transform((s) => s.toUpperCase())
