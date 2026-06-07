@@ -58,12 +58,12 @@ describe('GET /api/google/geocode', () => {
       ok: true,
       json: async () => ({
         status: 'OK',
-        results: [{ formatted_address: 'Paris, France', geometry: { location: { lat: 48.85, lng: 2.35 } } }],
+        results: [{ place_id: 'gp-paris', formatted_address: 'Paris, France', geometry: { location: { lat: 48.85, lng: 2.35 } } }],
       }),
     });
     const res = await GET(req('address=' + encodeURIComponent('12 Rue de Rivoli, Paris')));
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
+    await expect(res.json()).resolves.toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: 'gp-paris' });
 
     const u = new URL(fetchSpy.mock.calls[0]![0] as string);
     expect(u.searchParams.get('address')).toBe('12 Rue de Rivoli, Paris');
@@ -74,7 +74,7 @@ describe('GET /api/google/geocode', () => {
     fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ status: 'ZERO_RESULTS', results: [] }) });
     const res = await GET(req('address=nowhere'));
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ lat: null, lng: null, address: null });
+    await expect(res.json()).resolves.toEqual({ lat: null, lng: null, address: null, googlePlaceId: null });
   });
 
   it('forward: returns 400 for a blank address', async () => {

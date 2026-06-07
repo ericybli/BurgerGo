@@ -80,33 +80,50 @@ export function AddPlaceSheet({
   function handleSave() {
     setError(null);
     const trimmedName = name.trim();
-    if (!trimmedName) {
+    const trimmedAddress = address.trim() || null;
+    // Require a name OR an address — a typed address can resolve to a Google
+    // place whose name we auto-fill below.
+    if (!trimmedName && !trimmedAddress) {
       setError(t('nameRequired'));
       return;
     }
-    const trimmedAddress = address.trim() || null;
     startTransition(async () => {
       try {
         let lat: number | null = picked?.lat ?? null;
         let lng: number | null = picked?.lng ?? null;
+        let googlePlaceId: string | null = picked?.googlePlaceId ?? null;
+        let resolvedName = trimmedName;
         // No coordinates from a suggestion but we have a typed address →
-        // best-effort forward-geocode so the place maps + routes.
+        // best-effort forward-geocode so the place maps + routes. When the match
+        // carries a place id, pull Details (downloads + caches the photo) and
+        // auto-fill the name when the user didn't supply one.
         if (lat === null && trimmedAddress) {
           const geo = await forwardGeocode(trimmedAddress);
           if (geo) {
             lat = geo.lat;
             lng = geo.lng;
+            if (geo.googlePlaceId) {
+              const details = await select(geo.googlePlaceId);
+              googlePlaceId = details?.googlePlaceId || geo.googlePlaceId;
+              if (!resolvedName && details?.name) resolvedName = details.name;
+            }
           }
+        }
+        // Fall back to the typed address as a name when none could be derived.
+        if (!resolvedName) resolvedName = trimmedAddress ?? '';
+        if (!resolvedName) {
+          setError(t('nameRequired'));
+          return;
         }
         const created = await addPlaceAction({
           tripId,
           dayDate,
-          name: trimmedName,
+          name: resolvedName,
           address: trimmedAddress,
           lat,
           lng,
           category,
-          googlePlaceId: picked?.googlePlaceId ?? null,
+          googlePlaceId,
         });
         // Fire-and-forget AI summary; reload picks it up when it lands. Never blocks the add.
         void generatePlaceSummaryAction(created.id).catch(() => {});

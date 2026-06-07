@@ -64,10 +64,10 @@ describe('forwardGeocode', () => {
   it('calls /api/google/geocode with the address and returns coords', async () => {
     fetchSpy.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ lat: 48.85, lng: 2.35, address: 'Paris, France' }),
+      json: async () => ({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: 'gp-paris' }),
     });
     const result = await forwardGeocode('12 Rue de Rivoli, Paris');
-    expect(result).toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
+    expect(result).toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: 'gp-paris' });
 
     const url = new URL(fetchSpy.mock.calls[0]![0] as string, 'http://x');
     expect(url.pathname).toBe('/api/google/geocode');

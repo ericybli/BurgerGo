@@ -42,13 +42,14 @@ vi.mock('@/components/plan/useGooglePlaces', () => ({
   }),
 }));
 
-// forwardGeocode: typed-address → coords (or null on no match)
+// forwardGeocode: typed-address → coords (+ optional place id), or null on no match
 const forwardGeocode = vi.fn(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async (..._a: any[]): Promise<{ lat: number; lng: number; address: string | null } | null> => ({
+  async (..._a: any[]): Promise<{ lat: number; lng: number; address: string | null; googlePlaceId: string | null } | null> => ({
     lat: 48.85,
     lng: 2.35,
     address: 'Paris, France',
+    googlePlaceId: null,
   }),
 );
 vi.mock('@/components/plan/googleClient', () => ({
@@ -83,7 +84,7 @@ beforeEach(() => {
   generatePlaceSummaryAction.mockClear();
   selectFn.mockClear();
   clearFn.mockClear();
-  forwardGeocode.mockReset().mockResolvedValue({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
+  forwardGeocode.mockReset().mockResolvedValue({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: null });
 });
 
 describe('AddPlaceSheet', () => {
@@ -129,6 +130,26 @@ describe('AddPlaceSheet', () => {
         name: 'Hidden Café',
         address: '12 Rue de Rivoli, Paris',
         googlePlaceId: null,
+        lat: 48.85,
+        lng: 2.35,
+      }),
+    );
+  });
+
+  it('auto-fills name + photo via Details when a typed address resolves to a Google place', async () => {
+    forwardGeocode.mockResolvedValueOnce({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: 'geo-pid' });
+    renderSheet();
+    // Address only, no name — the name should be derived from Details.
+    await userEvent.type(screen.getByLabelText(en.plan.addressLabel), '12 Rue de Rivoli, Paris');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(addPlaceAction).toHaveBeenCalled());
+    // Details pulled for the geocoded place id — this is what downloads + caches the photo.
+    expect(selectFn).toHaveBeenCalledWith('geo-pid');
+    expect(addPlaceAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: 'Senso-ji', // auto-filled from Details
+        address: '12 Rue de Rivoli, Paris',
+        googlePlaceId: 'g1', // canonical id from Details
         lat: 48.85,
         lng: 2.35,
       }),

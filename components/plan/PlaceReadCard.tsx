@@ -42,18 +42,20 @@ export function PlaceReadCard({
   return (
     <div className="pointer-events-auto max-h-[70vh] w-full overflow-y-auto rounded-card bg-card p-4 shadow-lift">
       <div className="flex items-start gap-3">
-        {thumb.kind === 'photo' ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb.src} alt={place.name} width={56} height={56} className="h-14 w-14 shrink-0 rounded-control object-cover" />
-        ) : (
-          <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-control bg-paper text-2xl">{thumb.glyph}</span>
-        )}
+        {thumb.kind === 'glyph' ? (
+          <span aria-hidden="true" className="flex h-12 w-12 shrink-0 items-center justify-center rounded-control bg-paper text-2xl">{thumb.glyph}</span>
+        ) : null}
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-label font-semibold text-ink">{place.name}</h3>
           <p className="truncate text-caption text-ink-muted">{tCat(place.category)}{place.address ? ` · ${place.address}` : ''}</p>
         </div>
         <button type="button" aria-label={t('cancel')} onClick={onClose} className="-mr-1 -mt-1 shrink-0 rounded-chip p-1 text-ink-faint active:bg-line">✕</button>
       </div>
+
+      {thumb.kind === 'photo' ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={thumb.src} alt={place.name} className="mt-3 h-48 w-full rounded-control object-cover" />
+      ) : null}
 
       {place.aiSummary ? (
         <section className="mt-3">

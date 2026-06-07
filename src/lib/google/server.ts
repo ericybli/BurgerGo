@@ -62,6 +62,8 @@ export interface NormalizedForwardGeocode {
   lat: number;
   lng: number;
   address: string | null;
+  /** Google place id of the matched result, when present (enables photo/name auto-fill). */
+  googlePlaceId: string | null;
 }
 
 /** Normalized Directions — summed across legs; polyline written into `travel_legs`. */
@@ -149,6 +151,7 @@ export function normalizeForwardGeocode(raw: unknown): NormalizedForwardGeocode 
   const r = raw as {
     status?: string;
     results?: Array<{
+      place_id?: string;
       formatted_address?: string;
       geometry?: { location?: { lat?: number; lng?: number } };
     }>;
@@ -160,7 +163,12 @@ export function normalizeForwardGeocode(raw: unknown): NormalizedForwardGeocode 
   const top = r.results?.[0];
   const loc = top?.geometry?.location;
   if (!top || typeof loc?.lat !== 'number' || typeof loc?.lng !== 'number') return null;
-  return { lat: loc.lat, lng: loc.lng, address: top.formatted_address ?? null };
+  return {
+    lat: loc.lat,
+    lng: loc.lng,
+    address: top.formatted_address ?? null,
+    googlePlaceId: top.place_id ?? null,
+  };
 }
 
 export function normalizeDirections(raw: unknown): NormalizedDirections {

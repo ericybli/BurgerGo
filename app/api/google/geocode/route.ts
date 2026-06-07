@@ -26,7 +26,7 @@ export async function GET(req: Request) {
     try {
       const out = await fetchForwardGeocode({ address: trimmed, apiKey: env.GOOGLE_MAPS_SERVER_KEY });
       // Normalize a no-match to explicit nulls so the client can detect it.
-      return NextResponse.json(out ?? { lat: null, lng: null, address: null });
+      return NextResponse.json(out ?? { lat: null, lng: null, address: null, googlePlaceId: null });
     } catch {
       return NextResponse.json({ error: 'google_unavailable' }, { status: 502 });
     }

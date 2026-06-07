@@ -95,7 +95,7 @@ describe('normalizeForwardGeocode', () => {
     const raw = {
       status: 'OK',
       results: [
-        { formatted_address: 'Eiffel Tower, Paris', geometry: { location: { lat: 48.8584, lng: 2.2945 } } },
+        { place_id: 'gp-eiffel', formatted_address: 'Eiffel Tower, Paris', geometry: { location: { lat: 48.8584, lng: 2.2945 } } },
         { formatted_address: 'Paris', geometry: { location: { lat: 48.85, lng: 2.35 } } },
       ],
     };
@@ -103,7 +103,16 @@ describe('normalizeForwardGeocode', () => {
       lat: 48.8584,
       lng: 2.2945,
       address: 'Eiffel Tower, Paris',
+      googlePlaceId: 'gp-eiffel',
     });
+  });
+
+  it('returns googlePlaceId null when the match has no place_id', () => {
+    const raw = {
+      status: 'OK',
+      results: [{ formatted_address: 'Somewhere', geometry: { location: { lat: 1, lng: 2 } } }],
+    };
+    expect(normalizeForwardGeocode(raw)).toEqual({ lat: 1, lng: 2, address: 'Somewhere', googlePlaceId: null });
   });
 
   it('returns null on ZERO_RESULTS (no throw)', () => {
@@ -252,10 +261,10 @@ describe('fetch wrappers (injected fetch, no real key)', () => {
 
   it('fetchForwardGeocode calls the geocode endpoint with address + key', async () => {
     fetchSpy.mockReturnValueOnce(
-      okJson({ status: 'OK', results: [{ formatted_address: 'Paris, France', geometry: { location: { lat: 48.85, lng: 2.35 } } }] }),
+      okJson({ status: 'OK', results: [{ place_id: 'gp-paris', formatted_address: 'Paris, France', geometry: { location: { lat: 48.85, lng: 2.35 } } }] }),
     );
     const out = await fetchForwardGeocode({ address: '12 Rue de Rivoli, Paris', apiKey: 'SERVER_KEY' });
-    expect(out).toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France' });
+    expect(out).toEqual({ lat: 48.85, lng: 2.35, address: 'Paris, France', googlePlaceId: 'gp-paris' });
 
     const url = new URL(fetchSpy.mock.calls[0]![0] as string);
     expect(url.origin + url.pathname).toBe('https://maps.googleapis.com/maps/api/geocode/json');

@@ -4,6 +4,7 @@ import { env } from '@/src/env';
 import { now } from '@/src/lib/clock';
 import { getCachedDetails, upsertDetails } from '@/src/db/repos/placeCache';
 import { fetchPlaceDetails, type CategoryGuess } from '@/src/lib/google/server';
+import { fetchAndStoreGooglePhoto } from '@/src/lib/google/photo';
 import type { PlaceDetailsCacheRow } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -59,15 +60,30 @@ export async function GET(req: Request) {
       sessionToken,
       apiKey: env.GOOGLE_MAPS_SERVER_KEY,
     });
+    const gid = d.googlePlaceId || placeId;
+
+    // Auto-fill the place photo: download Google's photo once and cache it
+    // locally so the read card + photo handler can serve it. Reuse an existing
+    // local copy (e.g. on refresh) rather than re-downloading.
+    let photoLocalPath: string | null = existing?.photoLocalPath ?? null;
+    if (d.photoRef && !photoLocalPath) {
+      photoLocalPath = await fetchAndStoreGooglePhoto({
+        photoRef: d.photoRef,
+        googlePlaceId: gid,
+        apiKey: env.GOOGLE_MAPS_SERVER_KEY,
+        uploadsDir: env.UPLOADS_DIR,
+      });
+    }
+
     const saved = upsertDetails(db, {
-      googlePlaceId: d.googlePlaceId || placeId,
+      googlePlaceId: gid,
       name: d.name,
       address: d.address,
       lat: d.lat,
       lng: d.lng,
       categoryGuess: d.categoryGuess satisfies CategoryGuess,
       photoRef: d.photoRef,
-      photoLocalPath: null,
+      photoLocalPath,
       rawJson: JSON.stringify(d),
       fetchedAt: new Date(now()),
     });

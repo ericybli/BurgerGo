@@ -24,6 +24,8 @@ export interface ForwardGeocodeResult {
   lat: number;
   lng: number;
   address: string | null;
+  /** Google place id of the match, when present (drives photo/name auto-fill). */
+  googlePlaceId: string | null;
 }
 
 /**
@@ -37,9 +39,9 @@ export async function forwardGeocode(address: string): Promise<ForwardGeocodeRes
   try {
     const res = await fetch(withBase(`/api/google/geocode?address=${encodeURIComponent(trimmed)}`));
     if (!res.ok) return null;
-    const data = (await res.json()) as { lat: number | null; lng: number | null; address: string | null };
+    const data = (await res.json()) as { lat: number | null; lng: number | null; address: string | null; googlePlaceId?: string | null };
     if (typeof data.lat !== 'number' || typeof data.lng !== 'number') return null;
-    return { lat: data.lat, lng: data.lng, address: data.address };
+    return { lat: data.lat, lng: data.lng, address: data.address, googlePlaceId: data.googlePlaceId ?? null };
   } catch {
     return null;
   }

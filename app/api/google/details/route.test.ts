@@ -7,10 +7,12 @@ vi.mock('@/src/db/client', () => ({
   get db() { return testHandle.db; },
   sqlite: {},
 }));
-vi.mock('@/src/env', () => ({ env: { GOOGLE_MAPS_SERVER_KEY: 'SERVER_KEY' } }));
+vi.mock('@/src/env', () => ({ env: { GOOGLE_MAPS_SERVER_KEY: 'SERVER_KEY', UPLOADS_DIR: '/tmp/uploads' } }));
 vi.mock('@/src/lib/clock', () => ({ now: () => 1_700_000_000_000 }));
+vi.mock('@/src/lib/google/photo', () => ({ fetchAndStoreGooglePhoto: vi.fn() }));
 
 import { GET } from '@/app/api/google/details/route';
+import { fetchAndStoreGooglePhoto } from '@/src/lib/google/photo';
 
 function req(qs: string) {
   return new Request(`http://x/api/google/details?${qs}`);
@@ -18,10 +20,12 @@ function req(qs: string) {
 
 describe('GET /api/google/details', () => {
   let fetchSpy: ReturnType<typeof vi.fn>;
+  const photoMock = vi.mocked(fetchAndStoreGooglePhoto);
   beforeEach(() => {
     testHandle.db = makeTestDb().db;
     fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
+    photoMock.mockReset();
   });
 
   it('returns 400 when placeId is missing', async () => {
@@ -29,7 +33,7 @@ describe('GET /api/google/details', () => {
     expect(res.status).toBe(400);
   });
 
-  it('cache MISS: calls Google, writes the cache row, returns normalized details', async () => {
+  it('cache MISS: calls Google, downloads the photo, writes the cache row, returns normalized details', async () => {
     fetchSpy.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
@@ -44,19 +48,53 @@ describe('GET /api/google/details', () => {
         },
       }),
     });
+    photoMock.mockResolvedValueOnce('gphotos/gpid-1.webp');
 
     const res = await GET(req('placeId=gpid-1&sessionToken=sess-1'));
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      googlePlaceId: string; categoryGuess: string; cached: boolean;
+      googlePlaceId: string; categoryGuess: string; cached: boolean; photoLocalPath: string | null;
     };
     expect(body.googlePlaceId).toBe('gpid-1');
     expect(body.categoryGuess).toBe('sightseeing');
     expect(body.cached).toBe(false);
+    expect(body.photoLocalPath).toBe('gphotos/gpid-1.webp');
     expect(fetchSpy).toHaveBeenCalledTimes(1);
 
-    // Cache row was written.
-    expect(testHandle.db.select().from(placeDetailsCache).all().length).toBe(1);
+    // The photo download was wired with the server key + photo ref.
+    expect(photoMock).toHaveBeenCalledWith({
+      photoRef: 'R',
+      googlePlaceId: 'gpid-1',
+      apiKey: 'SERVER_KEY',
+      uploadsDir: '/tmp/uploads',
+    });
+
+    // Cache row was written, with the downloaded photo path.
+    const rows = testHandle.db.select().from(placeDetailsCache).all();
+    expect(rows.length).toBe(1);
+    expect(rows[0]!.photoLocalPath).toBe('gphotos/gpid-1.webp');
+  });
+
+  it('cache MISS with no photo: skips the download and stores a null photo path', async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        status: 'OK',
+        result: {
+          place_id: 'gpid-np',
+          name: 'No Photo Place',
+          formatted_address: 'Nowhere',
+          geometry: { location: { lat: 1, lng: 2 } },
+          types: ['lodging'],
+        },
+      }),
+    });
+
+    const res = await GET(req('placeId=gpid-np'));
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { photoLocalPath: string | null };
+    expect(body.photoLocalPath).toBeNull();
+    expect(photoMock).not.toHaveBeenCalled();
   });
 
   it('cache HIT: does not call Google and returns cached:true', async () => {
