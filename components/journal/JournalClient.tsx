@@ -8,6 +8,8 @@ import { entrySnippet } from '@/src/lib/journalView';
 import { EmptyState } from '@/components/EmptyState';
 import { EntrySheet } from '@/components/journal/EntrySheet';
 import { EntryReader } from '@/components/journal/EntryReader';
+import { LinkRow } from '@/components/journal/LinkRow';
+import { LinkSheet } from '@/components/journal/LinkSheet';
 import type { EntryDTO } from '@/app/api/trips/[tripId]/journal/route';
 import type { SavedLink } from '@/src/db/repos/savedLinks';
 
@@ -34,6 +36,11 @@ export function JournalClient({ tripId }: { tripId: string }) {
   const [tab, setTab] = useState<Tab>('entries');
   const [reading, setReading] = useState<EntryDTO | null>(null);
   const [entrySheet, setEntrySheet] = useState<{ open: boolean; entry?: EntryDTO }>({ open: false });
+  // Reading-list add/edit sheet. `linkSheetKey` bumps on every open so the
+  // sheet remounts with fresh state (the Plan-2 stale-form fix).
+  const [linkSheetOpen, setLinkSheetOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<SavedLink | undefined>(undefined);
+  const [linkSheetKey, setLinkSheetKey] = useState(0);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -69,6 +76,24 @@ export function JournalClient({ tripId }: { tripId: string }) {
     void load();
   }, [load]);
 
+  function openAddLink() {
+    setEditingLink(undefined);
+    setLinkSheetKey((k) => k + 1);
+    setLinkSheetOpen(true);
+  }
+  function openEditLink(id: string) {
+    const found = state.status === 'loaded' ? state.data.links.find((l) => l.id === id) : undefined;
+    setEditingLink(found);
+    setLinkSheetKey((k) => k + 1);
+    setLinkSheetOpen(true);
+  }
+  function handleLinkDelete(id: string) {
+    const found = state.status === 'loaded' ? state.data.links.find((l) => l.id === id) : undefined;
+    setEditingLink(found);
+    setLinkSheetKey((k) => k + 1);
+    setLinkSheetOpen(true);
+  }
+
   if (state.status === 'loading') {
     return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
   }
@@ -76,7 +101,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
     return <EmptyState mascotAlt={t('entries')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
   }
 
-  const { entries } = state.data;
+  const { entries, links } = state.data;
 
   // The reader is a full-view replacement (like opening a detail page).
   if (reading) {
@@ -129,10 +154,44 @@ export function JournalClient({ tripId }: { tripId: string }) {
       </div>
 
       {tab === 'links' ? (
-        // D2 replaces this placeholder with the LinkRow list + add-link sheet.
-        <p className="mt-8 px-4 py-8 text-center text-body text-ink-muted">
-          {t('readingListComingSoon')}
-        </p>
+        <div className="flex flex-col gap-3 mt-4">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={openAddLink}
+              disabled={!online}
+              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+            >
+              {t('addLink')}
+            </button>
+          </div>
+
+          {links.length === 0 ? (
+            <EmptyState
+              mascotAlt={t('addLink')}
+              headline={t('linksEmptyHeadline')}
+              subtext={t('linksEmptySubtext')}
+            />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {links.map((link) => (
+                <li key={link.id}>
+                  <LinkRow link={link} onEdit={openEditLink} onDelete={handleLinkDelete} />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <LinkSheet
+            key={`link-sheet-${linkSheetKey}`}
+            open={linkSheetOpen}
+            tripId={tripId}
+            link={editingLink}
+            disabled={!online}
+            onClose={() => setLinkSheetOpen(false)}
+            onSaved={load}
+          />
+        </div>
       ) : entries.length === 0 ? (
         <div className="mt-4">
           <EmptyState

@@ -57,12 +57,12 @@ describe('JournalClient', () => {
     expect(calls.some((u) => u.endsWith('/api/trips/trip-1/journal'))).toBe(true);
   });
 
-  it('toggles to the reading-list placeholder and back', async () => {
+  it('toggles to the reading-list sub-view and back', async () => {
     renderWith(<JournalClient tripId="trip-1" />);
     await waitFor(() => expect(screen.getByText('Day Two')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: en.journal.readingList }));
     expect(screen.getByRole('button', { name: en.journal.readingList })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(en.journal.readingListComingSoon)).toBeInTheDocument();
+    expect(screen.getByText(en.journal.linksEmptyHeadline)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: en.journal.entries }));
     expect(screen.getByText('Day Two')).toBeInTheDocument();
   });
@@ -98,5 +98,54 @@ describe('JournalClient', () => {
     vi.stubGlobal('fetch', mockFetchOk({ entries: [], links: [] }));
     renderWith(<JournalClient tripId="trip-1" />);
     await waitFor(() => expect(screen.getByText(en.journal.emptyHeadline)).toBeInTheDocument());
+  });
+});
+
+// --- D2: reading-list sub-view -------------------------------------------
+// (added to components/journal/JournalClient.test.tsx)
+describe('JournalClient — reading list', () => {
+  const links = [
+    {
+      id: 'link-1', tripId: 'trip-1', url: 'https://example.com/a', title: 'Article A',
+      note: null, thumbnail: null, createdAt: 0, updatedAt: 0,
+    },
+  ];
+
+  function mockJournalFetch(payload: { entries?: unknown[]; links?: unknown[] }) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ entries: payload.entries ?? [], links: payload.links ?? [] }),
+      })),
+    );
+  }
+
+  beforeEach(() => {
+    // Online by default for the gating assertions.
+    Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+  });
+
+  it('renders saved links as rows under the reading-list tab', async () => {
+    mockJournalFetch({ links });
+    renderWith(<JournalClient tripId="trip-1" />);
+    // Switch to the reading-list sub-view.
+    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
+    expect(await screen.findByText('Article A')).toBeInTheDocument();
+  });
+
+  it('shows the links empty state when there are no links', async () => {
+    mockJournalFetch({ links: [] });
+    renderWith(<JournalClient tripId="trip-1" />);
+    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
+    expect(await screen.findByText(en.journal.linksEmptyHeadline)).toBeInTheDocument();
+  });
+
+  it('opens the LinkSheet from the Add link button (online)', async () => {
+    mockJournalFetch({ links: [] });
+    renderWith(<JournalClient tripId="trip-1" />);
+    (await screen.findByRole('button', { name: en.journal.readingListTab })).click();
+    (await screen.findByRole('button', { name: en.journal.addLink })).click();
+    expect(await screen.findByRole('dialog', { name: en.journal.addLink })).toBeInTheDocument();
   });
 });
