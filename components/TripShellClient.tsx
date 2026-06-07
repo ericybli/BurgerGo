@@ -100,7 +100,7 @@ export function TripShellClient({
   }
 
   return (
-    <div className="flex min-h-[100dvh] flex-col pb-20">
+    <div className="flex h-[100dvh] flex-col overflow-hidden">
       {state.status === 'loading' ? (
         <header className="flex items-center gap-2 px-2 py-3" aria-busy="true">
           <div className="h-11 w-11 rounded-chip" />
@@ -118,7 +118,10 @@ export function TripShellClient({
           />
         </div>
       )}
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
+      {/* The single scroll region: the page itself never scrolls (shell is a
+          fixed-height overflow-hidden column); inner content scrolls here, and
+          map view fills it (flex-1) so the map drags instead of scrolling. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden">{children}</div>
       <BottomTabBar tripId={tripId} />
     </div>
   );

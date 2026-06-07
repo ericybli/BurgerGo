@@ -18,7 +18,7 @@ export function BottomTabBar({ tripId }: { tripId: string }) {
   return (
     <nav
       aria-label="Trip sections"
-      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-line bg-card shadow-lift [padding-bottom:env(safe-area-inset-bottom)]"
+      className="flex shrink-0 border-t border-line bg-card shadow-lift [padding-bottom:env(safe-area-inset-bottom)]"
     >
       {TABS.map((tab) => {
         const active = isActive(tab);

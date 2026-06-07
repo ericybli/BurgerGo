@@ -83,8 +83,12 @@ export function buildRuntimeCaching(base: string = swBasePath()): CacheEntry[] {
       },
     },
     {
+      // NetworkFirst (not SWR): when online, always return FRESH data so
+      // add/edit/delete reflect immediately (SWR served the stale cache first,
+      // making mutations appear to need a manual refresh). Offline falls back to
+      // the cached JSON, preserving the offline-read promise.
       name: 'data',
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkFirst',
       matcher({ url }: TestableMatcherOptions) {
         return url.pathname.startsWith(`${base}/api/trips`) || url.pathname === `${base}/api/settings`;
       },

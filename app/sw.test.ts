@@ -30,9 +30,11 @@ function matches(
 }
 
 describe('buildRuntimeCaching', () => {
-  it('SWR-caches trip-data + settings JSON under burgergo-data', () => {
+  it('NetworkFirst-caches trip-data + settings JSON under burgergo-data', () => {
     const entry = matcher('data');
-    expect(entry.handler).toBe('StaleWhileRevalidate');
+    // NetworkFirst so online reads are always fresh (post-mutation real-time);
+    // falls back to the burgergo-data cache offline.
+    expect(entry.handler).toBe('NetworkFirst');
     expect(entry.options.cacheName).toBe('burgergo-data');
     expect(matches('data', 'https://app.example.com/api/trips')).toBe(true);
     expect(matches('data', 'https://app.example.com/api/trips/abc-123')).toBe(true);
@@ -40,7 +42,7 @@ describe('buildRuntimeCaching', () => {
     expect(matches('data', 'https://app.example.com/api/health')).toBe(false);
   });
 
-  it('SWR-caches the budget read handler (covered by the /api/trips prefix)', () => {
+  it('routes the budget read handler through the data cache (covered by the /api/trips prefix)', () => {
     const url = new URL('http://localhost/api/trips/trip-1/budget');
     const entry = buildRuntimeCaching('').find((e) => e.name === 'data')!;
     expect(entry.matcher({ url, request: new Request(url), sameOrigin: true })).toBe(true);

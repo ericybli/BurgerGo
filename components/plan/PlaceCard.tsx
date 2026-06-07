@@ -50,7 +50,7 @@ export function PlaceCard({
         <span className="mt-1 w-px flex-1 bg-line" aria-hidden="true" />
       </div>
 
-      <div className="mb-3 flex-1 rounded-card bg-card p-3 shadow-card">
+      <div className="mb-3 min-w-0 flex-1 rounded-card bg-card p-3 shadow-card">
         <button
           type="button"
           onClick={() => onTap(place.id)}

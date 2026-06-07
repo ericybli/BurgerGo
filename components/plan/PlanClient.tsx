@@ -227,8 +227,8 @@ export function PlanClient({
 
   return (
     <main
-      className={`mx-auto flex w-full max-w-md flex-col px-4 pt-2 ${
-        params.view === 'map' ? 'min-h-0 flex-1 pb-2' : 'pb-24'
+      className={`mx-auto w-full max-w-md px-4 pt-2 ${
+        params.view === 'map' ? 'flex min-h-0 flex-1 flex-col pb-2' : 'pb-24'
       }`}
     >
       {/* FIX I2: transient mutation error banner */}
