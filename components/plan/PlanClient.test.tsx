@@ -20,6 +20,7 @@ const {
   recomputeDayLegsAction,
   moveToSavedAction,
   deletePlaceAction,
+  setDayModeAction,
 } = vi.hoisted(() => ({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   promoteToDayAction: vi.fn(async (_id?: any, _date?: any) => ({ id: 'p' })),
@@ -31,6 +32,8 @@ const {
   moveToSavedAction: vi.fn(async (_id?: any) => ({ id: 'p1' })),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   deletePlaceAction: vi.fn(async (_id?: any) => undefined),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setDayModeAction: vi.fn(async (_tripId?: any, _day?: any, _mode?: any) => ({})),
 }));
 vi.mock('@/app/_actions/places', () => ({
   addPlaceAction: vi.fn(async () => ({ id: 'p-new' })),
@@ -40,6 +43,7 @@ vi.mock('@/app/_actions/places', () => ({
   promoteToDayAction,
   moveToSavedAction,
   recomputeDayLegsAction,
+  setDayModeAction,
 }));
 
 // Stub the Google-dependent sheet + the B3 map so PlanClient is testable
@@ -76,7 +80,7 @@ const legs: LegDTO[] = [
 function mockFetch() {
   const f = vi.fn(async (url: string) => {
     if (url.includes('/places')) {
-      return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs })) };
+      return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs, dayModes: {} })) };
     }
     if (url.endsWith('/restaurants')) {
       return { ok: true, json: async () => ({ restaurants: [] }) };
@@ -103,6 +107,7 @@ beforeEach(() => {
   recomputeDayLegsAction.mockClear();
   moveToSavedAction.mockClear();
   deletePlaceAction.mockClear();
+  setDayModeAction.mockClear();
   vi.stubGlobal('navigator', { onLine: true });
 });
 afterEach(() => {
@@ -205,8 +210,38 @@ describe('PlanClient', () => {
     await userEvent.click(screen.getByRole('button', { name: en.plan.addToDay }));
     await userEvent.click(screen.getByRole('button', { name: /Day 2/ }));
     await waitFor(() => expect(promoteToDayAction).toHaveBeenCalledWith('s', '2026-05-04'));
+    // Day default is now 'drive' (no stored day_modes row → DEFAULT_DAY_MODE).
     await waitFor(() =>
-      expect(recomputeDayLegsAction).toHaveBeenCalledWith('t1', '2026-05-04', 'walk'),
+      expect(recomputeDayLegsAction).toHaveBeenCalledWith('t1', '2026-05-04', 'drive'),
+    );
+  });
+
+  it('uses a stored per-day default mode loaded from the API (not the global default)', async () => {
+    const f = vi.fn(async (url: string) => {
+      if (url.includes('/places')) {
+        return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs, dayModes: { '2026-05-03': 'transit' } })) };
+      }
+      if (url.endsWith('/restaurants')) return { ok: true, json: async () => ({ restaurants: [] }) };
+      return { ok: true, json: async () => JSON.parse(JSON.stringify({ trip })) };
+    });
+    vi.stubGlobal('fetch', f as unknown as typeof fetch);
+    renderPlan();
+    await screen.findByText('Stop A');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.recompute }));
+    await waitFor(() =>
+      expect(recomputeDayLegsAction).toHaveBeenCalledWith('t1', '2026-05-03', 'transit'),
+    );
+  });
+
+  it('persists a day-default mode change (setDayModeAction) and recomputes with it', async () => {
+    mockFetch(); // dayModes: {} → default 'drive'
+    renderPlan();
+    await screen.findByText('Stop A');
+    // The DayModeControl renders before the per-leg controls, so [0] is the day default.
+    await userEvent.click(screen.getAllByRole('button', { name: en.plan.travelModeTransit })[0]!);
+    await waitFor(() => expect(setDayModeAction).toHaveBeenCalledWith('t1', '2026-05-03', 'transit'));
+    await waitFor(() =>
+      expect(recomputeDayLegsAction).toHaveBeenCalledWith('t1', '2026-05-03', 'transit'),
     );
   });
 

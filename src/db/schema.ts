@@ -5,6 +5,7 @@ import {
   real,
   index,
   uniqueIndex,
+  primaryKey,
 } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
@@ -307,6 +308,26 @@ export const tasks = sqliteTable(
   }),
 );
 
+/**
+ * Per-day default travel mode. Sparse: a row exists only for a day the user
+ * explicitly set; a missing row → `DEFAULT_DAY_MODE` ('drive'). Per-leg
+ * overrides live on `places.legMode` and take precedence over this default.
+ */
+export const dayModes = sqliteTable(
+  'day_modes',
+  {
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    dayDate: text('day_date').notNull(),
+    mode: text('mode', { enum: ['walk', 'drive', 'transit'] }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.tripId, t.dayDate] }),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -410,3 +431,5 @@ export type PackingItem = typeof packingItems.$inferSelect;
 export type NewPackingItem = typeof packingItems.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
+export type DayMode = typeof dayModes.$inferSelect;
+export type NewDayMode = typeof dayModes.$inferInsert;

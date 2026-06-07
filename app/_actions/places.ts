@@ -15,12 +15,13 @@ import {
   type Place,
 } from '@/src/db/repos/places';
 import { invalidateLegsTouchingPlace } from '@/src/db/repos/legs';
+import { setDayMode } from '@/src/db/repos/dayModes';
 import { getTrip } from '@/src/db/repos/trips';
 import { getSettings } from '@/src/db/repos/settings';
 import { env } from '@/src/env';
 import { getOrFetchLeg } from '@/src/lib/google/getOrFetchLeg';
 import { generatePlaceSummary } from '@/src/lib/openai/server';
-import type { TravelLeg } from '@/src/db/schema';
+import type { TravelLeg, DayMode } from '@/src/db/schema';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
@@ -288,4 +289,26 @@ export async function setLegModeAction(
   if (!updated) throw new Error('Place not found');
   revalidatePath(`/trip/${existing.tripId}/plan`);
   return updated;
+}
+
+// --- setDayModeAction -----------------------------------------------------
+
+/**
+ * Persist a day's default travel mode (keyed by trip + day). The caller then
+ * triggers a day recompute with the new mode, which re-applies it to every leg
+ * that has no per-leg `legMode` override. Online-only, like all writes.
+ */
+export async function setDayModeAction(
+  tripId: string,
+  dayDate: string,
+  mode: TravelMode,
+): Promise<DayMode> {
+  const parsedTrip = z.string().min(1).parse(tripId);
+  const parsedDay = dateStr.parse(dayDate);
+  const parsedMode = travelMode.parse(mode);
+  const trip = getTrip(db, parsedTrip);
+  if (!trip) throw new Error('Trip not found');
+  const row = setDayMode(db, parsedTrip, parsedDay, parsedMode);
+  revalidatePath(`/trip/${parsedTrip}/plan`);
+  return row;
 }

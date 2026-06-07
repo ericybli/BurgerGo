@@ -5,6 +5,7 @@ import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
+import { listDayModes } from '@/src/db/repos/dayModes';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
 import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
@@ -123,7 +124,13 @@ export async function GET(
   // to straight stop-to-stop segments until the full payload hydrates it in.
   const legs: LegDTO[] = full ? legRows : legRows.map((l) => ({ ...l, polyline: null }));
 
-  return NextResponse.json({ places: placesResult, legs });
+  // Per-day default travel mode (sparse map dayDate → mode); days without a row
+  // fall back to DEFAULT_DAY_MODE on the client. Small, so always included.
+  const dayModes: Record<string, 'walk' | 'drive' | 'transit'> = Object.fromEntries(
+    listDayModes(db, tripId).map((d) => [d.dayDate, d.mode]),
+  );
+
+  return NextResponse.json({ places: placesResult, legs, dayModes });
 }
 
 const CATEGORY = z.enum([

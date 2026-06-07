@@ -22,9 +22,11 @@ import {
   moveToSavedAction,
   recomputeDayLegsAction,
   setLegModeAction,
+  setDayModeAction,
   generatePlaceSummaryAction,
 } from '@/app/_actions/places';
 import { getPlace, listByDay } from '@/src/db/repos/places';
+import { listDayModes } from '@/src/db/repos/dayModes';
 import { upsertLeg, getCachedLeg } from '@/src/db/repos/legs';
 import type { TravelLeg } from '@/src/db/schema';
 
@@ -319,6 +321,33 @@ describe('setLegModeAction', () => {
     await setLegModeAction('b', 'drive');
     const cleared = await setLegModeAction('b', null);
     expect(cleared.legMode).toBeNull();
+  });
+});
+
+describe('setDayModeAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('persists a day’s default mode and revalidates the plan', async () => {
+    const row = await setDayModeAction('trip-1', '2026-06-05', 'transit');
+    expect(row).toMatchObject({ tripId: 'trip-1', dayDate: '2026-06-05', mode: 'transit' });
+    expect(listDayModes(testHandle.db, 'trip-1')).toHaveLength(1);
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('overwrites the same day’s mode without duplicating', async () => {
+    await setDayModeAction('trip-1', '2026-06-05', 'drive');
+    await setDayModeAction('trip-1', '2026-06-05', 'walk');
+    const rows = listDayModes(testHandle.db, 'trip-1');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.mode).toBe('walk');
+  });
+
+  it('rejects an unknown trip', async () => {
+    await expect(setDayModeAction('nope', '2026-06-05', 'drive')).rejects.toThrow('Trip not found');
   });
 });
 

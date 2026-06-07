@@ -7,6 +7,9 @@
 /** Internal per-day travel mode (matches `travel_legs.mode`). */
 export type TravelMode = 'walk' | 'drive' | 'transit';
 
+/** Fallback day travel mode when a day has no stored override (day_modes). */
+export const DEFAULT_DAY_MODE: TravelMode = 'drive';
+
 /** Explicit enum → Google `travelmode` param mapping (never pass the raw enum). */
 const MODE_PARAM: Record<TravelMode, string> = {
   walk: 'walking',

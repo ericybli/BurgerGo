@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks } from '@/src/db/schema';
+import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks, dayModes } from '@/src/db/schema';
 
 const SEEDED_PLACE_ID = 'b';
 
@@ -120,7 +120,17 @@ describe('GET /api/trips/[tripId]/places', () => {
       ctx('trip-empty'),
     );
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ places: [], legs: [] });
+    await expect(res.json()).resolves.toEqual({ places: [], legs: [], dayModes: {} });
+  });
+
+  it('returns stored per-day default modes as a { dayDate: mode } map', async () => {
+    testHandle.db.insert(dayModes).values([
+      { tripId: 'trip-1', dayDate: '2026-06-05', mode: 'drive', updatedAt: TS },
+      { tripId: 'trip-1', dayDate: '2026-06-06', mode: 'transit', updatedAt: TS },
+    ]).run();
+    const res = await GET(new Request('http://x/api/trips/trip-1/places'), ctx('trip-1'));
+    const body = (await res.json()) as { dayModes: Record<string, string> };
+    expect(body.dayModes).toEqual({ '2026-06-05': 'drive', '2026-06-06': 'transit' });
   });
 
   it('attaches ordered personal photos to each PlaceDTO', async () => {

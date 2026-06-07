@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
-import { dayRouteUrl, type TravelMode } from '@/src/lib/googleMapsUrl';
+import { dayRouteUrl, DEFAULT_DAY_MODE, type TravelMode } from '@/src/lib/googleMapsUrl';
 import { landingDate } from '@/src/lib/landingDate';
 import { withBase } from '@/src/lib/basePath';
 import { fetchTripData } from '@/src/lib/tripData';
@@ -31,6 +31,7 @@ import {
   deletePlaceAction,
   recomputeDayLegsAction,
   setLegModeAction,
+  setDayModeAction,
 } from '@/app/_actions/places';
 import { EmptyState } from '@/components/EmptyState';
 import { DayStrip } from '@/components/plan/DayStrip';
@@ -45,7 +46,14 @@ import { DayPickerSheet } from '@/components/plan/DayPickerSheet';
 import { PlanMap } from '@/components/plan/PlanMap';
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
-type PlanData = { trip: TripLite; places: PlaceDTO[]; legs: LegDTO[]; restaurants: RestaurantMarkerInput[] };
+type PlanData = {
+  trip: TripLite;
+  places: PlaceDTO[];
+  legs: LegDTO[];
+  restaurants: RestaurantMarkerInput[];
+  /** Sparse per-day default travel mode (dayDate → mode); missing → DEFAULT_DAY_MODE. */
+  dayModes: Record<string, TravelMode>;
+};
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'loaded'; data: PlanData };
 
 /** Current wall-clock HH:MM in the trip timezone (for next-stop selection). */
@@ -103,7 +111,6 @@ export function PlanClient({
 
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [online, setOnline] = useState(true);
-  const [dayMode, setDayMode] = useState<TravelMode>('walk');
   const [addOpen, setAddOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
@@ -155,7 +162,11 @@ export function PlanClient({
       ]);
       if (!placesRes.ok) throw new Error('load failed');
       const trip: TripLite = tripData.trip;
-      const { places, legs } = (await placesRes.json()) as { places: PlaceDTO[]; legs: LegDTO[] };
+      const { places, legs, dayModes } = (await placesRes.json()) as {
+        places: PlaceDTO[];
+        legs: LegDTO[];
+        dayModes: Record<string, TravelMode>;
+      };
       let restaurants: RestaurantMarkerInput[] = [];
       if (restaurantsRes && restaurantsRes.ok) {
         const { restaurants: rows } = (await restaurantsRes.json()) as {
@@ -186,7 +197,7 @@ export function PlanClient({
         }));
       }
       // FIX C1: only setState if still mounted
-      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants } });
+      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants, dayModes } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
       return;
@@ -254,11 +265,14 @@ export function PlanClient({
     );
   }
 
-  const { trip, places, legs, restaurants } = state.data;
+  const { trip, places, legs, restaurants, dayModes } = state.data;
   const days: DerivedDay[] = deriveDays(trip, tz);
   const landing = landingDate(trip, tz);
   const range = { startDate: trip.startDate, endDate: trip.endDate };
   const params: PlanParams = parsePlanParams(searchParams, range, landing);
+  // The selected day's default travel mode: its stored override, else the global
+  // default ('drive'). Persisted per day (day_modes), so it survives reload.
+  const dayMode: TravelMode = dayModes[params.date] ?? DEFAULT_DAY_MODE;
 
   function setParams(patch: Partial<PlanParams>) {
     router.replace(`${pathname}?${buildPlanQuery({ ...params, ...patch })}`);
@@ -352,10 +366,14 @@ export function PlanClient({
   }
 
   function onModeChange(m: TravelMode) {
-    setDayMode(m);
-    // Recompute with the NEW mode explicitly — `dayMode` state is still stale in
-    // this closure until the next render.
-    if (online) mutateDay(params.date, async () => undefined, m);
+    // Optimistically reflect the new default in the selector right away, then
+    // persist it (day_modes) and recompute the day's legs with the new mode.
+    setState((s) =>
+      s.status === 'loaded'
+        ? { ...s, data: { ...s.data, dayModes: { ...s.data.dayModes, [params.date]: m } } }
+        : s,
+    );
+    if (online) mutateDay(params.date, () => setDayModeAction(tripId, params.date, m), m);
   }
 
   // PlanMap seam (locked): build dayGroups + handlers; pass legs + mode + online.
