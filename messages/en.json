@@ -100,7 +100,8 @@
     "layers": "Layers",
     "layerSaved": "Saved places",
     "layerRestaurants": "Restaurants",
-    "readCardLabel": "Place details"
+    "readCardLabel": "Place details",
+    "closeInfoCard": "Close"
   },
   "category": {
     "sightseeing": "Sightseeing",

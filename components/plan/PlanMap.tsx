@@ -32,6 +32,8 @@ export interface PlanMapProps {
   onSelectPlace: (placeId: string) => void;
   onOpenDayRoute: (date: string) => void;
   onViewPlace: (placeId: string) => void;
+  /** Tapping a restaurant-layer pin opens its info card (name/cuisine/address/notes). */
+  onViewRestaurant: (restaurantId: string) => void;
   online: boolean;
   /** Saved-bucket places, shown as an optional teal overlay in the days view. */
   savedPlaces?: PlaceDTO[];
@@ -61,6 +63,7 @@ export function PlanMap({
   onSelectPlace,
   onOpenDayRoute,
   onViewPlace,
+  onViewRestaurant,
   online,
   savedPlaces = [],
   restaurants = [],
@@ -137,6 +140,20 @@ export function PlanMap({
         ? [...dayMarkers, ...savedLayerMarkers, ...restaurantLayerMarkers]
         : savedMarkers,
     [bucket, dayMarkers, savedLayerMarkers, restaurantLayerMarkers, savedMarkers],
+  );
+
+  // The viewport fits only the base pins (day stops / saved bucket), so toggling
+  // the saved/restaurant overlays never moves the user's current view.
+  const baseMarkers: PlaceMarker[] = useMemo(
+    () => (bucket === 'days' ? dayMarkers : savedMarkers),
+    [bucket, dayMarkers, savedMarkers],
+  );
+
+  // Restaurant-layer marker ids → route their taps to the restaurant info card
+  // (restaurants aren't in `places`, so the place lookup would find nothing).
+  const restaurantMarkerIds = useMemo(
+    () => new Set(restaurantLayerMarkers.map((m) => m.id)),
+    [restaurantLayerMarkers],
   );
 
   // --- Legend (days bucket only): all day groups flagged by visibleDates. ---
@@ -269,8 +286,15 @@ export function PlanMap({
       >
         <MapCanvas
           markers={activeMarkers}
+          fitMarkers={baseMarkers}
           paths={dayPaths}
-          onMarkerClick={(id) => (bucket === 'saved' ? setSelectedId(id) : onViewPlace(id))}
+          onMarkerClick={(id) =>
+            restaurantMarkerIds.has(id)
+              ? onViewRestaurant(id)
+              : bucket === 'saved'
+                ? setSelectedId(id)
+                : onViewPlace(id)
+          }
         />
 
         {bucket === 'days' ? (

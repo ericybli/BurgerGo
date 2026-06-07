@@ -10,6 +10,12 @@ export interface MapCanvasProps {
   markers: PlaceMarker[];
   paths: DayPath[];
   onMarkerClick: (placeId: string) => void;
+  /**
+   * Markers the auto-fit viewport tracks. Defaults to `markers`. PlanMap passes
+   * only the base day/saved pins so toggling overlay layers (saved/restaurants)
+   * never moves the view — the fit only re-runs when these change (day filter).
+   */
+  fitMarkers?: PlaceMarker[];
 }
 
 /**

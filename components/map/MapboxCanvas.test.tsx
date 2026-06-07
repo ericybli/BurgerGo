@@ -34,6 +34,7 @@ const fakeMapbox = {
   Map: vi.fn(() => fakeMap),
   Marker: vi.fn((_opts: { element: HTMLElement; anchor?: string }) => makeMarker()),
   NavigationControl: vi.fn(),
+  GeolocateControl: vi.fn(),
 };
 
 vi.mock('@/src/lib/mapbox/loader', () => ({

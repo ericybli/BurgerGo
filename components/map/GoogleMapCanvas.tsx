@@ -22,11 +22,16 @@ export function GoogleMapCanvas({
   markers,
   paths,
   onMarkerClick,
+  fitMarkers,
 }: {
   markers: PlaceMarker[];
   paths: DayPath[];
   onMarkerClick: (placeId: string) => void;
+  fitMarkers?: PlaceMarker[];
 }) {
+  // Viewport tracks the base markers; overlay toggles keep the same fitSet so the
+  // view doesn't move when layers turn on/off.
+  const fitSet = fitMarkers ?? markers;
   const t = useTranslations('planMap');
   const containerRef = useRef<HTMLDivElement | null>(null);
   // Keep the latest callback without forcing a full map rebuild.
@@ -102,14 +107,6 @@ export function GoogleMapCanvas({
     }
     overlaysRef.current = [];
 
-    const allPositions = markers.map((m) => m.position);
-    const bounds = computeBounds(allPositions);
-    const center = bounds
-      ? { lat: (bounds.south + bounds.north) / 2, lng: (bounds.west + bounds.east) / 2 }
-      : { lat: 0, lng: 0 };
-
-    map.setCenter(center);
-
     // Polylines under the markers.
     for (const dp of paths) {
       if (dp.path.length < 2) continue;
@@ -144,16 +141,27 @@ export function GoogleMapCanvas({
       marker.addListener('click', () => clickRef.current(id));
       overlaysRef.current.push(marker as unknown as { setMap: (m: unknown) => void });
     }
-
-    if (bounds) {
-      map.fitBounds(
-        new maps.LatLngBounds(
-          new maps.LatLng(bounds.south, bounds.west),
-          new maps.LatLng(bounds.north, bounds.east),
-        ),
-      );
-    }
   }, [mapReady, markers, paths]);
+
+  // Effect 2b: center + fit the viewport to the base markers only, and only when
+  // that set changes — so toggling overlay layers keeps the user's current view.
+  useEffect(() => {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!maps || !map) return;
+    const bounds = computeBounds(fitSet.map((m) => m.position));
+    if (!bounds) return;
+    map.setCenter({
+      lat: (bounds.south + bounds.north) / 2,
+      lng: (bounds.west + bounds.east) / 2,
+    });
+    map.fitBounds(
+      new maps.LatLngBounds(
+        new maps.LatLng(bounds.south, bounds.west),
+        new maps.LatLng(bounds.north, bounds.east),
+      ),
+    );
+  }, [mapReady, fitSet]);
 
   // Effect 3: keep the map sized to its container. Flex-fill height varies per
   // device/orientation and the fullscreen toggle changes the container size after
@@ -170,7 +178,7 @@ export function GoogleMapCanvas({
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
         maps.event?.trigger?.(map, 'resize');
-        const bounds = computeBounds(markers.map((m) => m.position));
+        const bounds = computeBounds(fitSet.map((m) => m.position));
         if (bounds) {
           map.fitBounds(
             new maps.LatLngBounds(
@@ -186,7 +194,7 @@ export function GoogleMapCanvas({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [mapReady, markers]);
+  }, [mapReady, fitSet]);
 
   return (
     <div

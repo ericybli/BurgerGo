@@ -37,6 +37,7 @@ import { TodayHero } from '@/components/plan/TodayHero';
 import { AddPlaceSheet } from '@/components/plan/AddPlaceSheet';
 import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
 import { PlaceReadCard } from '@/components/plan/PlaceReadCard';
+import { RestaurantInfoCard } from '@/components/plan/RestaurantInfoCard';
 import { PlanMap } from '@/components/plan/PlanMap';
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
@@ -75,6 +76,7 @@ export function PlanClient({
   const [addOpen, setAddOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
+  const [viewRestaurant, setViewRestaurant] = useState<RestaurantMarkerInput | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
   // FIX I2+I5: track in-flight mutations to prevent double-fire
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -128,6 +130,9 @@ export function PlanClient({
             lat: number | null;
             lng: number | null;
             googlePlaceId: string | null;
+            cuisine: string | null;
+            address: string | null;
+            notes: string | null;
           }>;
         };
         restaurants = rows.map((r) => ({
@@ -136,6 +141,9 @@ export function PlanClient({
           lat: r.lat,
           lng: r.lng,
           googlePlaceId: r.googlePlaceId,
+          cuisine: r.cuisine,
+          address: r.address,
+          notes: r.notes,
         }));
       }
       // FIX C1: only setState if still mounted
@@ -149,15 +157,18 @@ export function PlanClient({
     void load();
   }, [load]);
 
-  // Escape closes the place read-card overlay (matches the editor / add sheets).
+  // Escape closes the place read-card / restaurant info overlays.
   useEffect(() => {
-    if (!viewPlace) return;
+    if (!viewPlace && !viewRestaurant) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setViewPlace(null);
+      if (e.key === 'Escape') {
+        setViewPlace(null);
+        setViewRestaurant(null);
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [viewPlace]);
+  }, [viewPlace, viewRestaurant]);
 
   // Once trip data is loaded, seed visibleDates with every day so all pins show
   // on the map by default. Runs once per trip (ref guard) so user toggles and
@@ -331,6 +342,7 @@ export function PlanClient({
           onSelectPlace={(id) => setDetailFor(placeById(id))}
           onOpenDayRoute={onOpenDayRoute}
           onViewPlace={(id) => setViewPlace(placeById(id))}
+          onViewRestaurant={(id) => setViewRestaurant(restaurants.find((r) => r.id === id) ?? null)}
           online={online}
           savedPlaces={saved}
           restaurants={restaurants}
@@ -410,6 +422,20 @@ export function PlanClient({
               onClose={() => setViewPlace(null)}
               onEdit={() => { setDetailFor(viewPlace); setViewPlace(null); }}
             />
+          </div>
+        </div>
+      ) : null}
+
+      {viewRestaurant ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={viewRestaurant.name}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(110_85_68_/_0.35)] px-3 pb-24"
+          onClick={() => setViewRestaurant(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
+            <RestaurantInfoCard restaurant={viewRestaurant} onClose={() => setViewRestaurant(null)} />
           </div>
         </div>
       ) : null}

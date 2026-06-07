@@ -35,13 +35,16 @@ export const RESTAURANT_PIN_COLOR = '#E8902E';
 /** Glyph shown on Restaurants-layer pins. */
 export const RESTAURANT_GLYPH = '🍽️';
 
-/** Minimal restaurant shape the Restaurants map layer needs. */
+/** Restaurant shape the Restaurants map layer + its tap info card need. */
 export interface RestaurantMarkerInput {
   id: string;
   name: string;
   lat: number | null;
   lng: number | null;
   googlePlaceId: string | null;
+  cuisine: string | null;
+  address: string | null;
+  notes: string | null;
 }
 
 function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {

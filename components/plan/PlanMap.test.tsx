@@ -57,6 +57,7 @@ const onShowAllDays = vi.fn();
 const onSelectPlace = vi.fn();
 const onOpenDayRoute = vi.fn();
 const onViewPlace = vi.fn();
+const onViewRestaurant = vi.fn();
 
 function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}) {
   return render(
@@ -72,6 +73,7 @@ function renderMap(overrides: Partial<React.ComponentProps<typeof PlanMap>> = {}
         onSelectPlace={onSelectPlace}
         onOpenDayRoute={onOpenDayRoute}
         onViewPlace={onViewPlace}
+        onViewRestaurant={onViewRestaurant}
         online={true}
         {...overrides}
       />
@@ -152,10 +154,11 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
   });
 
-  it('overlays Restaurant pins only after enabling the Layers toggle', async () => {
+  it('overlays Restaurant pins (and taps route to onViewRestaurant) after enabling the toggle', async () => {
     const user = userEvent.setup();
     const restaurants = [
-      { id: 'rest1', name: 'Ichiran', lat: 35.8, lng: 139.8, googlePlaceId: null },
+      { id: 'rest1', name: 'Ichiran', lat: 35.8, lng: 139.8, googlePlaceId: null,
+        cuisine: 'Ramen', address: '1-2-3 Shibuya', notes: 'Tonkotsu' },
     ];
     renderMap({ restaurants });
 
@@ -166,6 +169,11 @@ describe('PlanMap (online, days bucket)', () => {
 
     expect(screen.getByRole('button', { name: 'pin:Ichiran' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
+
+    // Tapping the restaurant pin routes to onViewRestaurant (not the place lookup).
+    await user.click(screen.getByRole('button', { name: 'pin:Ichiran' }));
+    expect(onViewRestaurant).toHaveBeenCalledWith('rest1');
+    expect(onViewPlace).not.toHaveBeenCalledWith('rest1');
   });
 
   it('does not show the Layers menu in the saved bucket', () => {

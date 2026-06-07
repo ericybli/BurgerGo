@@ -133,11 +133,16 @@ export function MapboxCanvas({
   markers,
   paths,
   onMarkerClick,
+  fitMarkers,
 }: {
   markers: PlaceMarker[];
   paths: DayPath[];
   onMarkerClick: (placeId: string) => void;
+  fitMarkers?: PlaceMarker[];
 }) {
+  // The viewport tracks the base markers (day/saved pins); overlay toggles pass
+  // the same `fitMarkers`, so the view stays put when layers turn on/off.
+  const fitSet = fitMarkers ?? markers;
   const t = useTranslations('planMap');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const clickRef = useRef(onMarkerClick);
@@ -176,6 +181,16 @@ export function MapboxCanvas({
         attributionControl: true,
       });
       map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right');
+      // Current-location control: shows the blue dot + a recenter button. It only
+      // centers the map when the user taps it, so the auto-fit (places) is unaffected.
+      map.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: { enableHighAccuracy: true },
+          trackUserLocation: true,
+          showUserHeading: true,
+        }),
+        'bottom-right',
+      );
       mapRef.current = map;
       map.on('load', () => {
         if (!cancelled) setStyleReady((n) => n + 1);
@@ -235,9 +250,15 @@ export function MapboxCanvas({
         .addTo(map);
       markerObjsRef.current.push(marker);
     }
+  }, [styleReady, markers, paths]);
 
-    // Fit the viewport to all markers.
-    const bounds = computeBounds(markers.map((m) => m.position));
+  // Effect 2b: fit the viewport to the base markers ONLY (not overlay layers),
+  // and only when that set changes (initial load, day filter) — so toggling the
+  // saved/restaurant layers keeps the user's current view.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || styleReady === 0) return;
+    const bounds = computeBounds(fitSet.map((m) => m.position));
     if (bounds) {
       map.fitBounds(
         [
@@ -247,7 +268,7 @@ export function MapboxCanvas({
         { padding: 48, duration: 0, maxZoom: 15 },
       );
     }
-  }, [styleReady, markers, paths]);
+  }, [styleReady, fitSet]);
 
   // Effect 3: keep the map sized to its container (full-height + fullscreen).
   useEffect(() => {
