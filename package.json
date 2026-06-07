@@ -23,6 +23,7 @@
     "drizzle-orm": "^0.36",
     "next": "^15",
     "next-intl": "^3",
+    "node-html-parser": "^6.1.13",
     "react": "^19",
     "react-dom": "^19",
     "react-markdown": "^9.1.0",
