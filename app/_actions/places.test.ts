@@ -20,6 +20,7 @@ import {
   promoteToDayAction,
   moveToSavedAction,
   recomputeDayLegsAction,
+  generatePlaceSummaryAction,
 } from '@/app/_actions/places';
 import { getPlace } from '@/src/db/repos/places';
 import { upsertLeg, getCachedLeg } from '@/src/db/repos/legs';
@@ -30,6 +31,10 @@ vi.mock('@/src/lib/google/getOrFetchLeg', () => ({
   getOrFetchLeg: (...args: unknown[]) => getOrFetchLegMock(...args),
 }));
 vi.mock('@/src/env', () => ({ env: { GOOGLE_MAPS_SERVER_KEY: 'SERVER_KEY' } }));
+
+vi.mock('@/src/lib/openai/server', () => ({
+  generatePlaceSummary: vi.fn(async () => 'Generated blurb.'),
+}));
 
 const TS = new Date('2026-06-08T12:00:00.000Z');
 
@@ -254,5 +259,19 @@ describe('recomputeDayLegsAction', () => {
     const legs = await recomputeDayLegsAction('trip-1', '2026-06-07', 'walk');
     expect(legs).toEqual([]);
     expect(getOrFetchLegMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('generatePlaceSummaryAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('generatePlaceSummaryAction stores the AI summary on the place', async () => {
+    const updated = await generatePlaceSummaryAction('a');
+    expect(updated?.aiSummary).toBe('Generated blurb.');
   });
 });

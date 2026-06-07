@@ -15,8 +15,10 @@ import {
   type Place,
 } from '@/src/db/repos/places';
 import { invalidateLegsTouchingPlace } from '@/src/db/repos/legs';
+import { getTrip } from '@/src/db/repos/trips';
 import { env } from '@/src/env';
 import { getOrFetchLeg } from '@/src/lib/google/getOrFetchLeg';
+import { generatePlaceSummary } from '@/src/lib/openai/server';
 import type { TravelLeg } from '@/src/db/schema';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
@@ -82,6 +84,7 @@ const updateSchema = z.object({
   durationMin: z.number().int().nonnegative().nullish(),
   cost: z.number().int().nullish(),
   notes: z.string().max(2000).nullish(),
+  aiSummary: z.string().max(4000).nullish(),
 });
 
 export type UpdatePlaceActionPatch = z.input<typeof updateSchema>;
@@ -156,6 +159,30 @@ export async function moveToSavedAction(id: string): Promise<Place> {
   if (!updated) throw new Error('Place not found');
   revalidatePlan(existing.tripId);
   return updated;
+}
+
+// --- generatePlaceSummaryAction -------------------------------------------
+
+export async function generatePlaceSummaryAction(placeId: string): Promise<Place | null> {
+  const id = z.string().min(1).parse(placeId);
+  const place = getPlace(db, id);
+  if (!place) throw new Error('Place not found');
+  const trip = getTrip(db, place.tripId);
+  if (!trip) throw new Error('Trip not found');
+
+  const summary = await generatePlaceSummary({
+    name: place.name,
+    address: place.address,
+    category: place.category,
+    tripName: trip.name,
+    startDate: trip.startDate,
+    endDate: trip.endDate,
+  });
+  if (!summary) return null; // no key / failure → leave existing summary untouched
+
+  const updated = updatePlace(db, id, { aiSummary: summary });
+  revalidatePlan(place.tripId);
+  return updated ?? null;
 }
 
 // --- recomputeDayLegsAction -----------------------------------------------
