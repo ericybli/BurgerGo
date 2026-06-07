@@ -6,6 +6,7 @@
  */
 import type { DayGroup, PlaceDTO, LatLngLiteral } from '@/src/lib/map/types';
 import { colorForGroup } from '@/src/lib/map/colors';
+import { categoryGlyph } from '@/src/lib/planUrl';
 
 /** One plottable pin. */
 export interface PlaceMarker {
@@ -19,7 +20,12 @@ export interface PlaceMarker {
   label: string | null;
   /** Day palette color for day markers; null for Saved markers. */
   color: string | null;
+  /** Category icon (emoji) shown on the pin so categories are distinguishable. */
+  glyph: string;
 }
+
+/** Teal used for non-day pins (Saved bucket / saved-places layer). */
+export const SAVED_PIN_COLOR = '#4F8A86';
 
 function hasCoords(p: PlaceDTO): p is PlaceDTO & { lat: number; lng: number } {
   return typeof p.lat === 'number' && typeof p.lng === 'number';
@@ -48,6 +54,7 @@ export function buildMarkers(group: DayGroup): PlaceMarker[] {
       position: { lat: p.lat, lng: p.lng },
       label: String(p.orderIndex + 1),
       color,
+      glyph: categoryGlyph(p.category),
     }));
 }
 
@@ -69,5 +76,6 @@ export function buildSavedMarkers(places: PlaceDTO[]): PlaceMarker[] {
       position: { lat: p.lat as number, lng: p.lng as number },
       label: null,
       color: null,
+      glyph: categoryGlyph(p.category),
     }));
 }

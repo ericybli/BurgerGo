@@ -61,11 +61,11 @@ function renderCanvas(
 const MARKERS: PlaceMarker[] = [
   {
     id: 'a', name: 'Senso-ji', category: 'sightseeing', googlePlaceId: 'ga',
-    photoPath: null, position: { lat: 35.0, lng: 139.0 }, label: '1', color: '#EE5B3C',
+    photoPath: null, position: { lat: 35.0, lng: 139.0 }, label: '1', color: '#EE5B3C', glyph: '🏛️',
   },
   {
     id: 'b', name: 'Skytree', category: 'activity', googlePlaceId: 'gb',
-    photoPath: null, position: { lat: 35.1, lng: 139.1 }, label: '2', color: '#EE5B3C',
+    photoPath: null, position: { lat: 35.1, lng: 139.1 }, label: '2', color: '#EE5B3C', glyph: '🎟️',
   },
 ];
 const PATHS: DayPath[] = [
@@ -86,12 +86,12 @@ describe('GoogleMapCanvas', () => {
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
   });
 
-  it('creates one marker per entry with correct position and numbered label', async () => {
+  it('creates one marker per entry with correct position and category-glyph label', async () => {
     renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.markers).toHaveLength(2));
     expect(captured.markers[0].opts.position).toEqual({ lat: 35.0, lng: 139.0 });
-    expect(captured.markers[0].opts.label.text).toBe('1');
-    expect(captured.markers[1].opts.label.text).toBe('2');
+    expect(captured.markers[0].opts.label.text).toBe('🏛️');
+    expect(captured.markers[1].opts.label.text).toBe('🎟️');
   });
 
   it('creates a colored polyline per day path', async () => {
@@ -104,14 +104,14 @@ describe('GoogleMapCanvas', () => {
     ]);
   });
 
-  it('creates un-labeled, un-numbered markers when label is null (Saved pins)', async () => {
+  it('labels Saved pins (label null) with the category glyph too', async () => {
     const savedMarkers: PlaceMarker[] = [
       { id: 's', name: 'Wish', category: 'other', googlePlaceId: null,
-        photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null },
+        photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null, glyph: '📍' },
     ];
     renderCanvas({ markers: savedMarkers, paths: [], onMarkerClick: vi.fn() });
     await waitFor(() => expect(captured.markers).toHaveLength(1));
-    expect(captured.markers[0].opts.label).toBeUndefined();
+    expect(captured.markers[0].opts.label.text).toBe('📍');
   });
 
   it('calls fitBounds with the marker extent', async () => {

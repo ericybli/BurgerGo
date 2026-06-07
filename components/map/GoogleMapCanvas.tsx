@@ -64,12 +64,13 @@ export function GoogleMapCanvas({
         zoom: 12,
         disableDefaultUI: false,
         clickableIcons: false,
-        // Compact dropdown map-type control, pinned top-left so it never collides
-        // with our custom fullscreen button (top-right) or zoom (bottom-right).
+        // Compact dropdown map-type control, pinned bottom-left so it never
+        // collides with PlanMap's Layers button (top-left), fullscreen button
+        // (top-right), or zoom (bottom-right).
         mapTypeControl: true,
         mapTypeControlOptions: {
           style: maps.MapTypeControlStyle?.DROPDOWN_MENU ?? 2,
-          position: maps.ControlPosition?.TOP_LEFT ?? 1,
+          position: maps.ControlPosition?.BOTTOM_LEFT ?? 6,
         },
         // PlanMap provides its own full-viewport overlay; the native control calls
         // the Fullscreen API, which iOS Safari does not support for divs.
@@ -122,18 +123,17 @@ export function GoogleMapCanvas({
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });
     }
 
-    // Numbered, colored markers (Coral label text, spec §3.4).
+    // Colored discs labeled with the category glyph so categories are
+    // distinguishable; day color (or teal for saved/layer pins) keeps days apart.
     for (const m of markers) {
       const marker = new maps.Marker({
         position: m.position,
         map,
         title: m.name,
-        label: m.label
-          ? { text: m.label, color: '#FFFFFF', fontSize: '12px', fontWeight: '700' }
-          : undefined,
+        label: { text: m.glyph, fontSize: '16px' },
         icon: {
           path: maps.SymbolPath?.CIRCLE ?? 0,
-          scale: m.label ? 12 : 9,
+          scale: m.label ? 14 : 12,
           fillColor: m.color ?? '#4F8A86',
           fillOpacity: 1,
           strokeColor: '#FFFFFF',

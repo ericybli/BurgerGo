@@ -130,6 +130,31 @@ describe('PlanMap (online, days bucket)', () => {
     expect(onSelectPlace).toHaveBeenCalledWith('s');
   });
 
+  it('overlays Saved-places pins only after enabling the Layers toggle', async () => {
+    const user = userEvent.setup();
+    const saved = [place('saved1', 0, 35.9, 139.9, 'gs')];
+    renderMap({ savedPlaces: saved });
+
+    // Hidden until the user opts in.
+    expect(screen.queryByRole('button', { name: 'pin:saved1' })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: en.planMap.layers }));
+    await user.click(screen.getByRole('checkbox', { name: en.planMap.layerSaved }));
+
+    expect(screen.getByRole('button', { name: 'pin:saved1' })).toBeInTheDocument();
+    // Day pins remain visible alongside the overlay.
+    expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
+  });
+
+  it('does not show the Layers menu in the saved bucket', () => {
+    const savedGroup: DayGroup = {
+      date: null, dayNumber: null, colorIndex: 0,
+      places: [place('s', 0, 35.5, 139.5, 'gs')],
+    };
+    renderMap({ bucket: 'saved', dayGroups: [savedGroup], visibleDates: new Set() });
+    expect(screen.queryByRole('button', { name: en.planMap.layers })).not.toBeInTheDocument();
+  });
+
   it('clicking a day-route link calls onOpenDayRoute once and does NOT call window.open', async () => {
     const user = userEvent.setup();
     const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { PlanBucket, DayGroup } from '@/src/lib/planUrl';
-import type { LegDTO } from '@/src/lib/planView';
+import type { LegDTO, PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import { dayRouteUrl, placeUrl } from '@/src/lib/googleMapsUrl';
 import type { LatLngLiteral } from '@/src/lib/map/types';
@@ -25,6 +25,8 @@ export interface PlanMapProps {
   onSelectPlace: (placeId: string) => void;
   onOpenDayRoute: (date: string) => void;
   online: boolean;
+  /** Saved-bucket places, shown as an optional teal overlay in the days view. */
+  savedPlaces?: PlaceDTO[];
 }
 
 /**
@@ -48,11 +50,15 @@ export function PlanMap({
   onSelectPlace,
   onOpenDayRoute,
   online,
+  savedPlaces = [],
 }: PlanMapProps) {
   const t = useTranslations('planMap');
   const tm = useTranslations('mascot');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  // Secondary "Layers" menu (days bucket): overlay extra pin sets onto the map.
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
 
   // Body scroll-lock + Escape while the fullscreen map overlay is open. No-op
   // until isFullscreen is true (offline/saved/tests unaffected); the toggle
@@ -99,7 +105,17 @@ export function PlanMap({
     [bucket, dayGroups],
   );
 
-  const activeMarkers: PlaceMarker[] = bucket === 'days' ? dayMarkers : savedMarkers;
+  // Saved-places overlay (days bucket only): teal, un-numbered pins layered on
+  // top of the day stops when the Layers menu's "Saved places" toggle is on.
+  const savedLayerMarkers = useMemo(
+    () => (bucket === 'days' && showSaved ? buildSavedMarkers(savedPlaces) : []),
+    [bucket, showSaved, savedPlaces],
+  );
+
+  const activeMarkers: PlaceMarker[] = useMemo(
+    () => (bucket === 'days' ? [...dayMarkers, ...savedLayerMarkers] : savedMarkers),
+    [bucket, dayMarkers, savedLayerMarkers, savedMarkers],
+  );
 
   // --- Legend (days bucket only): all day groups flagged by visibleDates. ---
   const legend: LegendEntry[] = useMemo(
@@ -248,6 +264,40 @@ export function PlanMap({
           paths={dayPaths}
           onMarkerClick={(id) => setSelectedId(id)}
         />
+
+        {bucket === 'days' ? (
+          <div className="absolute left-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[3]">
+            <button
+              type="button"
+              onClick={() => setLayersOpen((v) => !v)}
+              aria-label={t('layers')}
+              aria-expanded={layersOpen}
+              className="flex h-10 items-center gap-1.5 rounded-control bg-card/95 px-3 text-caption font-medium text-ink shadow-card backdrop-blur"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+              <span>{t('layers')}</span>
+            </button>
+            {layersOpen ? (
+              <div
+                role="group"
+                aria-label={t('layers')}
+                className="mt-2 w-44 rounded-card bg-card/95 p-1.5 shadow-lift backdrop-blur"
+              >
+                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-line">
+                  <span>{t('layerSaved')}</span>
+                  <input
+                    type="checkbox"
+                    checked={showSaved}
+                    onChange={(e) => setShowSaved(e.target.checked)}
+                    className="h-4 w-4 accent-teal"
+                  />
+                </label>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
 
         <button
           type="button"

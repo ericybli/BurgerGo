@@ -77,7 +77,10 @@
     "exitFullscreen": "Exit full screen",
     "toggleMapStyle": "Toggle map style",
     "styleMap": "Map",
-    "styleSatellite": "Satellite"
+    "styleSatellite": "Satellite",
+    "layers": "Layers",
+    "layerSaved": "Saved places",
+    "layerRestaurants": "Restaurants"
   },
   "category": {
     "sightseeing": "Sightseeing",

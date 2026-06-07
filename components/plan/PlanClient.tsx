@@ -295,6 +295,7 @@ export function PlanClient({
           onSelectPlace={(id) => setDetailFor(placeById(id))}
           onOpenDayRoute={onOpenDayRoute}
           online={online}
+          savedPlaces={saved}
         />
       ) : params.bucket === 'days' ? (
         <>

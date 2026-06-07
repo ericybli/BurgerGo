@@ -28,34 +28,66 @@ type StyleId = keyof typeof STYLES;
 
 const SAVED_COLOR = '#4F8A86';
 
-/** Build the DOM element for one marker (numbered day pin, or a saved dot). */
+/**
+ * Build the DOM element for one marker: a colored disc (day color, or teal for
+ * saved/layer pins) showing the place's category glyph. Day stops also get a
+ * small numbered badge in the corner so list/map stop numbering stays legible
+ * without hiding the category icon.
+ */
 function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButtonElement {
   const el = document.createElement('button');
   el.type = 'button';
   el.setAttribute('aria-label', m.name);
+  const isDay = m.label != null;
+  const bg = m.color ?? SAVED_COLOR;
   el.style.cssText = [
+    'position:relative',
     'display:flex',
     'align-items:center',
     'justify-content:center',
+    'padding:0',
     'border:2px solid #fff',
     'border-radius:9999px',
     'box-shadow:0 1px 3px rgba(0,0,0,0.35)',
     'cursor:pointer',
-    'color:#fff',
-    'font-weight:700',
-    'font-size:12px',
     'line-height:1',
+    `width:${isDay ? '30px' : '26px'}`,
+    `height:${isDay ? '30px' : '26px'}`,
+    `background-color:${bg}`,
   ].join(';');
-  if (m.label) {
-    el.style.width = '24px';
-    el.style.height = '24px';
-    el.style.backgroundColor = m.color ?? SAVED_COLOR;
-    el.textContent = m.label;
-  } else {
-    el.style.width = '16px';
-    el.style.height = '16px';
-    el.style.backgroundColor = SAVED_COLOR;
+
+  const glyph = document.createElement('span');
+  glyph.textContent = m.glyph;
+  glyph.setAttribute('aria-hidden', 'true');
+  glyph.style.cssText = 'pointer-events:none;font-size:15px;line-height:1';
+  el.appendChild(glyph);
+
+  if (isDay) {
+    const badge = document.createElement('span');
+    badge.textContent = m.label;
+    badge.setAttribute('aria-hidden', 'true');
+    badge.style.cssText = [
+      'position:absolute',
+      'top:-6px',
+      'right:-6px',
+      'min-width:16px',
+      'height:16px',
+      'padding:0 3px',
+      'box-sizing:border-box',
+      'display:flex',
+      'align-items:center',
+      'justify-content:center',
+      'border-radius:9999px',
+      'background:#fff',
+      `color:${bg}`,
+      'font-size:10px',
+      'font-weight:700',
+      'line-height:1',
+      'box-shadow:0 1px 2px rgba(0,0,0,0.3)',
+    ].join(';');
+    el.appendChild(badge);
   }
+
   el.addEventListener('click', (e) => {
     e.stopPropagation();
     onClick(m.id);
@@ -221,7 +253,7 @@ export function MapboxCanvas({
         type="button"
         onClick={toggleStyle}
         aria-label={t('toggleMapStyle')}
-        className="absolute left-3 top-3 z-[2] rounded-control bg-card/95 px-3 py-1.5 text-caption font-medium text-ink shadow-card backdrop-blur"
+        className="absolute bottom-9 left-3 z-[2] rounded-control bg-card/95 px-3 py-1.5 text-caption font-medium text-ink shadow-card backdrop-blur"
       >
         {styleId === 'streets' ? t('styleSatellite') : t('styleMap')}
       </button>

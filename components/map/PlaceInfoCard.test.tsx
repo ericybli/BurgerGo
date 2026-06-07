@@ -15,6 +15,7 @@ const DAY_MARKER: PlaceMarker = {
   position: { lat: 35.7148, lng: 139.7967 },
   label: '1',
   color: '#EE5B3C',
+  glyph: '🏛️',
 };
 
 function renderCard(
