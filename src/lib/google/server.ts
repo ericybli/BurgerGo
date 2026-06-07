@@ -8,6 +8,7 @@
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
 const DETAILS_URL = 'https://maps.googleapis.com/maps/api/place/details/json';
+const AUTOCOMPLETE_URL = 'https://maps.googleapis.com/maps/api/place/autocomplete/json';
 const GEOCODE_URL = 'https://maps.googleapis.com/maps/api/geocode/json';
 const DIRECTIONS_URL = 'https://maps.googleapis.com/maps/api/directions/json';
 
@@ -43,6 +44,12 @@ export interface NormalizedDetails {
   lng: number;
   categoryGuess: CategoryGuess;
   photoRef: string | null;
+}
+
+/** One autocomplete prediction (place id + human-readable description). */
+export interface AutocompletePrediction {
+  placeId: string;
+  description: string;
 }
 
 /** Normalized reverse-geocode result. */
@@ -109,6 +116,24 @@ export function normalizeDetails(raw: unknown): NormalizedDetails {
     categoryGuess: guessCategory(res.types),
     photoRef: res.photos?.[0]?.photo_reference ?? null,
   };
+}
+
+export function normalizeAutocomplete(raw: unknown): AutocompletePrediction[] {
+  const r = raw as {
+    status?: string;
+    predictions?: Array<{ place_id?: string; description?: string }>;
+  };
+  // No matches is a normal, non-error outcome → empty list.
+  if (r.status === 'ZERO_RESULTS') return [];
+  if (r.status !== 'OK') {
+    throw new GoogleApiError(r.status ?? 'UNKNOWN', 'Autocomplete failed');
+  }
+  return (r.predictions ?? [])
+    .filter(
+      (p): p is { place_id: string; description: string } =>
+        typeof p.place_id === 'string' && typeof p.description === 'string',
+    )
+    .map((p) => ({ placeId: p.place_id, description: p.description }));
 }
 
 export function normalizeReverseGeocode(raw: unknown): NormalizedReverseGeocode {
@@ -182,6 +207,25 @@ export async function fetchPlaceDetails(input: FetchDetailsInput): Promise<Norma
   });
   if (input.sessionToken) params.set('sessiontoken', input.sessionToken);
   return normalizeDetails(await getJson(`${DETAILS_URL}?${params.toString()}`));
+}
+
+export interface FetchAutocompleteInput {
+  input: string;
+  apiKey: string;
+  sessionToken?: string;
+}
+
+/**
+ * Server-side Places Autocomplete (uses the server key, so it works even when
+ * the browser Maps-JS key is unavailable). The session token bundles these
+ * predictions with the eventual Place Details call into one billing session.
+ */
+export async function fetchPlaceAutocomplete(
+  input: FetchAutocompleteInput,
+): Promise<AutocompletePrediction[]> {
+  const params = new URLSearchParams({ input: input.input, key: input.apiKey });
+  if (input.sessionToken) params.set('sessiontoken', input.sessionToken);
+  return normalizeAutocomplete(await getJson(`${AUTOCOMPLETE_URL}?${params.toString()}`));
 }
 
 export interface FetchReverseGeocodeInput {

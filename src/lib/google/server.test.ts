@@ -4,10 +4,12 @@ import {
   normalizeReverseGeocode,
   normalizeForwardGeocode,
   normalizeDirections,
+  normalizeAutocomplete,
   fetchPlaceDetails,
   fetchReverseGeocode,
   fetchForwardGeocode,
   fetchDirections,
+  fetchPlaceAutocomplete,
   GoogleApiError,
 } from '@/src/lib/google/server';
 
@@ -117,6 +119,35 @@ describe('normalizeForwardGeocode', () => {
   });
 });
 
+describe('normalizeAutocomplete', () => {
+  it('maps predictions to {placeId, description}', () => {
+    const raw = {
+      status: 'OK',
+      predictions: [
+        { place_id: 'p1', description: 'Senso-ji Temple, Tokyo' },
+        { place_id: 'p2', description: 'Tokyo Skytree' },
+      ],
+    };
+    expect(normalizeAutocomplete(raw)).toEqual([
+      { placeId: 'p1', description: 'Senso-ji Temple, Tokyo' },
+      { placeId: 'p2', description: 'Tokyo Skytree' },
+    ]);
+  });
+
+  it('returns an empty array for ZERO_RESULTS', () => {
+    expect(normalizeAutocomplete({ status: 'ZERO_RESULTS', predictions: [] })).toEqual([]);
+  });
+
+  it('drops malformed predictions missing place_id or description', () => {
+    const raw = { status: 'OK', predictions: [{ description: 'no id' }, { place_id: 'p1', description: 'ok' }] };
+    expect(normalizeAutocomplete(raw)).toEqual([{ placeId: 'p1', description: 'ok' }]);
+  });
+
+  it('throws GoogleApiError on a non-OK status', () => {
+    expect(() => normalizeAutocomplete({ status: 'REQUEST_DENIED' })).toThrow(GoogleApiError);
+  });
+});
+
 describe('normalizeDirections', () => {
   it('extracts duration/distance seconds+meters and the overview polyline', () => {
     const raw = {
@@ -190,6 +221,20 @@ describe('fetch wrappers (injected fetch, no real key)', () => {
     expect(url.searchParams.get('key')).toBe('SERVER_KEY');
     expect(url.searchParams.get('sessiontoken')).toBe('sess-1');
     expect(url.searchParams.get('fields')).toContain('place_id');
+  });
+
+  it('fetchPlaceAutocomplete calls the autocomplete endpoint with input + key + sessiontoken', async () => {
+    fetchSpy.mockReturnValueOnce(
+      okJson({ status: 'OK', predictions: [{ place_id: 'p1', description: 'Senso-ji Temple, Tokyo' }] }),
+    );
+    const out = await fetchPlaceAutocomplete({ input: 'senso', sessionToken: 'sess-1', apiKey: 'SERVER_KEY' });
+    expect(out).toEqual([{ placeId: 'p1', description: 'Senso-ji Temple, Tokyo' }]);
+
+    const url = new URL(fetchSpy.mock.calls[0]![0] as string);
+    expect(url.origin + url.pathname).toBe('https://maps.googleapis.com/maps/api/place/autocomplete/json');
+    expect(url.searchParams.get('input')).toBe('senso');
+    expect(url.searchParams.get('key')).toBe('SERVER_KEY');
+    expect(url.searchParams.get('sessiontoken')).toBe('sess-1');
   });
 
   it('fetchReverseGeocode calls the geocode endpoint with latlng + key', async () => {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
-import { loadGoogleMaps } from '@/src/lib/google/loader';
 import { withBase } from '@/src/lib/basePath';
 
 export interface Prediction {
@@ -31,13 +30,10 @@ export interface UsePlacesAutocompleteResult {
 
 /**
  * Autocomplete hook: one client-generated UUID session token per search→select
- * cycle. The same UUID is passed to getPlacePredictions (as the sessionToken
- * field) and to GET /api/google/details?sessionToken= so Google's backend can
- * bundle the Autocomplete + Details calls into a single billing unit.
- *
- * Using a plain UUID string (not the opaque AutocompleteSessionToken object)
- * avoids the serialization bug where (token as {id}).id === undefined, which
- * caused every session to be billed as individual per-keystroke calls.
+ * cycle. The same UUID is passed to GET /api/google/autocomplete?sessionToken=
+ * and GET /api/google/details?sessionToken= so Google bundles the Autocomplete +
+ * Details calls into a single billing session. Both calls are server-proxied
+ * (server key), so suggestions work without a live browser Maps-JS key.
  */
 export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -49,35 +45,28 @@ export function usePlacesAutocomplete(): UsePlacesAutocompleteResult {
   const rotateToken = () => { sessionTokenRef.current = crypto.randomUUID(); };
 
   const search = useCallback(async (input: string) => {
-    if (!input.trim()) { setPredictions([]); return; }
+    const value = input.trim();
+    if (!value) {
+      setPredictions([]);
+      return;
+    }
     setLoading(true);
     try {
-      const maps = await loadGoogleMaps();
-      const places = (maps as {
-        places: {
-          AutocompleteService: new () => {
-            getPlacePredictions: (
-              req: { input: string; sessionToken: string },
-              cb: (results: Array<{ place_id: string; description: string }>, status: string) => void,
-            ) => void;
-          };
-        };
-      }).places;
-      const service = new places.AutocompleteService();
-
-      await new Promise<void>((resolve) => {
-        service.getPlacePredictions(
-          { input, sessionToken: sessionTokenRef.current },
-          (results, status) => {
-            if (status === 'OK' && results) {
-              setPredictions(results.map((r) => ({ placeId: r.place_id, description: r.description })));
-            } else {
-              setPredictions([]);
-            }
-            resolve();
-          },
-        );
-      });
+      // Server-proxied autocomplete (uses the server key), so suggestions work
+      // even when the browser Maps-JS key is unavailable. Same session token as
+      // the eventual /api/google/details select → one Google billing session.
+      const res = await fetch(
+        withBase(
+          `/api/google/autocomplete?input=${encodeURIComponent(value)}&sessionToken=${encodeURIComponent(sessionTokenRef.current)}`,
+        ),
+        { credentials: 'same-origin' },
+      );
+      if (!res.ok) {
+        setPredictions([]);
+        return;
+      }
+      const data = (await res.json()) as { predictions?: Prediction[] };
+      setPredictions(data.predictions ?? []);
     } catch {
       setPredictions([]);
     } finally {

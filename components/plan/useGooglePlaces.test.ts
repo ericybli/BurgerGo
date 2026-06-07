@@ -4,38 +4,29 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
-// Capture the sessionToken passed to getPlacePredictions so we can assert it.
-let lastSearchSessionToken: string | undefined;
+const DETAILS = {
+  googlePlaceId: 'pid-1', name: 'Senso-ji Temple', address: 'Asakusa, Tokyo',
+  lat: 35.71, lng: 139.79, categoryGuess: 'sightseeing',
+  photoRef: 'R', photoLocalPath: null, cached: false,
+};
 
-// Mock the loader so no real Maps JS is injected.
-// loadGoogleMaps now resolves with the maps namespace directly (not {maps}).
-vi.mock('@/src/lib/google/loader', () => {
-  return {
-    loadGoogleMaps: vi.fn().mockResolvedValue({
-      places: {
-        AutocompleteService: class {
-          getPlacePredictions(
-            req: { input: string; sessionToken: string },
-            cb: (r: unknown[], s: string) => void,
-          ) {
-            lastSearchSessionToken = req.sessionToken;
-            cb(
-              [{ place_id: 'pid-1', description: 'Senso-ji Temple, Tokyo' }],
-              'OK',
-            );
-          }
-        },
-      },
-    }),
-    __resetMapsLoaderForTests: vi.fn(),
-  };
-});
-
+// One fetch spy that routes by URL: autocomplete → predictions, details → place.
 let fetchSpy: ReturnType<typeof vi.fn>;
-beforeEach(() => {
-  fetchSpy = vi.fn();
+function routeFetch() {
+  fetchSpy = vi.fn(async (url: string) => {
+    if (String(url).includes('/api/google/autocomplete')) {
+      return {
+        ok: true,
+        json: async () => ({ predictions: [{ placeId: 'pid-1', description: 'Senso-ji Temple, Tokyo' }] }),
+      };
+    }
+    return { ok: true, json: async () => DETAILS };
+  });
   vi.stubGlobal('fetch', fetchSpy);
-  lastSearchSessionToken = undefined;
+}
+
+beforeEach(() => {
+  routeFetch();
 });
 afterEach(() => {
   delete process.env.NEXT_PUBLIC_BASE_PATH;
@@ -44,6 +35,10 @@ afterEach(() => {
 
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
 
+function tokenFromUrl(url: string): string | null {
+  return new URLSearchParams(url.split('?')[1] ?? '').get('sessionToken');
+}
+
 describe('usePlacesAutocomplete', () => {
   it('returns an empty predictions array initially', () => {
     const { result } = renderHook(() => usePlacesAutocomplete());
@@ -51,123 +46,64 @@ describe('usePlacesAutocomplete', () => {
     expect(result.current.loading).toBe(false);
   });
 
-  it('populates predictions after search is called', async () => {
-    const { result } = renderHook(() => usePlacesAutocomplete());
-    await act(async () => {
-      await result.current.search('senso');
-    });
-    expect(result.current.predictions).toHaveLength(1);
-    expect(result.current.predictions[0]!.placeId).toBe('pid-1');
-    expect(result.current.predictions[0]!.description).toBe('Senso-ji Temple, Tokyo');
-  });
-
-  it('calls /api/google/details on select and returns the normalized place', async () => {
-    fetchSpy.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        googlePlaceId: 'pid-1',
-        name: 'Senso-ji Temple',
-        address: 'Asakusa, Tokyo',
-        lat: 35.71,
-        lng: 139.79,
-        categoryGuess: 'sightseeing',
-        photoRef: 'R',
-        photoLocalPath: null,
-        cached: false,
-      }),
-    });
-
+  it('populates predictions from the autocomplete proxy', async () => {
     const { result } = renderHook(() => usePlacesAutocomplete());
     await act(async () => { await result.current.search('senso'); });
+    expect(result.current.predictions).toHaveLength(1);
+    expect(result.current.predictions[0]!.placeId).toBe('pid-1');
+    const url = fetchSpy.mock.calls[0]![0] as string;
+    expect(url).toContain('/api/google/autocomplete');
+    expect(url).toContain('input=senso');
+  });
 
+  it('does not call the proxy for an empty query', async () => {
+    const { result } = renderHook(() => usePlacesAutocomplete());
+    await act(async () => { await result.current.search('   '); });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(result.current.predictions).toEqual([]);
+  });
+
+  it('select calls /api/google/details and returns the normalized place', async () => {
+    const { result } = renderHook(() => usePlacesAutocomplete());
     let place: Awaited<ReturnType<typeof result.current.select>> | undefined;
-    await act(async () => {
-      place = await result.current.select('pid-1');
-    });
-
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const calledUrl = fetchSpy.mock.calls[0]![0] as string;
-    expect(calledUrl).toContain('/api/google/details');
-    expect(calledUrl).toContain('placeId=pid-1');
-
+    await act(async () => { place = await result.current.select('pid-1'); });
+    const url = fetchSpy.mock.calls[0]![0] as string;
+    expect(url).toContain('/api/google/details');
+    expect(url).toContain('placeId=pid-1');
     expect(place?.name).toBe('Senso-ji Temple');
     expect(place?.categoryGuess).toBe('sightseeing');
   });
 
-  it('passes the same UUID session token to search and select (not "undefined")', async () => {
-    fetchSpy.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        googlePlaceId: 'pid-1', name: 'Senso-ji Temple', address: 'Asakusa, Tokyo',
-        lat: 35.71, lng: 139.79, categoryGuess: 'sightseeing',
-        photoRef: null, photoLocalPath: null, cached: false,
-      }),
-    });
-
+  it('passes the same UUID session token to search (autocomplete) and select (details)', async () => {
     const { result } = renderHook(() => usePlacesAutocomplete());
-
-    // search() should capture the session token passed to getPlacePredictions.
     await act(async () => { await result.current.search('senso'); });
-    const searchToken = lastSearchSessionToken;
+    const searchToken = tokenFromUrl(fetchSpy.mock.calls[0]![0] as string);
+    expect(searchToken).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
 
-    // The token must be a valid UUID (not "undefined" or empty).
-    expect(searchToken).toBeTruthy();
-    expect(searchToken).not.toBe('undefined');
-    expect(searchToken).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-    );
-
-    // select() must send the same token in the URL.
     await act(async () => { await result.current.select('pid-1'); });
-    const calledUrl = fetchSpy.mock.calls[0]![0] as string;
-    const urlParams = new URLSearchParams(calledUrl.split('?')[1]);
-    const detailsToken = urlParams.get('sessionToken');
-    expect(detailsToken).toBe(searchToken);
+    const selectToken = tokenFromUrl(fetchSpy.mock.calls[1]![0] as string);
+    expect(selectToken).toBe(searchToken);
   });
 
-  it('prefixes /api/google/details with the base path when NEXT_PUBLIC_BASE_PATH is set', async () => {
+  it('prefixes endpoints with the base path when NEXT_PUBLIC_BASE_PATH is set', async () => {
     vi.resetModules();
     process.env.NEXT_PUBLIC_BASE_PATH = '/burgergo';
-    const { usePlacesAutocomplete: prefixedHook } = await import('@/components/plan/useGooglePlaces');
-    fetchSpy.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        googlePlaceId: 'pid-1', name: 'Senso-ji', address: 'Tokyo',
-        lat: 35.71, lng: 139.79, categoryGuess: 'sightseeing',
-        photoRef: null, photoLocalPath: null, cached: false,
-      }),
-    });
-    const { result } = renderHook(() => prefixedHook());
+    const { usePlacesAutocomplete: prefixed } = await import('@/components/plan/useGooglePlaces');
+    const { result } = renderHook(() => prefixed());
     await act(async () => { await result.current.search('senso'); });
-    await act(async () => { await result.current.select('pid-1'); });
     const url = new URL(fetchSpy.mock.calls[0]![0] as string, 'http://x');
-    expect(url.pathname).toBe('/burgergo/api/google/details');
+    expect(url.pathname).toBe('/burgergo/api/google/autocomplete');
   });
 
   it('rotates the session token after select (fresh session for next search)', async () => {
-    fetchSpy.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        googlePlaceId: 'pid-1', name: 'Senso-ji', address: 'Tokyo',
-        lat: 35.71, lng: 139.79, categoryGuess: 'sightseeing',
-        photoRef: null, photoLocalPath: null, cached: false,
-      }),
-    });
-
     const { result } = renderHook(() => usePlacesAutocomplete());
-
-    // First session: search then select.
     await act(async () => { await result.current.search('senso'); });
-    const tokenSession1 = lastSearchSessionToken;
+    const token1 = tokenFromUrl(fetchSpy.mock.calls[0]![0] as string);
     await act(async () => { await result.current.select('pid-1'); });
-
-    // Second session: search again — token must have rotated.
-    lastSearchSessionToken = undefined;
     await act(async () => { await result.current.search('temple'); });
-    const tokenSession2 = lastSearchSessionToken;
-
-    expect(tokenSession1).toBeTruthy();
-    expect(tokenSession2).toBeTruthy();
-    expect(tokenSession1).not.toBe(tokenSession2);
+    const token2 = tokenFromUrl(fetchSpy.mock.calls[2]![0] as string);
+    expect(token1).toBeTruthy();
+    expect(token2).toBeTruthy();
+    expect(token1).not.toBe(token2);
   });
 });
