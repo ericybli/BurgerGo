@@ -4,13 +4,15 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
+import { APP_VERSION } from '@/src/lib/appVersion';
 
 type SettingsRow = { language: string; currency: string } | null;
 
 /**
  * Settings data owner. The page is a static shell; this client fetches the
  * read-only `/api/settings` row (SWR-cached by the SW) so it works offline.
- * Read-only placeholder display as in 1A — no controls yet.
+ * Language/currency stay read-only placeholders (1A); the About block is
+ * fully static — i18n strings + a build-time version literal, no I/O.
  */
 export function SettingsClient() {
   const t = useTranslations();
@@ -75,6 +77,21 @@ export function SettingsClient() {
         />
         <p className="mt-3 text-heading font-semibold text-ink">{t('app.name')}</p>
         <p className="mt-1 text-caption text-ink-muted">{t('settings.aboutTagline')}</p>
+        <p className="mt-2 text-caption text-ink-faint [font-variant-numeric:tabular-nums]">
+          {t('settings.aboutVersion', { version: APP_VERSION })}
+        </p>
+      </section>
+
+      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
+        <div>
+          <p className="text-label font-medium text-ink">{t('settings.offlineInstallTitle')}</p>
+          <p className="mt-1 text-caption text-ink-muted">{t('settings.offlineInstallBody')}</p>
+        </div>
+        <div className="mt-3 border-t border-line pt-3">
+          <p className="text-label font-medium text-ink">{t('settings.yourDataTitle')}</p>
+          <p className="mt-1 text-caption text-ink-muted">{t('settings.yourDataBody')}</p>
+          <p className="mt-1 text-caption text-ink-faint">{t('settings.yourDataBackup')}</p>
+        </div>
       </section>
     </main>
   );

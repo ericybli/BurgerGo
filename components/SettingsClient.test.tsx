@@ -31,6 +31,7 @@ function renderSettings() {
 afterEach(() => {
   vi.unstubAllGlobals();
   delete process.env.NEXT_PUBLIC_BASE_PATH;
+  delete process.env.NEXT_PUBLIC_APP_VERSION;
   vi.resetModules();
 });
 
@@ -82,5 +83,43 @@ describe('SettingsClient', () => {
     // Fallback defaults are displayed — no crash.
     expect(await screen.findByText('en')).toBeInTheDocument();
     expect(screen.getByText('USD')).toBeInTheDocument();
+  });
+
+  it('renders the About block: wordmark, tagline, version, and both info rows', () => {
+    process.env.NEXT_PUBLIC_APP_VERSION = '9.9.9';
+    mockFetchSettings({ language: 'en', currency: 'USD' });
+    renderSettings();
+
+    // Wordmark + tagline (mascot image + app name).
+    expect(screen.getByText(en.app.name)).toBeInTheDocument();
+    expect(screen.getByText(en.settings.aboutTagline)).toBeInTheDocument();
+
+    // Version line — value is the inlined literal at module-eval time. The
+    // string is formatted as `Version {version}`; assert the label prefix and
+    // that some version token is shown (env is read at import; see note below).
+    expect(screen.getByText(/^Version\b/)).toBeInTheDocument();
+
+    // Both quiet info rows render their titles + bodies.
+    expect(screen.getByText(en.settings.offlineInstallTitle)).toBeInTheDocument();
+    expect(screen.getByText(en.settings.offlineInstallBody)).toBeInTheDocument();
+    expect(screen.getByText(en.settings.yourDataTitle)).toBeInTheDocument();
+    expect(screen.getByText(en.settings.yourDataBody)).toBeInTheDocument();
+    expect(screen.getByText(en.settings.yourDataBackup)).toBeInTheDocument();
+  });
+
+  it('shows the "dev" version fallback when NEXT_PUBLIC_APP_VERSION is unset', async () => {
+    vi.resetModules();
+    delete process.env.NEXT_PUBLIC_APP_VERSION;
+    const { SettingsClient: Fresh } = await import('./SettingsClient');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({ ok: true, json: async () => ({ language: 'en', currency: 'USD' }) })) as unknown as typeof fetch,
+    );
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <Fresh />
+      </NextIntlClientProvider>,
+    );
+    expect(screen.getByText('Version dev')).toBeInTheDocument();
   });
 });
