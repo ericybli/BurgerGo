@@ -31,6 +31,7 @@ describe('Plan 3 schema shapes', () => {
         'title',
         'note',
         'thumbnail',
+        'place_id',
         'created_at',
         'updated_at',
       ].sort(),
