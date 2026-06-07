@@ -206,7 +206,10 @@
     "summaryFailed": "Couldn't generate a summary.",
     "moveUp": "Move up",
     "moveDown": "Move down",
-    "move": "Move"
+    "move": "Move",
+    "copy": "Copy",
+    "moveToDayTitle": "Move to which day?",
+    "copyToDayTitle": "Copy to which day?"
   },
   "eats": {
     "title": "Eats",

@@ -25,6 +25,7 @@ import type { RestaurantMarkerInput } from '@/src/lib/map/markers';
 import {
   reorderDayAction,
   promoteToDayAction,
+  copyPlaceToDayAction,
   moveToSavedAction,
   deletePlaceAction,
   recomputeDayLegsAction,
@@ -38,6 +39,7 @@ import { AddPlaceSheet } from '@/components/plan/AddPlaceSheet';
 import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
 import { PlaceReadCard } from '@/components/plan/PlaceReadCard';
 import { RestaurantInfoCard } from '@/components/plan/RestaurantInfoCard';
+import { DayPickerSheet } from '@/components/plan/DayPickerSheet';
 import { PlanMap } from '@/components/plan/PlanMap';
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
@@ -77,6 +79,8 @@ export function PlanClient({
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
   const [viewRestaurant, setViewRestaurant] = useState<RestaurantMarkerInput | null>(null);
+  // Day picker for moving / copying a day place to another date.
+  const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy'; placeId: string } | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
   // FIX I2+I5: track in-flight mutations to prevent double-fire
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -243,6 +247,41 @@ export function PlanClient({
     });
   }
 
+  /** Reassign a place to `targetDate`; recompute legs for both the source day
+   *  (it lost a stop) and the target day (it gained one). */
+  function moveToDay(placeId: string, targetDate: string) {
+    const sourceDate = params.date;
+    setMutationError(null);
+    startTransition(async () => {
+      try {
+        await promoteToDayAction(placeId, targetDate);
+        if (online) {
+          await recomputeDayLegsAction(tripId, sourceDate, dayMode);
+          await recomputeDayLegsAction(tripId, targetDate, dayMode);
+        }
+      } catch {
+        if (mountedRef.current) setMutationError(t('mutationFailed'));
+      } finally {
+        await load();
+      }
+    });
+  }
+
+  /** Duplicate a place onto `targetDate` (original stays); recompute the target day. */
+  function copyToDay(placeId: string, targetDate: string) {
+    setMutationError(null);
+    startTransition(async () => {
+      try {
+        await copyPlaceToDayAction(placeId, targetDate);
+        if (online) await recomputeDayLegsAction(tripId, targetDate, dayMode);
+      } catch {
+        if (mountedRef.current) setMutationError(t('mutationFailed'));
+      } finally {
+        await load();
+      }
+    });
+  }
+
   function onModeChange(m: TravelMode) {
     setDayMode(m);
     // Recompute with the NEW mode explicitly — `dayMode` state is still stale in
@@ -367,7 +406,8 @@ export function PlanClient({
             onTapPlace={(id) => setDetailFor(placeById(id))}
             onViewPlace={(id) => setViewPlace(placeById(id))}
             onMoveToSaved={(id) => mutateDay(params.date, () => moveToSavedAction(id))}
-            onMoveToDay={(id) => setDetailFor(placeById(id))}
+            onMoveToDay={(id) => setDayPicker({ mode: 'move', placeId: id })}
+            onCopyToDay={(id) => setDayPicker({ mode: 'copy', placeId: id })}
             onDelete={(id) => mutateDay(params.date, () => deletePlaceAction(id))}
             onModeChange={onModeChange}
             onRecompute={() => mutateDay(params.date, async () => undefined)}
@@ -439,6 +479,18 @@ export function PlanClient({
           </div>
         </div>
       ) : null}
+
+      <DayPickerSheet
+        open={dayPicker !== null}
+        title={dayPicker?.mode === 'copy' ? t('copyToDayTitle') : t('moveToDayTitle')}
+        days={days}
+        onPick={(date) => {
+          if (!dayPicker) return;
+          if (dayPicker.mode === 'copy') copyToDay(dayPicker.placeId, date);
+          else moveToDay(dayPicker.placeId, date);
+        }}
+        onClose={() => setDayPicker(null)}
+      />
     </main>
   );
 }

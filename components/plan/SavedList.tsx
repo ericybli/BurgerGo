@@ -6,6 +6,7 @@ import type { PlaceDTO } from '@/src/lib/planView';
 import type { DerivedDay } from '@/src/lib/days';
 import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
 import { EmptyState } from '@/components/EmptyState';
+import { DayPickerSheet } from '@/components/plan/DayPickerSheet';
 
 type SavedListProps = {
   saved: PlaceDTO[];
@@ -97,39 +98,15 @@ export function SavedList({
         })}
       </ul>
 
-      {pickerFor ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={t('dayPickerTitle')}
-          className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
-          onClick={() => setPickerFor(null)}
-          onKeyDown={(e) => { if (e.key === 'Escape') setPickerFor(null); }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[70vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
-          >
-            <h2 className="mb-3 text-title font-bold text-ink">{t('dayPickerTitle')}</h2>
-            <ul className="flex flex-col gap-2">
-              {days.map((d) => (
-                <li key={d.date}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onPromote(pickerFor, d.date);
-                      setPickerFor(null);
-                    }}
-                    className="w-full rounded-control bg-paper px-4 py-3 text-left text-body font-medium text-ink shadow-inset"
-                  >
-                    {`Day ${d.dayNumber} · ${d.weekday.slice(0, 3)}`}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      ) : null}
+      <DayPickerSheet
+        open={pickerFor !== null}
+        title={t('dayPickerTitle')}
+        days={days}
+        onPick={(date) => {
+          if (pickerFor) onPromote(pickerFor, date);
+        }}
+        onClose={() => setPickerFor(null)}
+      />
     </div>
   );
 }

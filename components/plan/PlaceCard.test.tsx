@@ -22,6 +22,7 @@ function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {})
   const onMoveDown = vi.fn();
   const onMoveToSaved = vi.fn();
   const onMoveToDay = vi.fn();
+  const onCopyToDay = vi.fn();
   const onDelete = vi.fn();
   render(
     <NextIntlClientProvider locale="en" messages={en}>
@@ -40,12 +41,13 @@ function renderCard(props: Partial<React.ComponentProps<typeof PlaceCard>> = {})
         onMoveDown={onMoveDown}
         onMoveToSaved={onMoveToSaved}
         onMoveToDay={onMoveToDay}
+        onCopyToDay={onCopyToDay}
         onDelete={onDelete}
         {...props}
       />
     </NextIntlClientProvider>,
   );
-  return { onTap, onView, onMoveUp, onMoveDown, onMoveToSaved, onMoveToDay, onDelete };
+  return { onTap, onView, onMoveUp, onMoveDown, onMoveToSaved, onMoveToDay, onCopyToDay, onDelete };
 }
 
 describe('PlaceCard', () => {
@@ -96,13 +98,15 @@ describe('PlaceCard', () => {
     expect(screen.getAllByRole('button', { name: en.plan.moveDown }).at(-1)).toBeDisabled();
   });
 
-  it('fires the management actions (Save/Move/Delete)', async () => {
-    const { onMoveToSaved, onMoveToDay, onDelete } = renderCard();
+  it('fires the management actions (Save/Move/Copy/Delete)', async () => {
+    const { onMoveToSaved, onMoveToDay, onCopyToDay, onDelete } = renderCard();
     await userEvent.click(screen.getByRole('button', { name: en.plan.moveToSaved }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.move }));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.copy }));
     await userEvent.click(screen.getByRole('button', { name: en.plan.delete }));
     expect(onMoveToSaved).toHaveBeenCalledWith('p1');
     expect(onMoveToDay).toHaveBeenCalledWith('p1');
+    expect(onCopyToDay).toHaveBeenCalledWith('p1');
     expect(onDelete).toHaveBeenCalledWith('p1');
   });
 

@@ -21,7 +21,10 @@ type PlaceCardProps = {
   onMoveUp: (placeId: string) => void;
   onMoveDown: (placeId: string) => void;
   onMoveToSaved: (placeId: string) => void;
+  /** Reassign this place to another day (opens a day picker). */
   onMoveToDay: (placeId: string) => void;
+  /** Duplicate this place onto another day (opens a day picker). */
+  onCopyToDay: (placeId: string) => void;
   onDelete: (placeId: string) => void;
 };
 
@@ -40,6 +43,7 @@ export function PlaceCard({
   onMoveDown,
   onMoveToSaved,
   onMoveToDay,
+  onCopyToDay,
   onDelete,
 }: PlaceCardProps) {
   const t = useTranslations('plan');
@@ -147,6 +151,14 @@ export function PlaceCard({
             className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
           >
             {t('move')}
+          </button>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onCopyToDay(place.id)}
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+          >
+            {t('copy')}
           </button>
           <button
             type="button"

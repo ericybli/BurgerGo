@@ -149,6 +149,37 @@ export async function promoteToDayAction(id: string, dayDate: string): Promise<P
   return updated;
 }
 
+// --- copyPlaceToDayAction -------------------------------------------------
+
+/**
+ * Duplicate a place onto another day (e.g. revisiting the same spot). Copies the
+ * core fields + notes/cost/time/AI summary into a NEW place on `dayDate`; the
+ * original is left untouched. Personal photos and attached links stay with the
+ * original (not duplicated). Returns the new place.
+ */
+export async function copyPlaceToDayAction(id: string, dayDate: string): Promise<Place> {
+  const existing = getPlace(db, id);
+  if (!existing) throw new Error('Place not found');
+  const parsedDay = dateStr.parse(dayDate);
+  const copy = addPlace(db, {
+    tripId: existing.tripId,
+    dayDate: parsedDay,
+    googlePlaceId: existing.googlePlaceId,
+    name: existing.name,
+    address: existing.address,
+    lat: existing.lat,
+    lng: existing.lng,
+    category: existing.category,
+    scheduledTime: existing.scheduledTime,
+    durationMin: existing.durationMin,
+    cost: existing.cost,
+    notes: existing.notes,
+  });
+  if (existing.aiSummary) updatePlace(db, copy.id, { aiSummary: existing.aiSummary });
+  revalidatePlan(existing.tripId);
+  return copy;
+}
+
 // --- moveToSavedAction ----------------------------------------------------
 
 export async function moveToSavedAction(id: string): Promise<Place> {

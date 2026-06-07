@@ -18,11 +18,12 @@ import {
   deletePlaceAction,
   reorderDayAction,
   promoteToDayAction,
+  copyPlaceToDayAction,
   moveToSavedAction,
   recomputeDayLegsAction,
   generatePlaceSummaryAction,
 } from '@/app/_actions/places';
-import { getPlace } from '@/src/db/repos/places';
+import { getPlace, listByDay } from '@/src/db/repos/places';
 import { upsertLeg, getCachedLeg } from '@/src/db/repos/legs';
 import type { TravelLeg } from '@/src/db/schema';
 
@@ -205,6 +206,33 @@ describe('promoteToDayAction', () => {
 
   it('throws when the id is unknown', async () => {
     await expect(promoteToDayAction('nope', '2026-06-05')).rejects.toThrow();
+  });
+});
+
+describe('copyPlaceToDayAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db); // 'a','b' on 2026-06-05
+    revalidatePath.mockClear();
+  });
+
+  it('duplicates a place onto another day, leaving the original in place', async () => {
+    const copy = await copyPlaceToDayAction('a', '2026-06-06');
+    expect(copy.id).not.toBe('a');
+    expect(copy.dayDate).toBe('2026-06-06');
+    expect(copy.name).toBe('A');
+    expect(copy.lat).toBe(35);
+    // Original still on its day.
+    expect(getPlace(testHandle.db, 'a')?.dayDate).toBe('2026-06-05');
+    // Target day now has the copy; source day still has both originals.
+    expect(listByDay(testHandle.db, 'trip-1', '2026-06-06').map((p) => p.name)).toEqual(['A']);
+    expect(listByDay(testHandle.db, 'trip-1', '2026-06-05')).toHaveLength(2);
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+  });
+
+  it('throws when the id is unknown', async () => {
+    await expect(copyPlaceToDayAction('nope', '2026-06-06')).rejects.toThrow();
   });
 });
 

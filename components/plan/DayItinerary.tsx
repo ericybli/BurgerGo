@@ -36,6 +36,7 @@ type DayItineraryProps = {
   onViewPlace: (placeId: string) => void;
   onMoveToSaved: (placeId: string) => void;
   onMoveToDay: (placeId: string) => void;
+  onCopyToDay: (placeId: string) => void;
   onDelete: (placeId: string) => void;
   onModeChange: (mode: TravelMode) => void;
   onRecompute: () => void;
@@ -57,6 +58,7 @@ export function DayItinerary({
   onViewPlace,
   onMoveToSaved,
   onMoveToDay,
+  onCopyToDay,
   onDelete,
   onModeChange,
   onRecompute,
@@ -107,6 +109,7 @@ export function DayItinerary({
                   onMoveDown={(id) => move(id, 'down')}
                   onMoveToSaved={onMoveToSaved}
                   onMoveToDay={onMoveToDay}
+                  onCopyToDay={onCopyToDay}
                   onDelete={onDelete}
                 />
               </li>
