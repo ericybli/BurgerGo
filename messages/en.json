@@ -170,7 +170,22 @@
     "photoTooMany": "You've reached the photo limit for this place (max 12).",
     "photoNotImage": "Please choose an image file.",
     "closePhoto": "Close photo",
-    "photoOf": "Photo of {name}"
+    "photoOf": "Photo of {name}",
+    "aiSummary": "About",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "view": "View",
+    "edit": "Edit",
+    "guidesLabel": "Travel guides",
+    "noContent": "No details yet.",
+    "addGuideLink": "Add a guide link",
+    "guideUrlPlaceholder": "Paste a URL",
+    "regenerateSummary": "Regenerate",
+    "regenerating": "Generating…",
+    "summaryFailed": "Couldn't generate a summary.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "move": "Move"
   },
   "eats": {
     "title": "Eats",
