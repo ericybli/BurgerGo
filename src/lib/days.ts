@@ -43,11 +43,22 @@ function weekdayOf(dateStr: string): string {
   }).format(d);
 }
 
+/** Add `n` calendar days to a YYYY-MM-DD string (UTC arithmetic; n may be negative). */
+export function addDays(dateStr: string, n: number): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+/** Whole calendar days from `a` to `b` (b − a); negative when b precedes a. */
+export function diffDays(a: string, b: string): number {
+  const ms = new Date(`${b}T00:00:00Z`).getTime() - new Date(`${a}T00:00:00Z`).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
 /** Advance a YYYY-MM-DD string by one calendar day (UTC arithmetic). */
 function nextDate(dateStr: string): string {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCDate(d.getUTCDate() + 1);
-  return d.toISOString().slice(0, 10);
+  return addDays(dateStr, 1);
 }
 
 /**

@@ -1,5 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { deriveDays, tripStatus } from '@/src/lib/days';
+import { deriveDays, tripStatus, addDays, diffDays } from '@/src/lib/days';
+
+describe('addDays / diffDays', () => {
+  it('adds and subtracts calendar days across month boundaries', () => {
+    expect(addDays('2026-05-30', 3)).toBe('2026-06-02');
+    expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
+    expect(addDays('2026-01-01', 0)).toBe('2026-01-01');
+  });
+  it('diffDays returns signed whole-day differences', () => {
+    expect(diffDays('2026-05-01', '2026-05-04')).toBe(3);
+    expect(diffDays('2026-05-04', '2026-05-01')).toBe(-3);
+    expect(diffDays('2026-05-01', '2026-05-01')).toBe(0);
+  });
+});
 
 /** Minimal trip shape consumed by the day helpers. */
 const trip = (startDate: string, endDate: string) => ({ startDate, endDate });

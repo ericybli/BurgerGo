@@ -6,6 +6,7 @@ import type { Trip } from '@/src/db/schema';
 import { withBase } from '@/src/lib/basePath';
 import { TripCard } from '@/components/TripCard';
 import { NewTripSheet } from '@/components/NewTripSheet';
+import { ManageTripSheet } from '@/components/ManageTripSheet';
 import { EmptyState } from '@/components/EmptyState';
 
 type LoadState =
@@ -21,6 +22,7 @@ type LoadState =
 export function HomeClient({ tz }: { tz: string }) {
   const t = useTranslations();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [manageTrip, setManageTrip] = useState<Trip | null>(null);
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const mountedRef = useRef(true);
 
@@ -77,7 +79,7 @@ export function HomeClient({ tz }: { tz: string }) {
         <ul className="flex flex-col gap-3">
           {state.trips.map((trip) => (
             <li key={trip.id}>
-              <TripCard trip={trip} tz={tz} />
+              <TripCard trip={trip} tz={tz} onManage={() => setManageTrip(trip)} />
             </li>
           ))}
         </ul>
@@ -98,6 +100,15 @@ export function HomeClient({ tz }: { tz: string }) {
         onClose={() => setSheetOpen(false)}
         onCreated={() => void loadTrips()}
       />
+
+      {manageTrip ? (
+        <ManageTripSheet
+          key={manageTrip.id}
+          trip={manageTrip}
+          onClose={() => setManageTrip(null)}
+          onChanged={() => void loadTrips()}
+        />
+      ) : null}
     </main>
   );
 }

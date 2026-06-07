@@ -1,8 +1,9 @@
-import { and, asc, eq, isNull, max, sql } from 'drizzle-orm';
+import { and, asc, eq, isNotNull, isNull, max, sql } from 'drizzle-orm';
 import type { TestDb } from '@/src/db/testDb';
 import { places, type Place } from '@/src/db/schema';
 import { newId } from '@/src/db/ids';
 import { now } from '@/src/lib/clock';
+import { addDays } from '@/src/lib/days';
 
 export type { Place };
 
@@ -141,6 +142,38 @@ export function updatePlace(db: Db, id: string, patch: PlacePatch): Place | unde
 /** Delete a place; dependent travel_legs cascade via FK onDelete. */
 export function deletePlace(db: Db, id: string): void {
   db.delete(places).where(eq(places.id, id)).run();
+}
+
+/**
+ * Shift every scheduled (non-null dayDate) place in a trip by `deltaDays` so it
+ * stays on the same relative day after the trip window moves. No-op for 0.
+ * Transactional. Saved-bucket places (dayDate null) are untouched.
+ */
+export function shiftDayDates(db: Db, tripId: string, deltaDays: number): void {
+  if (deltaDays === 0) return;
+  db.transaction((tx) => {
+    const txDb = tx as unknown as Db;
+    const rows = txDb
+      .select({ id: places.id, dayDate: places.dayDate })
+      .from(places)
+      .where(and(eq(places.tripId, tripId), isNotNull(places.dayDate)))
+      .all();
+    const ts = new Date(now());
+    for (const r of rows) {
+      txDb.update(places)
+        .set({ dayDate: addDays(r.dayDate as string, deltaDays), updatedAt: ts })
+        .where(eq(places.id, r.id))
+        .run();
+    }
+  });
+}
+
+/** Move every place scheduled on `dayDate` back to the Saved bucket (dayDate null). */
+export function unscheduleDay(db: Db, tripId: string, dayDate: string): void {
+  db.update(places)
+    .set({ dayDate: null, updatedAt: new Date(now()) })
+    .where(and(eq(places.tripId, tripId), eq(places.dayDate, dayDate)))
+    .run();
 }
 
 /**

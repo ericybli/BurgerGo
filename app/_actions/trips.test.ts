@@ -16,8 +16,15 @@ vi.mock('next/cache', () => ({
   revalidatePath: (...args: unknown[]) => revalidatePath(...args),
 }));
 
-import { createTripAction, renameTripAction } from '@/app/_actions/trips';
+import {
+  createTripAction,
+  renameTripAction,
+  shiftTripDatesAction,
+  addTripDayAction,
+  removeTripDayAction,
+} from '@/app/_actions/trips';
 import { getTrip } from '@/src/db/repos/trips';
+import { addPlace, getPlace } from '@/src/db/repos/places';
 
 describe('createTripAction', () => {
   beforeEach(() => {
@@ -82,5 +89,46 @@ describe('renameTripAction', () => {
 
   it('throws when id does not exist', async () => {
     await expect(renameTripAction('nonexistent', 'X')).rejects.toThrow();
+  });
+});
+
+describe('shiftTripDatesAction', () => {
+  beforeEach(() => { testHandle.db = makeTestDb().db; revalidatePath.mockClear(); });
+
+  it('moves the whole window and shifts scheduled places by the same delta', async () => {
+    const trip = await createTripAction({ name: 'T', startDate: '2026-05-01', endDate: '2026-05-03' });
+    const onDay = addPlace(testHandle.db, { tripId: trip.id, dayDate: '2026-05-02', name: 'Stop', category: 'other' });
+    const saved = addPlace(testHandle.db, { tripId: trip.id, dayDate: null, name: 'Wishlist', category: 'other' });
+
+    const updated = await shiftTripDatesAction(trip.id, '2026-05-04'); // +3 days
+    expect(updated.startDate).toBe('2026-05-04');
+    expect(updated.endDate).toBe('2026-05-06'); // length preserved (3 days)
+    expect(getPlace(testHandle.db, onDay.id)?.dayDate).toBe('2026-05-05'); // 05-02 + 3
+    expect(getPlace(testHandle.db, saved.id)?.dayDate).toBeNull(); // Saved untouched
+    expect(revalidatePath).toHaveBeenCalledWith('/');
+  });
+});
+
+describe('addTripDayAction / removeTripDayAction', () => {
+  beforeEach(() => { testHandle.db = makeTestDb().db; revalidatePath.mockClear(); });
+
+  it('addTripDay extends the end by one day', async () => {
+    const trip = await createTripAction({ name: 'T', startDate: '2026-05-01', endDate: '2026-05-03' });
+    const updated = await addTripDayAction(trip.id);
+    expect(updated.endDate).toBe('2026-05-04');
+    expect(updated.startDate).toBe('2026-05-01');
+  });
+
+  it('removeTripDay shortens the end and moves the last day’s places to Saved', async () => {
+    const trip = await createTripAction({ name: 'T', startDate: '2026-05-01', endDate: '2026-05-03' });
+    const lastDay = addPlace(testHandle.db, { tripId: trip.id, dayDate: '2026-05-03', name: 'Last', category: 'other' });
+    const updated = await removeTripDayAction(trip.id);
+    expect(updated.endDate).toBe('2026-05-02');
+    expect(getPlace(testHandle.db, lastDay.id)?.dayDate).toBeNull(); // moved to Saved, not deleted
+  });
+
+  it('removeTripDay refuses to remove the only day', async () => {
+    const trip = await createTripAction({ name: 'T', startDate: '2026-05-01', endDate: '2026-05-01' });
+    await expect(removeTripDayAction(trip.id)).rejects.toThrow();
   });
 });

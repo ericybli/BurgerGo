@@ -20,7 +20,25 @@
     "past": "Past"
   },
   "tripCard": {
-    "dateRange": "{start} – {end} · {days, plural, one {# day} other {# days}}"
+    "dateRange": "{start} – {end} · {days, plural, one {# day} other {# days}}",
+    "edit": "Edit trip"
+  },
+  "manageTripSheet": {
+    "title": "Manage trip",
+    "nameLabel": "Trip name",
+    "rename": "Rename",
+    "datesTitle": "Move dates",
+    "startLabel": "New start date",
+    "datesHint": "Moves the whole trip; scheduled places shift with it.",
+    "move": "Move",
+    "lengthTitle": "Length",
+    "lengthDays": "{days, plural, one {# day} other {# days}}",
+    "addDay": "Add a day",
+    "removeDay": "Remove a day",
+    "removeDayHint": "Removing the last day moves any of its places to Saved.",
+    "saved": "Saved ✓",
+    "saveError": "Couldn't save — please try again.",
+    "close": "Close"
   },
   "newTripSheet": {
     "title": "New trip",
