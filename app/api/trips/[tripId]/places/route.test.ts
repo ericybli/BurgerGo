@@ -70,7 +70,7 @@ describe('GET /api/trips/[tripId]/places', () => {
     seed(testHandle.db);
   });
 
-  it('returns 200 with PlaceDTO array (sorted) and LegDTO array with polyline', async () => {
+  it('returns 200 with a sorted PlaceDTO array; the light payload omits route polylines', async () => {
     const res = await GET(
       new Request('http://x/api/trips/trip-1/places'),
       ctx('trip-1'),
@@ -87,11 +87,20 @@ describe('GET /api/trips/[tripId]/places', () => {
     // No cache row for place 'a' or 's'.
     expect(body.places.find((p) => p.id === 'a')?.photoPath).toBeNull();
     expect(body.places.find((p) => p.id === 's')?.photoPath).toBeNull();
-    // Leg with polyline.
+    // Leg present, but its (heavy) polyline is dropped from the light payload.
     expect(body.legs).toHaveLength(1);
     expect(body.legs[0]).toMatchObject({
-      id: 'leg-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk', polyline: 'POLY_AB',
+      id: 'leg-1', fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk', polyline: null,
     });
+  });
+
+  it('ships the route polyline only when ?detail=full is requested', async () => {
+    const res = await GET(
+      new Request('http://x/api/trips/trip-1/places?detail=full'),
+      ctx('trip-1'),
+    );
+    const body = (await res.json()) as { legs: Array<{ id: string; polyline: string | null }> };
+    expect(body.legs[0]?.polyline).toBe('POLY_AB');
   });
 
   it('returns 404 for an unknown trip', async () => {
@@ -131,7 +140,7 @@ describe('GET /api/trips/[tripId]/places', () => {
     expect(Array.isArray(body.places[0]!.photos)).toBe(true);
   });
 
-  it('includes aiSummary and attached links per place', async () => {
+  it('omits aiSummary in the light payload, includes it on ?detail=full, and always attaches links', async () => {
     // Use a fresh db so we control exactly what's there
     testHandle.db = makeTestDb().db;
     testHandle.db.insert(trips).values({
@@ -148,11 +157,21 @@ describe('GET /api/trips/[tripId]/places', () => {
       id: 'sl1', tripId: 't1', url: 'https://x.example', title: null, note: null,
       thumbnail: null, placeId: 'p1', createdAt: TS, updatedAt: TS,
     }).run();
-    const res = await GET(new Request('http://t/'), { params: Promise.resolve({ tripId: 't1' }) });
-    const body = await res.json();
-    const p = body.places.find((x: { id: string }) => x.id === 'p1');
-    expect(p.aiSummary).toBe('Hi');
-    expect(p.links).toEqual([{ id: expect.any(String), url: 'https://x.example', title: null, thumbnail: null }]);
+
+    // Light payload: aiSummary dropped, but links (small) are always present.
+    const light = await (
+      await GET(new Request('http://t/'), { params: Promise.resolve({ tripId: 't1' }) })
+    ).json();
+    const lp = light.places.find((x: { id: string }) => x.id === 'p1');
+    expect(lp.aiSummary).toBeNull();
+    expect(lp.links).toEqual([{ id: expect.any(String), url: 'https://x.example', title: null, thumbnail: null }]);
+
+    // Full payload: aiSummary present.
+    const fullBody = await (
+      await GET(new Request('http://t/?detail=full'), { params: Promise.resolve({ tripId: 't1' }) })
+    ).json();
+    const fp = fullBody.places.find((x: { id: string }) => x.id === 'p1');
+    expect(fp.aiSummary).toBe('Hi');
   });
 });
 

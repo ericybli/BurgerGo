@@ -30,10 +30,11 @@ const baseEntry = {
 } as unknown as EntryDTO;
 
 describe('EntryReader', () => {
-  it('renders the title, the markdown body, and the photo gallery', () => {
+  it('renders the title, the markdown body, and the photo gallery', async () => {
     renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} online />);
     expect(screen.getByText('Day One')).toBeInTheDocument();
-    expect(screen.getByTestId('md')).toHaveTextContent('# hi');
+    // Markdown is now lazy-loaded via next/dynamic, so it resolves async.
+    expect(await screen.findByTestId('md')).toHaveTextContent('# hi');
     expect(screen.getByTestId('gallery')).toHaveTextContent('1');
   });
 

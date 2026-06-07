@@ -7,6 +7,7 @@ import { deriveDays, type DerivedDay } from '@/src/lib/days';
 import { dayRouteUrl, type TravelMode } from '@/src/lib/googleMapsUrl';
 import { landingDate } from '@/src/lib/landingDate';
 import { withBase } from '@/src/lib/basePath';
+import { fetchTripData } from '@/src/lib/tripData';
 import {
   parsePlanParams,
   buildPlanQuery,
@@ -55,6 +56,37 @@ function nowHHMM(tz: string): string {
     minute: '2-digit',
     hourCycle: 'h23',
   }).format(new Date());
+}
+
+/** Stable identity for a leg (matches `buildDayPaths` / `indexLegs`). */
+const legKey = (l: LegDTO) => `${l.fromPlaceId}|${l.toPlaceId}|${l.mode}`;
+
+/**
+ * Merge the heavy fields from a `?detail=full` fetch into already-loaded state:
+ * per-place `aiSummary` and per-leg route `polyline`. Maps over the current
+ * places/legs (preserving any optimistic edits + add/remove since the light
+ * load) and only fills fields for ids/legs still present.
+ */
+function mergeHeavyFields(
+  state: Extract<LoadState, { status: 'loaded' }>,
+  fullPlaces: PlaceDTO[],
+  fullLegs: LegDTO[],
+): LoadState {
+  const summaryById = new Map(fullPlaces.map((p) => [p.id, p.aiSummary]));
+  const polylineByLeg = new Map(fullLegs.map((l) => [legKey(l), l.polyline]));
+  return {
+    ...state,
+    data: {
+      ...state.data,
+      places: state.data.places.map((p) =>
+        summaryById.has(p.id) ? { ...p, aiSummary: summaryById.get(p.id) ?? null } : p,
+      ),
+      legs: state.data.legs.map((l) => {
+        const polyline = polylineByLeg.get(legKey(l));
+        return polyline != null ? { ...l, polyline } : l;
+      }),
+    },
+  };
 }
 
 export function PlanClient({
@@ -110,8 +142,10 @@ export function PlanClient({
 
   const load = useCallback(async () => {
     try {
-      const [tripRes, placesRes, restaurantsRes] = await Promise.all([
-        fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' }),
+      const [tripData, placesRes, restaurantsRes] = await Promise.all([
+        // Coalesced with the trip shell's identical fetch (one request).
+        fetchTripData(tripId),
+        // Light list payload: omits aiSummary + route polylines (hydrated below).
         fetch(withBase(`/api/trips/${tripId}/places`), { credentials: 'same-origin' }),
         // Restaurants power the optional map overlay only — non-critical, so a
         // failure here must not error the whole plan (`.catch` → null below).
@@ -119,8 +153,8 @@ export function PlanClient({
           () => null,
         ),
       ]);
-      if (!tripRes.ok || !placesRes.ok) throw new Error('load failed');
-      const { trip } = (await tripRes.json()) as { trip: TripLite };
+      if (!placesRes.ok) throw new Error('load failed');
+      const trip: TripLite = tripData.trip;
       const { places, legs } = (await placesRes.json()) as { places: PlaceDTO[]; legs: LegDTO[] };
       let restaurants: RestaurantMarkerInput[] = [];
       if (restaurantsRes && restaurantsRes.ok) {
@@ -155,6 +189,26 @@ export function PlanClient({
       if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
+      return;
+    }
+    // Background hydrate (perf): the list paints from the light payload above;
+    // now pull the heavy fields the list never needs — per-place aiSummary (for
+    // the read card) + route polylines (for the map) — and merge them in.
+    try {
+      const res = await fetch(withBase(`/api/trips/${tripId}/places?detail=full`), {
+        credentials: 'same-origin',
+      });
+      if (!res.ok) return;
+      const { places: fullPlaces, legs: fullLegs } = (await res.json()) as {
+        places: PlaceDTO[];
+        legs: LegDTO[];
+      };
+      if (mountedRef.current) {
+        setState((s) => (s.status === 'loaded' ? mergeHeavyFields(s, fullPlaces, fullLegs) : s));
+      }
+    } catch {
+      // Offline / failed → keep the light data; summaries + road polylines just
+      // stay absent (the map falls back to straight stop-to-stop segments).
     }
   }, [tripId]);
 

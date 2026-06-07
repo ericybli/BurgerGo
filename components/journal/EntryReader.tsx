@@ -1,9 +1,18 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Markdown } from '@/components/journal/Markdown';
+import dynamic from 'next/dynamic';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import type { EntryDTO } from '@/app/api/trips/[tripId]/journal/route';
+
+// react-markdown + remark/rehype plugins are ~45 KB and only render here (when
+// an entry is opened), so split them into their own chunk instead of shipping
+// them in the journal route's First Load JS. Client-only — the body is
+// client-fetched, so there is nothing to server-render. (perf)
+const Markdown = dynamic(() => import('@/components/journal/Markdown').then((m) => m.Markdown), {
+  ssr: false,
+  loading: () => <p className="mt-2 text-body text-ink-muted">…</p>,
+});
 
 type Props = {
   entry: EntryDTO;

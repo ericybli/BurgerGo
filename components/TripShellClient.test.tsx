@@ -2,6 +2,14 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
+import { __resetTripDataForTests } from '@/src/lib/tripData';
+
+// The shell shares a module-level request-coalescing cache (src/lib/tripData).
+// Clear it before every test so a never-resolving `fetch` stub in one test can't
+// leave a stuck in-flight promise that poisons the next.
+beforeEach(() => {
+  __resetTripDataForTests();
+});
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => (

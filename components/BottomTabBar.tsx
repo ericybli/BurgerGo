@@ -26,6 +26,12 @@ export function BottomTabBar({ tripId }: { tripId: string }) {
           <Link
             key={tab}
             href={`/trip/${tripId}/${tab}`}
+            // The tab bar is always on screen, so default prefetch eagerly
+            // fetches all four sibling tabs' RSC payloads on every trip page
+            // load — requests that compete with the critical data fetch. Each
+            // tab client re-fetches its own data on navigation anyway, so the
+            // prefetch buys little; disable it. (perf)
+            prefetch={false}
             aria-current={active ? 'page' : undefined}
             className={`relative flex min-h-[44px] flex-1 flex-col items-center justify-center py-2 text-label font-medium ${
               active ? 'text-coral' : 'text-ink-muted'

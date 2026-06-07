@@ -7,7 +7,7 @@ import { TripHeader } from '@/components/TripHeader';
 import { BottomTabBar } from '@/components/BottomTabBar';
 import { EmptyState } from '@/components/EmptyState';
 import { landingDate } from '@/src/lib/landingDate';
-import { withBase } from '@/src/lib/basePath';
+import { fetchTripData } from '@/src/lib/tripData';
 import type { Trip } from '@/src/db/schema';
 
 /** Browser-resolved IANA timezone; mirrors env.TZ for client-side day math. */
@@ -78,19 +78,14 @@ export function TripShellClient({
     let cancelled = false;
     void (async () => {
       try {
-        const res = await fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' });
-        if (res.status === 404) {
-          if (!cancelled) setState({ status: 'notFound' });
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { trip } = (await res.json()) as { trip: Trip };
+        // Coalesced with the active tab client's identical fetch (one request).
+        const { trip } = await fetchTripData(tripId);
         if (!cancelled) setState({ status: 'loaded', trip });
       } catch {
-        // Offline with no cached trip (or any 5xx/network error) → intentionally
-        // mapped to notFound. For a private single-user app, "can't load" and
-        // "not found" are the same user-facing outcome; a distinct error screen
-        // adds no value here.
+        // 404, any 5xx/network error, or offline with no cached trip → all
+        // intentionally mapped to notFound. For a private single-user app,
+        // "can't load" and "not found" are the same user-facing outcome; a
+        // distinct error screen adds no value here.
         if (!cancelled) setState({ status: 'notFound' });
       }
     })();

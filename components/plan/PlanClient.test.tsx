@@ -69,12 +69,13 @@ const legs: LegDTO[] = [
 ];
 
 /**
- * Route fetch by URL: /api/trips/t1 → {trip}; /places → {places,legs};
- * /restaurants → {restaurants} (empty by default; the map overlay reads it).
+ * Route fetch by URL: /api/trips/t1 → {trip}; /places (light) and
+ * /places?detail=full (hydrate) → {places,legs}; /restaurants → {restaurants}
+ * (empty by default; the map overlay reads it).
  */
 function mockFetch() {
   const f = vi.fn(async (url: string) => {
-    if (url.endsWith('/places')) {
+    if (url.includes('/places')) {
       return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs })) };
     }
     if (url.endsWith('/restaurants')) {
@@ -118,6 +119,17 @@ describe('PlanClient', () => {
     expect(screen.getByText('Stop B')).toBeInTheDocument();
     expect(f).toHaveBeenCalledWith('/api/trips/t1', { credentials: 'same-origin' });
     expect(f).toHaveBeenCalledWith('/api/trips/t1/places', { credentials: 'same-origin' });
+  });
+
+  it('background-hydrates the heavy fields (aiSummary + polylines) via ?detail=full', async () => {
+    const f = mockFetch();
+    renderPlan();
+    await screen.findByText('Stop A');
+    await waitFor(() =>
+      expect(f).toHaveBeenCalledWith('/api/trips/t1/places?detail=full', {
+        credentials: 'same-origin',
+      }),
+    );
   });
 
   it('fetches both base-path-prefixed endpoints when NEXT_PUBLIC_BASE_PATH is set', async () => {

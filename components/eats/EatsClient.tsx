@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
+import { fetchTripData } from '@/src/lib/tripData';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
 import { filterByStatus, type EatsStatusFilter } from '@/src/lib/eatsView';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
@@ -60,12 +61,13 @@ export function EatsClient({
 
   const load = useCallback(async () => {
     try {
-      const [tripRes, restRes] = await Promise.all([
-        fetch(withBase(`/api/trips/${tripId}`), { credentials: 'same-origin' }),
+      const [tripData, restRes] = await Promise.all([
+        // Coalesced with the trip shell's identical fetch (one request).
+        fetchTripData(tripId),
         fetch(withBase(`/api/trips/${tripId}/restaurants`), { credentials: 'same-origin' }),
       ]);
-      if (!tripRes.ok || !restRes.ok) throw new Error('load failed');
-      const { trip } = (await tripRes.json()) as { trip: TripLite };
+      if (!restRes.ok) throw new Error('load failed');
+      const trip: TripLite = tripData.trip;
       const { restaurants } = (await restRes.json()) as { restaurants: RestaurantDTO[] };
       if (mountedRef.current) setState({ status: 'loaded', data: { trip, restaurants } });
     } catch {

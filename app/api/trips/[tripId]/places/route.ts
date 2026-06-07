@@ -28,10 +28,15 @@ export interface PlaceDTO extends Place {
 export type LegDTO = TravelLeg;
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
+  // Heavy fields — per-place `aiSummary` (≈1–2 KB each) + per-leg route
+  // `polyline` — are only needed by the read card + map, never the list. They
+  // ship only on `?detail=full`; the default light payload keeps the
+  // fast-painting list fetch small. (perf)
+  const full = new URL(req.url).searchParams.get('detail') === 'full';
   const trip = getTrip(db, tripId);
   if (!trip) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
@@ -99,19 +104,24 @@ export async function GET(
     }
   }
 
-  // Build PlaceDTO using the pre-fetched maps.
+  // Build PlaceDTO using the pre-fetched maps. `aiSummary` is dropped from the
+  // light payload (see `full` above) — the list never renders it.
   const placesResult: PlaceDTO[] = rawPlaces.map((p) => ({
     ...p,
+    aiSummary: full ? p.aiSummary : null,
     photoPath: (p.googlePlaceId ? (photoMap.get(p.googlePlaceId) ?? null) : null),
     photos: photoMapByOwner.get(p.id) ?? [],
     links: linksByPlace.get(p.id) ?? [],
   }));
 
-  const legs: LegDTO[] = db
+  const legRows: LegDTO[] = db
     .select()
     .from(travelLegs)
     .where(eq(travelLegs.tripId, tripId))
     .all();
+  // Light payload drops the (large) encoded route polyline; the map falls back
+  // to straight stop-to-stop segments until the full payload hydrates it in.
+  const legs: LegDTO[] = full ? legRows : legRows.map((l) => ({ ...l, polyline: null }));
 
   return NextResponse.json({ places: placesResult, legs });
 }
