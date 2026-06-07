@@ -4,6 +4,8 @@ import {
   expenses,
   budgetTargets,
   photos,
+  packingCategories,
+  packingItems,
 } from '@/src/db/schema';
 import { getTableConfig } from 'drizzle-orm/sqlite-core';
 
@@ -76,6 +78,29 @@ describe('Plan 2 schema shapes', () => {
         'height',
         'order_index',
         'created_at',
+      ].sort(),
+    );
+  });
+});
+
+describe('Packing list schema shapes', () => {
+  it('packing_categories has the expected columns', () => {
+    expect(columnNames(packingCategories)).toEqual(
+      ['id', 'trip_id', 'name', 'order_index', 'created_at', 'updated_at'].sort(),
+    );
+  });
+
+  it('packing_items has the expected columns', () => {
+    expect(columnNames(packingItems)).toEqual(
+      [
+        'id',
+        'category_id',
+        'name',
+        'quantity',
+        'packed',
+        'order_index',
+        'created_at',
+        'updated_at',
       ].sort(),
     );
   });

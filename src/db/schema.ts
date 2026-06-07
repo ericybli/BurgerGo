@@ -238,6 +238,45 @@ export const savedLinks = sqliteTable(
   }),
 );
 
+// Packing list — user-defined categories, each holding items with a name,
+// quantity (default 1), and a packed checkbox. Categories cascade-delete their
+// items; trips cascade-delete their categories.
+export const packingCategories = sqliteTable(
+  'packing_categories',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    orderIndex: integer('order_index').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTrip: index('idx_packing_cat_trip').on(t.tripId, t.orderIndex),
+  }),
+);
+
+export const packingItems = sqliteTable(
+  'packing_items',
+  {
+    id: text('id').primaryKey(),
+    categoryId: text('category_id')
+      .notNull()
+      .references(() => packingCategories.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    quantity: integer('quantity').notNull().default(1),
+    packed: integer('packed', { mode: 'boolean' }).notNull().default(false),
+    orderIndex: integer('order_index').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byCategory: index('idx_packing_item_cat').on(t.categoryId, t.orderIndex),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -248,6 +287,7 @@ export const tripsRelations = relations(trips, ({ many }) => ({
   photos: many(photos),
   journalEntries: many(journalEntries),
   savedLinks: many(savedLinks),
+  packingCategories: many(packingCategories),
 }));
 
 export const placesRelations = relations(places, ({ one, many }) => ({
@@ -302,6 +342,18 @@ export const savedLinksRelations = relations(savedLinks, ({ one }) => ({
   trip: one(trips, { fields: [savedLinks.tripId], references: [trips.id] }),
 }));
 
+export const packingCategoriesRelations = relations(packingCategories, ({ one, many }) => ({
+  trip: one(trips, { fields: [packingCategories.tripId], references: [trips.id] }),
+  items: many(packingItems),
+}));
+
+export const packingItemsRelations = relations(packingItems, ({ one }) => ({
+  category: one(packingCategories, {
+    fields: [packingItems.categoryId],
+    references: [packingCategories.id],
+  }),
+}));
+
 // Inferred row types (used by repos in later tasks).
 export type Trip = typeof trips.$inferSelect;
 export type NewTrip = typeof trips.$inferInsert;
@@ -322,3 +374,7 @@ export type JournalEntry = typeof journalEntries.$inferSelect;
 export type NewJournalEntry = typeof journalEntries.$inferInsert;
 export type SavedLink = typeof savedLinks.$inferSelect;
 export type NewSavedLink = typeof savedLinks.$inferInsert;
+export type PackingCategory = typeof packingCategories.$inferSelect;
+export type NewPackingCategory = typeof packingCategories.$inferInsert;
+export type PackingItem = typeof packingItems.$inferSelect;
+export type NewPackingItem = typeof packingItems.$inferInsert;
