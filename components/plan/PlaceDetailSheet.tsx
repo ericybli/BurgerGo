@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { currencyExponent } from '@/src/lib/currency';
-import { updatePlaceAction } from '@/app/_actions/places';
+import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
 import { deletePhotoAction } from '@/app/_actions/photos';
@@ -43,6 +43,8 @@ export function PlaceDetailSheet({
     place.cost != null ? String(place.cost / 10 ** exponent) : '',
   );
   const [notes, setNotes] = useState(place.notes ?? '');
+  const [aiSummary, setAiSummary] = useState(place.aiSummary ?? '');
+  const [regenerating, setRegenerating] = useState(false);
   const [isPending, startTransition] = useTransition();
   // FIX I1: inline error when the Server Action rejects
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -113,6 +115,7 @@ export function PlaceDetailSheet({
           scheduledTime: time || null,
           cost: costMinor != null && Number.isFinite(costMinor) ? costMinor : null,
           notes: notes.trim() || null,
+          aiSummary: aiSummary.trim() || null,
         });
         onSaved();
         onClose();
@@ -178,6 +181,30 @@ export function PlaceDetailSheet({
         <input
           id="pd-cost" type="number" inputMode="decimal" value={costMajor} disabled={disabled}
           onChange={(e) => setCostMajor(e.target.value)}
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+        />
+
+        <div className="mt-3 flex items-center justify-between">
+          <label className="block text-label font-medium text-ink" htmlFor="pd-ai">{t('aiSummary')}</label>
+          <button
+            type="button"
+            disabled={disabled || regenerating}
+            onClick={async () => {
+              setRegenerating(true);
+              try {
+                const r = await generatePlaceSummaryAction(place.id);
+                if (r?.aiSummary) setAiSummary(r.aiSummary);
+              } catch { /* leave field as-is */ }
+              finally { setRegenerating(false); }
+            }}
+            className="text-caption font-medium text-teal disabled:opacity-40"
+          >
+            {regenerating ? t('regenerating') : t('regenerateSummary')}
+          </button>
+        </div>
+        <textarea
+          id="pd-ai" value={aiSummary} disabled={disabled}
+          onChange={(e) => setAiSummary(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
         />
 

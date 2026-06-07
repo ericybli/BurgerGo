@@ -7,6 +7,7 @@ import type { PlaceDTO } from '@/src/lib/planView';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updatePlaceAction = vi.fn(async (..._a: any[]) => ({ id: 'p1' }));
+const generatePlaceSummaryAction = vi.fn(async (_id: string) => ({ id: 'p1', aiSummary: 'Fresh blurb.' }));
 vi.mock('@/app/_actions/places', () => ({
   addPlaceAction: vi.fn(),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +17,7 @@ vi.mock('@/app/_actions/places', () => ({
   promoteToDayAction: vi.fn(),
   moveToSavedAction: vi.fn(),
   recomputeDayLegsAction: vi.fn(),
+  generatePlaceSummaryAction: (id: string) => generatePlaceSummaryAction(id),
 }));
 
 // Add alongside the existing places action mock:
@@ -68,6 +70,7 @@ beforeEach(() => {
   updatePlaceAction.mockClear();
   deletePhotoAction.mockClear();
   uploadFn.mockClear();
+  generatePlaceSummaryAction.mockClear();
 });
 
 describe('PlaceDetailSheet', () => {
@@ -144,5 +147,12 @@ describe('PlaceDetailSheet', () => {
   it('disables the photo upload control when offline', () => {
     renderSheet({ disabled: true });
     expect(screen.getByLabelText(en.plan.addPhoto)).toBeDisabled();
+  });
+
+  it('regenerate fills the AI summary field', async () => {
+    renderSheet(); // existing helper that renders with a place
+    await userEvent.click(screen.getByRole('button', { name: en.plan.regenerateSummary }));
+    await waitFor(() => expect(generatePlaceSummaryAction).toHaveBeenCalledWith('p1'));
+    expect(screen.getByLabelText(en.plan.aiSummary)).toHaveValue('Fresh blurb.');
   });
 });
