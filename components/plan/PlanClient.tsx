@@ -36,6 +36,7 @@ import { SavedList } from '@/components/plan/SavedList';
 import { TodayHero } from '@/components/plan/TodayHero';
 import { AddPlaceSheet } from '@/components/plan/AddPlaceSheet';
 import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
+import { PlaceReadCard } from '@/components/plan/PlaceReadCard';
 import { PlanMap } from '@/components/plan/PlanMap';
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
@@ -382,6 +383,24 @@ export function PlanClient({
             void load();
           }}
         />
+      ) : null}
+
+      {viewPlace ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={viewPlace.name}
+          className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+          onClick={() => setViewPlace(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()} className="w-full p-3">
+            <PlaceReadCard
+              place={viewPlace}
+              onClose={() => setViewPlace(null)}
+              onEdit={() => { setDetailFor(viewPlace); setViewPlace(null); }}
+            />
+          </div>
+        </div>
       ) : null}
     </main>
   );
