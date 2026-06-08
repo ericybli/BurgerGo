@@ -84,7 +84,7 @@ server.tool(
 
 server.tool(
   'get_trip',
-  'Get a trip overview: its day-by-day places, saved (wishlist) places, and restaurants.',
+  'Get a trip overview: day-by-day places, saved (wishlist) places (each with its list, if any), the trip\'s saved-place lists, and restaurants.',
   { tripId: z.string().describe('Trip id from list_trips') },
   async ({ tripId }) => {
     try {
@@ -94,11 +94,13 @@ server.tool(
         apiGet(`/api/trips/${tripId}/restaurants`),
       ]);
       const places = placesRes.places ?? [];
+      const lists = placesRes.lists ?? [];
+      const listNameById = new Map(lists.map((l) => [l.id, l.name]));
       const byDay = {};
       const saved = [];
       for (const p of places) {
         const slim = { id: p.id, name: p.name, address: p.address, about: p.aiSummary, notes: p.notes, scheduledTime: p.scheduledTime, category: p.category };
-        if (p.dayDate === null) saved.push(slim);
+        if (p.dayDate === null) saved.push({ ...slim, list: p.listId ? (listNameById.get(p.listId) ?? null) : null });
         else (byDay[p.dayDate] ??= []).push(slim);
       }
       const days = Object.keys(byDay).sort().map((date) => ({ date, places: byDay[date] }));
@@ -106,7 +108,7 @@ server.tool(
         id: r.id, name: r.name, cuisine: r.cuisine, address: r.address, notes: r.notes,
         status: r.status, rating: r.rating, scheduledDayDate: r.scheduledDayDate,
       }));
-      return ok({ trip: { id: trip.id, name: trip.name, startDate: trip.startDate, endDate: trip.endDate }, days, savedPlaces: saved, restaurants });
+      return ok({ trip: { id: trip.id, name: trip.name, startDate: trip.startDate, endDate: trip.endDate }, days, savedPlaces: saved, savedLists: lists.map((l) => l.name), restaurants });
     } catch (e) {
       return fail(String(e.message ?? e));
     }
@@ -129,11 +131,15 @@ server.tool(
       ])
       .optional()
       .describe('Place category (controls the map pin glyph). Defaults to "other" when omitted.'),
+    list: z
+      .string()
+      .optional()
+      .describe('Saved-list name to group this place under (Saved tab). Reuses a same-named list (case-insensitive) or creates it. Omit to leave it loose.'),
     imageUrl: z.string().url().optional().describe('Image URL to attach as the place photo'),
   },
-  async ({ tripId, name, address, about, notes, category, imageUrl }) => {
+  async ({ tripId, name, address, about, notes, category, list, imageUrl }) => {
     try {
-      const { place } = await apiPost(`/api/trips/${tripId}/places`, { name, address, about, notes, category });
+      const { place } = await apiPost(`/api/trips/${tripId}/places`, { name, address, about, notes, category, list });
       let photo = 'no photo';
       if (imageUrl) photo = await uploadPhoto({ tripId, ownerType: 'place', ownerId: place.id, imageUrl });
       return ok({ created: { id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng }, photo });

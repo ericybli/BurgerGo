@@ -12,6 +12,7 @@ vi.mock('@/src/db/client', () => ({
 
 import { GET, POST } from '@/app/api/trips/[tripId]/places/route';
 import { listAllForTrip } from '@/src/db/repos/places';
+import { listByTrip as listSavedLists } from '@/src/db/repos/savedLists';
 
 const TS = new Date('2026-06-08T12:00:00.000Z');
 
@@ -244,5 +245,18 @@ describe('POST /api/trips/[tripId]/places', () => {
     expect((await POST(postReq('trip-1', { name: 'X' }), ctx('trip-1'))).status).toBe(401);
     const ok = await POST(postReq('trip-1', { name: 'X' }, { 'x-api-key': 'secret' }), ctx('trip-1'));
     expect(ok.status).toBe(201);
+  });
+
+  it('groups a created place under a named list (find-or-create, case-insensitive)', async () => {
+    const r1 = await POST(postReq('trip-1', { name: 'Beach A', list: 'Beaches' }), ctx('trip-1'));
+    const b1 = (await r1.json()) as { place: { listId: string | null } };
+    expect(b1.place.listId).not.toBeNull();
+    expect(listSavedLists(testHandle.db, 'trip-1').map((l) => l.name)).toEqual(['Beaches']);
+
+    // Same name, different case → reuse the existing list (no duplicate).
+    const r2 = await POST(postReq('trip-1', { name: 'Beach B', list: 'beaches' }), ctx('trip-1'));
+    const b2 = (await r2.json()) as { place: { listId: string | null } };
+    expect(b2.place.listId).toBe(b1.place.listId);
+    expect(listSavedLists(testHandle.db, 'trip-1')).toHaveLength(1);
   });
 });

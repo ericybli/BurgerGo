@@ -6,7 +6,7 @@ import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
 import { listDayModes } from '@/src/db/repos/dayModes';
-import { listByTrip as listSavedLists } from '@/src/db/repos/savedLists';
+import { listByTrip as listSavedLists, addList } from '@/src/db/repos/savedLists';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
 import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
@@ -148,6 +148,8 @@ const createPlaceSchema = z.object({
   about: z.string().max(4000).optional(), // → aiSummary
   notes: z.string().max(2000).optional(),
   category: CATEGORY.optional(),
+  /** Saved-list name to group this place under; find-or-created (case-insensitive). */
+  list: z.string().trim().min(1).max(100).optional(),
 });
 
 /**
@@ -177,7 +179,15 @@ export async function POST(
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_input', issues: parsed.error.issues }, { status: 400 });
   }
-  const { name, address, about, notes, category } = parsed.data;
+  const { name, address, about, notes, category, list } = parsed.data;
+
+  // Group under a named saved list when requested: reuse a same-named list
+  // (case-insensitive), else create it. NULL = loose.
+  let listId: string | null = null;
+  if (list) {
+    const existing = listSavedLists(db, tripId).find((l) => l.name.toLowerCase() === list.toLowerCase());
+    listId = existing ? existing.id : addList(db, tripId, list).id;
+  }
 
   // Best-effort geocode so the place maps + gets a Google place id.
   let lat: number | null = null;
@@ -206,6 +216,7 @@ export async function POST(
     googlePlaceId,
     category: category ?? 'other',
     notes: notes ?? null,
+    listId,
   });
   // "about" maps to the editable AI-summary field.
   const finalPlace = about ? (updatePlace(db, place.id, { aiSummary: about }) ?? place) : place;
