@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
+import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
 import { deletePhotoAction } from '@/app/_actions/photos';
@@ -45,6 +46,10 @@ export function PlaceDetailSheet({
   const [notes, setNotes] = useState(place.notes ?? '');
   const [aiSummary, setAiSummary] = useState(place.aiSummary ?? '');
   const [regenerating, setRegenerating] = useState(false);
+  // Coords + place id captured when the user re-pins via an address suggestion.
+  // null → keep the place's existing coordinates on save.
+  const [picked, setPicked] = useState<{ lat: number; lng: number; googlePlaceId: string } | null>(null);
+  const { predictions, search, select, clear } = usePlacesAutocomplete();
   const [isPending, startTransition] = useTransition();
   // FIX I1: inline error when the Server Action rejects
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -101,6 +106,23 @@ export function PlaceDetailSheet({
     });
   }
 
+  function handleAddressChange(value: string) {
+    setAddress(value);
+    setPicked(null); // typing invalidates a prior suggestion pick
+    void search(value);
+  }
+
+  /** Re-pin: a picked suggestion carries the corrected coordinates + place id. */
+  async function handlePick(placeId: string) {
+    const filled = await select(placeId);
+    if (!filled) return;
+    if (filled.address) setAddress(filled.address);
+    if (typeof filled.lat === 'number' && typeof filled.lng === 'number') {
+      setPicked({ lat: filled.lat, lng: filled.lng, googlePlaceId: filled.googlePlaceId });
+    }
+    clear();
+  }
+
   // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function handleSave() {
     setSaveError(null);
@@ -111,6 +133,8 @@ export function PlaceDetailSheet({
       scheduledTime: time || null,
       notes: notes.trim() || null,
       aiSummary: aiSummary.trim() || null,
+      // Only move the pin when the user re-picked an address suggestion.
+      ...(picked ? { lat: picked.lat, lng: picked.lng, googlePlaceId: picked.googlePlaceId } : {}),
     };
     startTransition(async () => {
       try {
@@ -153,9 +177,28 @@ export function PlaceDetailSheet({
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-address">{t('addressLabel')}</label>
         <input
           id="pd-address" type="text" value={address} disabled={disabled}
-          onChange={(e) => setAddress(e.target.value)}
+          autoComplete="off"
+          placeholder={t('addressSearchPlaceholder')}
+          onChange={(e) => handleAddressChange(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
         />
+        <p className="mt-1 text-caption text-ink-muted">{t('addressRepinHint')}</p>
+        {predictions.length > 0 ? (
+          <ul className="mt-2 flex flex-col rounded-control border border-line bg-paper">
+            {predictions.map((p) => (
+              <li key={p.placeId}>
+                <button
+                  type="button"
+                  disabled={disabled || isPending}
+                  onClick={() => void handlePick(p.placeId)}
+                  className="w-full px-3 py-2 text-left text-body text-ink hover:bg-card disabled:opacity-40"
+                >
+                  {p.description}
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-category">{t('categoryLabel')}</label>
         <select

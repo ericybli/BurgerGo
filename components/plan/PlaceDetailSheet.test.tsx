@@ -35,6 +35,21 @@ vi.mock('@/components/plan/usePhotoUpload', () => ({
   usePhotoUpload: () => ({ upload: uploadFn, uploading: uploadState.uploading, error: uploadState.error }),
 }));
 
+// Controllable Places autocomplete for the re-pin flow.
+const autocompleteState = { predictions: [] as Array<{ placeId: string; description: string }> };
+const selectFn = vi.fn(async (_id: string) => ({
+  googlePlaceId: 'g2', name: 'Holei Sea Arch', address: 'Chain of Craters Rd, HI 96718',
+  lat: 19.2986, lng: -155.1026, categoryGuess: 'sightseeing',
+}));
+vi.mock('@/components/plan/useGooglePlaces', () => ({
+  usePlacesAutocomplete: () => ({
+    predictions: autocompleteState.predictions,
+    search: vi.fn(),
+    select: (id: string) => selectFn(id),
+    clear: vi.fn(),
+  }),
+}));
+
 import { PlaceDetailSheet } from './PlaceDetailSheet';
 
 function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
@@ -69,9 +84,30 @@ beforeEach(() => {
   deletePhotoAction.mockClear();
   uploadFn.mockClear();
   generatePlaceSummaryAction.mockClear();
+  selectFn.mockClear();
+  autocompleteState.predictions = [];
 });
 
 describe('PlaceDetailSheet', () => {
+  it('re-pins the place (sends new coords + place id) when an address suggestion is picked', async () => {
+    autocompleteState.predictions = [{ placeId: 'g2', description: 'Holei Sea Arch, Hawaii, USA' }];
+    const { onSaved } = renderSheet();
+    await userEvent.click(screen.getByRole('button', { name: /Holei Sea Arch/ }));
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
+    const patch = updatePlaceAction.mock.calls[0]![1];
+    expect(patch).toMatchObject({ lat: 19.2986, lng: -155.1026, googlePlaceId: 'g2' });
+    expect(onSaved).toHaveBeenCalledWith('p1', expect.objectContaining({ googlePlaceId: 'g2' }));
+  });
+
+  it('leaves coords untouched when the address is edited without picking a suggestion', async () => {
+    renderSheet();
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    const patch = updatePlaceAction.mock.calls[0]![1];
+    expect(patch).not.toHaveProperty('lat');
+    expect(patch).not.toHaveProperty('googlePlaceId');
+  });
+
   it('renders an Open in Google Maps link with a query_place_id deep link', () => {
     renderSheet();
     const link = screen.getByRole('link', { name: en.plan.openInGoogleMaps });

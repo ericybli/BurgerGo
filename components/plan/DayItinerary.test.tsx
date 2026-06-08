@@ -52,6 +52,7 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
         mode="walk"
         dayColor="#EE5B3C"
         disabled={false}
+        online={true}
         onAddPlace={onAddPlace}
         onAddFromSaved={onAddFromSaved}
         onReorder={onReorder}

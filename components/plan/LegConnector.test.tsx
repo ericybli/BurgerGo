@@ -16,7 +16,7 @@ function leg(over: Partial<LegDTO> = {}): LegDTO {
 
 function renderLeg(
   l: LegDTO | undefined,
-  opts: { mode?: TravelMode; disabled?: boolean; onModeChange?: (m: TravelMode) => void } = {},
+  opts: { mode?: TravelMode; disabled?: boolean; online?: boolean; onModeChange?: (m: TravelMode) => void } = {},
 ) {
   render(
     <NextIntlClientProvider locale="en" messages={en}>
@@ -24,6 +24,7 @@ function renderLeg(
         leg={l}
         mode={opts.mode ?? 'walk'}
         disabled={opts.disabled ?? false}
+        online={opts.online ?? false}
         onModeChange={opts.onModeChange ?? vi.fn()}
       />
     </NextIntlClientProvider>,
@@ -37,10 +38,18 @@ describe('LegConnector', () => {
     expect(screen.queryByText(en.plan.legNeedsConnection)).not.toBeInTheDocument();
   });
 
-  it('renders the placeholder and caption when the leg is absent', () => {
-    renderLeg(undefined);
+  it('renders the placeholder and the offline caption when the leg is absent and offline', () => {
+    renderLeg(undefined, { online: false });
     expect(screen.getByText('—')).toBeInTheDocument();
     expect(screen.getByText(en.plan.legNeedsConnection)).toBeInTheDocument();
+    expect(screen.queryByText(en.plan.legNoRoute)).not.toBeInTheDocument();
+  });
+
+  it('renders the "no route" caption when the leg is absent but online (Google had no route)', () => {
+    renderLeg(undefined, { online: true });
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.getByText(en.plan.legNoRoute)).toBeInTheDocument();
+    expect(screen.queryByText(en.plan.legNeedsConnection)).not.toBeInTheDocument();
   });
 
   it('marks the active mode and switches this leg on tap', async () => {

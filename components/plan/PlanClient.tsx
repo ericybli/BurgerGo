@@ -538,6 +538,7 @@ export function PlanClient({
             mode={dayMode}
             dayColor={color}
             disabled={actionDisabled}
+            online={online}
             onAddPlace={() => setAddOpen(true)}
             onAddFromSaved={() => setParams({ bucket: 'saved' })}
             onReorder={(ids) => mutateDay(params.date, () => reorderDayAction(tripId, params.date, ids))}

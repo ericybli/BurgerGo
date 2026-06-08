@@ -32,6 +32,8 @@ type DayItineraryProps = {
   mode: TravelMode;
   dayColor: string;
   disabled: boolean;
+  /** Online → a missing leg means Google had no route; offline → reconnect to compute. */
+  online: boolean;
   onAddPlace: () => void;
   onAddFromSaved: () => void;
   onReorder: (orderedIds: string[]) => void;
@@ -56,6 +58,7 @@ export function DayItinerary({
   mode,
   dayColor,
   disabled,
+  online,
   onAddPlace,
   onAddFromSaved,
   onReorder,
@@ -106,6 +109,7 @@ export function DayItinerary({
                     leg={legBetween(legs, prev.id, stop.id, stop.legMode ?? mode)}
                     mode={stop.legMode ?? mode}
                     disabled={disabled}
+                    online={online}
                     onModeChange={(m) => onLegModeChange(stop.id, m)}
                   />
                 ) : null}

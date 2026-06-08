@@ -22,12 +22,15 @@ export function LegConnector({
   leg,
   mode,
   disabled,
+  online,
   onModeChange,
 }: {
   leg: LegDTO | undefined;
   mode: TravelMode;
   /** Offline → mode switching disabled (mutations are online-only). */
   disabled: boolean;
+  /** Online but no cached leg → Google returned no route (vs. offline → reconnect to compute). */
+  online: boolean;
   onModeChange: (mode: TravelMode) => void;
 }) {
   const t = useTranslations('plan');
@@ -54,7 +57,7 @@ export function LegConnector({
       </div>
       <div className="flex items-center gap-2 text-caption text-ink-muted">
         <span className="[font-variant-numeric:tabular-nums]">{formatLeg(leg)}</span>
-        {leg ? null : <span className="text-ink-faint">{t('legNeedsConnection')}</span>}
+        {leg ? null : <span className="text-ink-faint">{online ? t('legNoRoute') : t('legNeedsConnection')}</span>}
       </div>
     </div>
   );
