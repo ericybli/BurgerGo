@@ -73,6 +73,9 @@ export function PlanMap({
   const [layersOpen, setLayersOpen] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(false);
+  // The per-day "Open day route" links collapse into one toggle (multi-day) so
+  // they don't eat the map's vertical space; collapsed by default.
+  const [routesOpen, setRoutesOpen] = useState(false);
 
   // Body scroll-lock + Escape while the fullscreen map overlay is open. No-op
   // until isFullscreen is true (offline/saved/tests unaffected); the toggle
@@ -344,29 +347,52 @@ export function PlanMap({
       </div>
 
       {bucket === 'days' && routeLinks.length > 0 ? (
-        <ul className="shrink-0 space-y-2 px-3 py-3">
-          {routeLinks.map((r) => (
-            <li key={r.date}>
-              <a
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  onOpenDayRoute(r.date);
-                }}
-                className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+        <div className="shrink-0 px-3 py-3">
+          {routeLinks.length === 1 ? (
+            // Single visible day → show the one link directly (collapsing it
+            // would save no space).
+            <a
+              href={routeLinks[0]!.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => { e.preventDefault(); onOpenDayRoute(routeLinks[0]!.date); }}
+              className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+            >
+              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-chip" style={{ backgroundColor: routeLinks[0]!.color }} />
+              {t('openDayRoute')}
+            </a>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => setRoutesOpen((v) => !v)}
+                aria-expanded={routesOpen}
+                className="flex w-full items-center justify-between gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
               >
-                <span
-                  aria-hidden="true"
-                  className="h-2.5 w-2.5 rounded-chip"
-                  style={{ backgroundColor: r.color }}
-                />
-                {t('openDayRoute')}
-              </a>
-            </li>
-          ))}
-        </ul>
+                <span>{t('openDayRoutes')}</span>
+                <span aria-hidden="true" className="text-ink-muted">{routesOpen ? '▾' : '▸'}</span>
+              </button>
+              {routesOpen ? (
+                <ul className="mt-2 space-y-2">
+                  {routeLinks.map((r) => (
+                    <li key={r.date}>
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => { e.preventDefault(); onOpenDayRoute(r.date); }}
+                        className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+                      >
+                        <span aria-hidden="true" className="h-2.5 w-2.5 rounded-chip" style={{ backgroundColor: r.color }} />
+                        {t('openDayRoute')}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          )}
+        </div>
       ) : null}
     </div>
   );

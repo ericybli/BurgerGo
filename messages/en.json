@@ -121,6 +121,7 @@
     "dayChip": "Day {n}",
     "legendLabel": "Day visibility",
     "openDayRoute": "Open day route in Google Maps",
+    "openDayRoutes": "Open day routes in Google Maps",
     "openInMaps": "Open in Google Maps",
     "addToDay": "Add to day →",
     "offlineHeadline": "Map needs a connection",

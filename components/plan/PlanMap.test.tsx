@@ -181,10 +181,25 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.queryByRole('button', { name: en.planMap.layers })).not.toBeInTheDocument();
   });
 
+  it('collapses the multi-day route links behind a toggle (hidden until opened)', async () => {
+    const user = userEvent.setup();
+    renderMap(); // two visible days → two routes → collapsed
+    expect(screen.queryByRole('link', { name: en.planMap.openDayRoute })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: en.planMap.openDayRoutes }));
+    expect(screen.getAllByRole('link', { name: en.planMap.openDayRoute })).toHaveLength(2);
+  });
+
+  it('shows the single route link directly when only one day is visible (no toggle)', () => {
+    renderMap({ visibleDates: new Set(['2026-06-04']) });
+    expect(screen.queryByRole('button', { name: en.planMap.openDayRoutes })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: en.planMap.openDayRoute })).toBeInTheDocument();
+  });
+
   it('clicking a day-route link calls onOpenDayRoute once and does NOT call window.open', async () => {
     const user = userEvent.setup();
     const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
     renderMap();
+    await user.click(screen.getByRole('button', { name: en.planMap.openDayRoutes }));
     const links = screen.getAllByRole('link', { name: en.planMap.openDayRoute });
     expect(links.length).toBeGreaterThanOrEqual(1);
     await user.click(links[0]!);
