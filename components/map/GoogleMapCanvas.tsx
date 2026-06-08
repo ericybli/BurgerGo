@@ -144,13 +144,19 @@ export function GoogleMapCanvas({
   }, [mapReady, markers, paths]);
 
   // Effect 2b: center + fit the viewport to the base markers only, and only when
-  // that set changes — so toggling overlay layers keeps the user's current view.
+  // their POSITIONS change — so unrelated re-renders (opening a place's read
+  // card, a data re-fetch that moved no pin, layer toggles) keep the user's view
+  // instead of snapping it back to the fit.
+  const lastFitKeyRef = useRef('');
   useEffect(() => {
     const maps = mapsRef.current;
     const map = mapRef.current;
     if (!maps || !map) return;
+    const key = fitSet.map((m) => `${m.position.lat},${m.position.lng}`).join('|');
+    if (key === lastFitKeyRef.current) return; // positions unchanged → keep the view
     const bounds = computeBounds(fitSet.map((m) => m.position));
     if (!bounds) return;
+    lastFitKeyRef.current = key;
     map.setCenter({
       lat: (bounds.south + bounds.north) / 2,
       lng: (bounds.west + bounds.east) / 2,

@@ -253,11 +253,19 @@ export function MapboxCanvas({
   }, [styleReady, markers, paths]);
 
   // Effect 2b: fit the viewport to the base markers ONLY (not overlay layers),
-  // and only when that set changes (initial load, day filter) — so toggling the
-  // saved/restaurant layers keeps the user's current view.
+  // and only when their POSITIONS actually change (initial load, day filter).
+  // We key off the positions (not the array reference) because unrelated
+  // re-renders — opening a place's read card, a style toggle, a data re-fetch
+  // that didn't move any pin — rebuild the marker array with the SAME positions;
+  // re-fitting then would yank the user's view back. Layer toggles already pass
+  // the same `fitMarkers`, so the view also stays put there.
+  const lastFitKeyRef = useRef('');
   useEffect(() => {
     const map = mapRef.current;
     if (!map || styleReady === 0) return;
+    const key = fitSet.map((m) => `${m.position.lat},${m.position.lng}`).join('|');
+    if (key === lastFitKeyRef.current) return; // positions unchanged → keep the view
+    lastFitKeyRef.current = key;
     const bounds = computeBounds(fitSet.map((m) => m.position));
     if (bounds) {
       map.fitBounds(

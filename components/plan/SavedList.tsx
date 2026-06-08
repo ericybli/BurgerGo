@@ -192,18 +192,7 @@ export function SavedList({
         {tL('newListOption')}
       </button>
 
-      {/* Loose (ungrouped) places, on top. */}
-      {loose.length > 0 ? (
-        <ul className="flex flex-col gap-3">
-          {loose.map((p) => (
-            <li key={p.id}>
-              <SavedPlaceCard {...cardProps(p)} />
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
-      {/* Lists, each a collapsible section. */}
+      {/* Lists first, each a collapsible section. */}
       {lists.map((list) => {
         const items = placesInList(list.id);
         const isOpen = expanded.has(list.id);
@@ -278,6 +267,17 @@ export function SavedList({
           </section>
         );
       })}
+
+      {/* Loose (ungrouped) places, after the lists. */}
+      {loose.length > 0 ? (
+        <ul className="mt-4 flex flex-col gap-3">
+          {loose.map((p) => (
+            <li key={p.id}>
+              <SavedPlaceCard {...cardProps(p)} />
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <button
         type="button"

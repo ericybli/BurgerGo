@@ -93,6 +93,25 @@ describe('MapboxCanvas', () => {
     expect(fakeMap.fitBounds).toHaveBeenCalledTimes(1);
   });
 
+  it('re-fits only when marker positions change — NOT on same-position re-renders (e.g. opening a card)', async () => {
+    const wrap = (ms: PlaceMarker[]) => (
+      <NextIntlClientProvider locale="en" messages={en}>
+        <MapboxCanvas markers={ms} paths={paths} onMarkerClick={vi.fn()} />
+      </NextIntlClientProvider>
+    );
+    const { rerender } = render(wrap(markers));
+    await fireMapLoad();
+    await waitFor(() => expect(fakeMap.fitBounds).toHaveBeenCalledTimes(1));
+
+    // A parent re-render hands down a fresh array with the SAME positions → no re-fit.
+    rerender(wrap(markers.map((m) => ({ ...m }))));
+    expect(fakeMap.fitBounds).toHaveBeenCalledTimes(1);
+
+    // A genuinely moved/changed pin set → re-fit.
+    rerender(wrap([{ ...markers[0]!, position: { lat: 9, lng: 9 } }, markers[1]!]));
+    expect(fakeMap.fitBounds).toHaveBeenCalledTimes(2);
+  });
+
   it('invokes onMarkerClick when a marker element is clicked', async () => {
     const onClick = vi.fn();
     renderCanvas(onClick);
