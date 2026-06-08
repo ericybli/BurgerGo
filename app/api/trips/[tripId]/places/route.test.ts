@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks, dayModes } from '@/src/db/schema';
+import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks, dayModes, savedLists } from '@/src/db/schema';
 
 const SEEDED_PLACE_ID = 'b';
 
@@ -120,7 +120,25 @@ describe('GET /api/trips/[tripId]/places', () => {
       ctx('trip-empty'),
     );
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ places: [], legs: [], dayModes: {} });
+    await expect(res.json()).resolves.toEqual({ places: [], legs: [], dayModes: {}, lists: [] });
+  });
+
+  it('returns the trip\'s saved lists (id+name) and each place\'s listId', async () => {
+    testHandle.db = makeTestDb().db;
+    testHandle.db.insert(trips).values({
+      id: 't1', name: 'T', startDate: '2026-06-05', endDate: '2026-06-07', coverPhoto: null, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(savedLists).values({
+      id: 'L1', tripId: 't1', name: 'Beaches', orderIndex: 0, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(places).values({
+      id: 'p1', tripId: 't1', dayDate: null, googlePlaceId: null, name: 'Beach', address: null, lat: null, lng: null,
+      category: 'sightseeing', scheduledTime: null, durationMin: null, cost: null, notes: null, listId: 'L1',
+      orderIndex: 0, createdAt: TS, updatedAt: TS,
+    }).run();
+    const body = await (await GET(new Request('http://x/'), { params: Promise.resolve({ tripId: 't1' }) })).json();
+    expect(body.lists).toEqual([{ id: 'L1', name: 'Beaches' }]);
+    expect(body.places.find((p: { id: string }) => p.id === 'p1')?.listId).toBe('L1');
   });
 
   it('returns stored per-day default modes as a { dayDate: mode } map', async () => {

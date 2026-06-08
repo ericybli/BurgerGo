@@ -78,6 +78,7 @@ export interface AddPlaceInput {
   durationMin?: number | null;
   cost?: number | null;
   notes?: string | null;
+  listId?: string | null;
 }
 
 /**
@@ -103,6 +104,7 @@ export function addPlace(db: Db, input: AddPlaceInput): Place {
     notes: input.notes ?? null,
     aiSummary: null,
     legMode: null,
+    listId: input.listId ?? null,
     orderIndex: maxOrderIndex(db, input.tripId, dayDate) + 1,
     createdAt: ts,
     updatedAt: ts,
@@ -127,6 +129,7 @@ export type PlacePatch = Partial<
     | 'notes'
     | 'aiSummary'
     | 'legMode'
+    | 'listId'
   >
 >;
 

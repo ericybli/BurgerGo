@@ -47,6 +47,9 @@ export const places = sqliteTable(
     // day). NULL = follow the day's default mode. The first stop of a day has no
     // incoming leg, so its value is unused.
     legMode: text('leg_mode', { enum: ['walk', 'drive', 'transit'] }),
+    // Saved-bucket grouping: the saved_list this place belongs to, or NULL =
+    // "loose" (shown ungrouped). Only meaningful for saved places (dayDate NULL).
+    listId: text('list_id').references(() => savedLists.id, { onDelete: 'set null' }),
     orderIndex: integer('order_index').notNull(), // 0-based; pin label = orderIndex + 1
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -328,6 +331,28 @@ export const dayModes = sqliteTable(
   }),
 );
 
+/**
+ * A named, per-trip grouping ("list") for Saved-bucket places. A place points
+ * here via `places.list_id`; deleting a list sets those places' list_id to NULL
+ * (they become "loose" again — never deleted).
+ */
+export const savedLists = sqliteTable(
+  'saved_lists',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    orderIndex: integer('order_index').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTrip: index('idx_saved_lists_trip').on(t.tripId, t.orderIndex),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -433,3 +458,5 @@ export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type DayMode = typeof dayModes.$inferSelect;
 export type NewDayMode = typeof dayModes.$inferInsert;
+export type SavedListRow = typeof savedLists.$inferSelect;
+export type NewSavedListRow = typeof savedLists.$inferInsert;

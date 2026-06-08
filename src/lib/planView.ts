@@ -43,6 +43,8 @@ export interface PlaceDTO {
   notes: string | null;
   /** Mode of the leg arriving at this place (from the previous stop); null → follow the day default. */
   legMode: TravelMode | null;
+  /** Saved-bucket grouping: the saved list this place is in, or null = "loose". */
+  listId: string | null;
   orderIndex: number; // 0-based; pin label = orderIndex + 1
   photoPath: string | null; // place_details_cache.photoLocalPath, else null
   /** Personal photos for this place, ordered (Plan 2). First wins for the card thumb. */
@@ -51,6 +53,12 @@ export interface PlaceDTO {
   aiSummary: string | null;
   /** Travel-guide links attached to this place (newest first). */
   links: { id: string; url: string; title: string | null; thumbnail: string | null }[];
+}
+
+/** A saved-place grouping list (slim, client-facing). */
+export interface SavedListItem {
+  id: string;
+  name: string;
 }
 
 /** One cached travel leg as returned by the B1 read handler. */

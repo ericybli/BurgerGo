@@ -23,10 +23,12 @@ import {
   recomputeDayLegsAction,
   setLegModeAction,
   setDayModeAction,
+  setPlaceListAction,
   generatePlaceSummaryAction,
 } from '@/app/_actions/places';
 import { getPlace, listByDay } from '@/src/db/repos/places';
 import { listDayModes } from '@/src/db/repos/dayModes';
+import { addList } from '@/src/db/repos/savedLists';
 import { upsertLeg, getCachedLeg } from '@/src/db/repos/legs';
 import type { TravelLeg } from '@/src/db/schema';
 
@@ -348,6 +350,25 @@ describe('setDayModeAction', () => {
 
   it('rejects an unknown trip', async () => {
     await expect(setDayModeAction('nope', '2026-06-05', 'drive')).rejects.toThrow('Trip not found');
+  });
+});
+
+describe('setPlaceListAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    seed(testHandle.db);
+    seedTwoPlaces(testHandle.db);
+    revalidatePath.mockClear();
+  });
+
+  it('moves a place into a list and back out (null = loose)', async () => {
+    const list = addList(testHandle.db, 'trip-1', 'Beaches');
+    const moved = await setPlaceListAction('a', list.id);
+    expect(moved.listId).toBe(list.id);
+    expect(revalidatePath).toHaveBeenCalledWith('/trip/trip-1/plan');
+
+    const loose = await setPlaceListAction('a', null);
+    expect(loose.listId).toBeNull();
   });
 });
 

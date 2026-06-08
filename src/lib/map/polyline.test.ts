@@ -8,7 +8,7 @@ function p(id: string, orderIndex: number, lat: number, lng: number) {
            tripId: 't', dayDate: '2026-06-04', googlePlaceId: null,
            address: null, scheduledTime: null, durationMin: null, cost: null,
            notes: null, photoPath: null, photos: [], aiSummary: null, links: [],
-           legMode: null as 'walk' | 'drive' | 'transit' | null };
+           legMode: null as 'walk' | 'drive' | 'transit' | null, listId: null };
 }
 
 function group(date: string, places: ReturnType<typeof p>[], colorIndex = 0): DayGroup {

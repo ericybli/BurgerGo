@@ -44,6 +44,12 @@ vi.mock('@/app/_actions/places', () => ({
   moveToSavedAction,
   recomputeDayLegsAction,
   setDayModeAction,
+  setPlaceListAction: vi.fn(async () => ({ id: 'p1' })),
+}));
+vi.mock('@/app/_actions/savedLists', () => ({
+  addSavedListAction: vi.fn(async () => ({ id: 'L-new', name: 'New' })),
+  renameSavedListAction: vi.fn(async () => undefined),
+  deleteSavedListAction: vi.fn(async () => undefined),
 }));
 
 // Stub the Google-dependent sheet + the B3 map so PlanClient is testable
@@ -64,9 +70,9 @@ const trip = {
   coverPhoto: null,
 };
 const places: PlaceDTO[] = [
-  { id: 'a', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-a', name: 'Stop A', address: 'X', lat: 1, lng: 2, category: 'sightseeing', scheduledTime: '09:00', durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
-  { id: 'b', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-b', name: 'Stop B', address: 'Y', lat: 3, lng: 4, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 1, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
-  { id: 's', tripId: 't1', dayDate: null, googlePlaceId: null, name: 'Saved One', address: 'Z', lat: 5, lng: 6, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null },
+  { id: 'a', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-a', name: 'Stop A', address: 'X', lat: 1, lng: 2, category: 'sightseeing', scheduledTime: '09:00', durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, listId: null },
+  { id: 'b', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: 'g-b', name: 'Stop B', address: 'Y', lat: 3, lng: 4, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 1, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, listId: null },
+  { id: 's', tripId: 't1', dayDate: null, googlePlaceId: null, name: 'Saved One', address: 'Z', lat: 5, lng: 6, category: 'other', scheduledTime: null, durationMin: null, cost: null, notes: null, orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, listId: null },
 ];
 const legs: LegDTO[] = [
   { fromPlaceId: 'a', toPlaceId: 'b', mode: 'walk', durationSeconds: 720, distanceMeters: 900, polyline: null },
@@ -80,7 +86,7 @@ const legs: LegDTO[] = [
 function mockFetch() {
   const f = vi.fn(async (url: string) => {
     if (url.includes('/places')) {
-      return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs, dayModes: {} })) };
+      return { ok: true, json: async () => JSON.parse(JSON.stringify({ places, legs, dayModes: {}, lists: [] })) };
     }
     if (url.endsWith('/restaurants')) {
       return { ok: true, json: async () => ({ restaurants: [] }) };

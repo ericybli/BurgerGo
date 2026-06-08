@@ -26,7 +26,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     id: 'p1', tripId: 't1', dayDate: '2026-05-03', googlePlaceId: null,
     name: 'A', address: null, lat: 0, lng: 0, category: 'sightseeing',
     scheduledTime: null, durationMin: null, cost: null, notes: null,
-    orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, ...over,
+    orderIndex: 0, photoPath: null, photos: [], aiSummary: null, links: [], legMode: null, listId: null, ...over,
   };
 }
 

@@ -11,7 +11,7 @@ function place(over: Partial<PlaceDTO> = {}): PlaceDTO {
     id: 'p1', tripId: 't1', dayDate: '2026-06-04', googlePlaceId: null,
     name: 'Senso-ji', address: 'Asakusa', lat: 35, lng: 139, category: 'sightseeing',
     scheduledTime: null, durationMin: null, cost: null, notes: 'My note',
-    orderIndex: 0, photoPath: null, photos: [], aiSummary: 'A historic temple.', legMode: null,
+    orderIndex: 0, photoPath: null, photos: [], aiSummary: 'A historic temple.', legMode: null, listId: null,
     links: [{ id: 'l1', url: 'https://guide.example', title: 'Guide', thumbnail: null }],
     ...over,
   };

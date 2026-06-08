@@ -312,3 +312,20 @@ export async function setDayModeAction(
   revalidatePath(`/trip/${parsedTrip}/plan`);
   return row;
 }
+
+// --- setPlaceListAction ---------------------------------------------------
+
+/**
+ * Move a saved place into a list (`listId`) or out of any list (`null` →
+ * "loose"). Only meaningful for Saved-bucket places. Online-only.
+ */
+export async function setPlaceListAction(placeId: string, listId: string | null): Promise<Place> {
+  const id = z.string().min(1).parse(placeId);
+  const parsedListId = listId === null ? null : z.string().min(1).parse(listId);
+  const existing = getPlace(db, id);
+  if (!existing) throw new Error('Place not found');
+  const updated = updatePlace(db, id, { listId: parsedListId });
+  if (!updated) throw new Error('Place not found');
+  revalidatePath(`/trip/${existing.tripId}/plan`);
+  return updated;
+}

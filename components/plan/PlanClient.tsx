@@ -21,6 +21,7 @@ import {
   dayColor,
   type PlaceDTO,
   type LegDTO,
+  type SavedListItem,
 } from '@/src/lib/planView';
 import { indexLegs } from '@/src/lib/legView';
 import type { RestaurantMarkerInput } from '@/src/lib/map/markers';
@@ -33,7 +34,13 @@ import {
   recomputeDayLegsAction,
   setLegModeAction,
   setDayModeAction,
+  setPlaceListAction,
 } from '@/app/_actions/places';
+import {
+  addSavedListAction,
+  renameSavedListAction,
+  deleteSavedListAction,
+} from '@/app/_actions/savedLists';
 import { EmptyState } from '@/components/EmptyState';
 import { DayStrip } from '@/components/plan/DayStrip';
 import { DayItinerary } from '@/components/plan/DayItinerary';
@@ -54,6 +61,8 @@ type PlanData = {
   restaurants: RestaurantMarkerInput[];
   /** Sparse per-day default travel mode (dayDate → mode); missing → DEFAULT_DAY_MODE. */
   dayModes: Record<string, TravelMode>;
+  /** Saved-place grouping lists (id + name), in display order. */
+  lists: SavedListItem[];
 };
 type LoadState = { status: 'loading' } | { status: 'error' } | { status: 'loaded'; data: PlanData };
 
@@ -163,10 +172,11 @@ export function PlanClient({
       ]);
       if (!placesRes.ok) throw new Error('load failed');
       const trip: TripLite = tripData.trip;
-      const { places, legs, dayModes } = (await placesRes.json()) as {
+      const { places, legs, dayModes, lists } = (await placesRes.json()) as {
         places: PlaceDTO[];
         legs: LegDTO[];
         dayModes: Record<string, TravelMode>;
+        lists: SavedListItem[];
       };
       let restaurants: RestaurantMarkerInput[] = [];
       if (restaurantsRes && restaurantsRes.ok) {
@@ -198,7 +208,7 @@ export function PlanClient({
         }));
       }
       // FIX C1: only setState if still mounted
-      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants, dayModes } });
+      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants, dayModes, lists } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
       return;
@@ -273,7 +283,7 @@ export function PlanClient({
     );
   }
 
-  const { trip, places, legs, restaurants, dayModes } = state.data;
+  const { trip, places, legs, restaurants, dayModes, lists } = state.data;
   const days: DerivedDay[] = deriveDays(trip, tz);
   const landing = landingDate(trip, tz);
   const range = { startDate: trip.startDate, endDate: trip.endDate };
@@ -382,6 +392,38 @@ export function PlanClient({
         : s,
     );
     if (online) mutateDay(params.date, () => setDayModeAction(tripId, params.date, m), m);
+  }
+
+  // --- Saved-bucket list management (online-only; no leg recompute needed) ---
+  function runSavedMutation(fn: () => Promise<unknown>) {
+    setMutationError(null);
+    startTransition(async () => {
+      try {
+        await fn();
+      } catch {
+        if (mountedRef.current) setMutationError(t('mutationFailed'));
+      } finally {
+        await load();
+      }
+    });
+  }
+  function moveToList(placeId: string, listId: string | null) {
+    runSavedMutation(() => setPlaceListAction(placeId, listId));
+  }
+  function deleteSavedPlace(placeId: string) {
+    runSavedMutation(() => deletePlaceAction(placeId));
+  }
+  function renameList(listId: string, name: string) {
+    runSavedMutation(() => renameSavedListAction(tripId, listId, name));
+  }
+  function deleteList(listId: string) {
+    runSavedMutation(() => deleteSavedListAction(tripId, listId));
+  }
+  /** Create a list and re-fetch; returns it so the caller can move a place in. */
+  async function createList(name: string): Promise<SavedListItem> {
+    const row = await addSavedListAction(tripId, name);
+    await load();
+    return { id: row.id, name: row.name };
   }
 
   // PlanMap seam (locked): build dayGroups + handlers; pass legs + mode + online.
@@ -513,11 +555,17 @@ export function PlanClient({
       ) : (
         <SavedList
           saved={saved}
+          lists={lists}
           days={days}
           disabled={actionDisabled}
           onPromote={(id, date) => mutateDay(date, () => promoteToDayAction(id, date))}
           onTapPlace={(id) => setDetailFor(placeById(id))}
           onAddPlace={() => setAddOpen(true)}
+          onMoveToList={moveToList}
+          onDelete={deleteSavedPlace}
+          onCreateList={createList}
+          onRenameList={renameList}
+          onDeleteList={deleteList}
         />
       )}
 

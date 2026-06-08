@@ -441,5 +441,23 @@
     "doneTitle": "Imported!",
     "doneSummary": "Added {restaurants} to Eats and {places} to Saved.",
     "close": "Close"
+  },
+  "savedLists": {
+    "newList": "New list",
+    "newListOption": "+ New list…",
+    "namePlaceholder": "List name",
+    "create": "Create",
+    "createTitle": "New list",
+    "renameTitle": "Rename list",
+    "save": "Save",
+    "cancel": "Cancel",
+    "moveToList": "Move to list",
+    "moveToListTitle": "Move to which list?",
+    "removeFromList": "Remove from list",
+    "listActions": "List options",
+    "rename": "Rename",
+    "deleteList": "Delete list",
+    "deleteListConfirm": "Delete list? Places stay",
+    "emptyListHint": "No places in this list yet."
   }
 }

@@ -6,6 +6,7 @@ import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
 import { listDayModes } from '@/src/db/repos/dayModes';
+import { listByTrip as listSavedLists } from '@/src/db/repos/savedLists';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
 import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
@@ -130,7 +131,10 @@ export async function GET(
     listDayModes(db, tripId).map((d) => [d.dayDate, d.mode]),
   );
 
-  return NextResponse.json({ places: placesResult, legs, dayModes });
+  // Saved-place grouping lists for this trip (slim: id + name), in display order.
+  const lists = listSavedLists(db, tripId).map((l) => ({ id: l.id, name: l.name }));
+
+  return NextResponse.json({ places: placesResult, legs, dayModes, lists });
 }
 
 const CATEGORY = z.enum([
