@@ -59,6 +59,40 @@ describe('dayRouteUrl', () => {
     expect(u.searchParams.get('destination')).toBe('35.7148,139.7967');
     expect(u.searchParams.get('waypoints')).toBe('35.6595,139.7005|35.6764,139.6993');
     expect(u.searchParams.get('travelmode')).toBe('transit');
+    // No place ids → no *_place_id params.
+    expect(u.searchParams.has('origin_place_id')).toBe(false);
+    expect(u.searchParams.has('waypoint_place_ids')).toBe(false);
+  });
+
+  it('passes real Google places (names + place ids) when stops carry them', () => {
+    const stops = [
+      { lat: 1, lng: 2, name: 'KOA Airport', googlePlaceId: 'pid-a' },
+      { lat: 3, lng: 4, name: 'Kua Bay', googlePlaceId: 'pid-b' },
+      { lat: 5, lng: 6, name: 'Kona Airbnb', googlePlaceId: 'pid-c' },
+    ];
+    const u = new URL(dayRouteUrl(stops, 'drive'));
+    expect(u.searchParams.get('origin')).toBe('KOA Airport');
+    expect(u.searchParams.get('origin_place_id')).toBe('pid-a');
+    expect(u.searchParams.get('destination')).toBe('Kona Airbnb');
+    expect(u.searchParams.get('destination_place_id')).toBe('pid-c');
+    expect(u.searchParams.get('waypoints')).toBe('Kua Bay');
+    expect(u.searchParams.get('waypoint_place_ids')).toBe('pid-b');
+  });
+
+  it('falls back to coordinates for intermediates when not ALL of them have place ids', () => {
+    const stops = [
+      { lat: 1, lng: 2, name: 'KOA Airport', googlePlaceId: 'pid-a' },
+      { lat: 3, lng: 4, name: 'Dropped pin', googlePlaceId: null },
+      { lat: 5, lng: 6, name: 'Kua Bay', googlePlaceId: 'pid-b' },
+      { lat: 7, lng: 8, name: 'Kona Airbnb', googlePlaceId: 'pid-c' },
+    ];
+    const u = new URL(dayRouteUrl(stops, 'drive'));
+    // waypoint_place_ids must correspond 1:1 — mixed ids → coords + no id list.
+    expect(u.searchParams.get('waypoints')).toBe('3,4|5,6');
+    expect(u.searchParams.has('waypoint_place_ids')).toBe(false);
+    // Origin/destination ids are independent and still sent.
+    expect(u.searchParams.get('origin_place_id')).toBe('pid-a');
+    expect(u.searchParams.get('destination_place_id')).toBe('pid-c');
   });
 
   it('maps walk → walking and drive → driving', () => {

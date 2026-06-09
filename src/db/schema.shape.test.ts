@@ -15,7 +15,7 @@ function columnNames(table: Parameters<typeof getTableConfig>[0]): string[] {
 }
 
 describe('Plan 2 schema shapes', () => {
-  it('restaurants has the spec §5.2 columns', () => {
+  it('restaurants has the spec §5.2 columns (+ persisted Google place data)', () => {
     expect(columnNames(restaurants)).toEqual(
       [
         'id',
@@ -31,6 +31,11 @@ describe('Plan 2 schema shapes', () => {
         'lng',
         'google_place_id',
         'linked_place_id',
+        // Migration 0015: persisted Google rating/hours (server-managed).
+        'google_rating',
+        'google_rating_count',
+        'google_hours',
+        'google_data_updated_at',
         'created_at',
         'updated_at',
       ].sort(),

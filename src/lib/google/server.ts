@@ -138,7 +138,14 @@ export interface NormalizedPoiDetails {
   /** Photo references (up to 6) — served via the /api/google/poi-photo proxy. */
   photoRefs: string[];
   reviews: PoiReview[];
+  /** True when Google types mark this POI as a dining spot (restaurant/cafe/bar…). */
+  isFood: boolean;
 }
+
+/** Google types that mark a POI as dining — drives the "Save restaurant" action. */
+const FOOD_TYPES = new Set([
+  'restaurant', 'food', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery',
+]);
 
 // --- Pure normalizers (unit-tested directly) ----------------------------------
 
@@ -193,6 +200,7 @@ export function normalizePoiDetails(raw: unknown): NormalizedPoiDetails {
         time: rv.relative_time_description ?? null,
         text: (rv.text ?? '').trim(),
       })),
+    isFood: (res.types ?? []).some((t) => FOOD_TYPES.has(t)),
   };
 }
 

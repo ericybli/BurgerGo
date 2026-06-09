@@ -2,6 +2,8 @@
 
 import { useState, useTransition, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { Star } from 'lucide-react';
+import { fetchPoiDetails } from '@/components/plan/googleClient';
 import type { RestaurantDTO } from '@/app/api/trips/[tripId]/restaurants/route';
 import type { DerivedDay } from '@/src/lib/days';
 import { priceLevelLabel, ratingStars } from '@/src/lib/eatsView';
@@ -37,6 +39,7 @@ export function RestaurantDetailSheet({
 }: RestaurantDetailSheetProps) {
   const t = useTranslations('eats');
   const tPlan = useTranslations('plan');
+  const tMapNs = useTranslations('planMap');
   const [isPending, startTransition] = useTransition();
   const [actionError, setActionError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -46,6 +49,21 @@ export function RestaurantDetailSheet({
 
   // Clear a stale photo error whenever the sheet opens for a different restaurant.
   useEffect(() => { setPhotoError(null); }, [restaurant.id]);
+
+  // Live Google open-now + freshest hours (online only). Stored googleHours /
+  // googleRating remain the offline fallback.
+  const [live, setLive] = useState<{ openNow: boolean | null; hours: string[] } | null>(null);
+  const [hoursOpen, setHoursOpen] = useState(false);
+  useEffect(() => {
+    setLive(null);
+    setHoursOpen(false);
+    if (!open || disabled || !restaurant.googlePlaceId) return;
+    let cancelled = false;
+    void fetchPoiDetails(restaurant.googlePlaceId).then((d) => {
+      if (!cancelled && d) setLive({ openNow: d.openNow, hours: d.hours });
+    });
+    return () => { cancelled = true; };
+  }, [open, disabled, restaurant.id, restaurant.googlePlaceId]);
 
   if (!open) return null;
 
@@ -141,6 +159,65 @@ export function RestaurantDetailSheet({
         <p className="mt-1 text-micro uppercase text-accent">
           {restaurant.scheduledDayDate ? t('scheduledOn', { date: restaurant.scheduledDayDate }) : t('notScheduled')}
         </p>
+
+        {(() => {
+          // Google place data: persisted rating/hours + live open-now.
+          const storedHours: string[] = (() => {
+            try {
+              const parsed = restaurant.googleHours ? (JSON.parse(restaurant.googleHours) as unknown) : null;
+              return Array.isArray(parsed) ? (parsed as string[]) : [];
+            } catch {
+              return [];
+            }
+          })();
+          const hours = live?.hours.length ? live.hours : storedHours;
+          const openNow = live?.openNow ?? null;
+          if (restaurant.googleRating == null && hours.length === 0 && openNow == null) return null;
+          return (
+            <div className="mt-2 rounded-control border border-line px-3 py-2">
+              {restaurant.googleRating != null ? (
+                <p className="flex items-center gap-1 text-caption text-sub">
+                  <Star size={12} strokeWidth={0} className="fill-day-2" aria-hidden="true" />
+                  <span className="font-semibold tabular-nums text-ink">{restaurant.googleRating.toFixed(1)}</span>
+                  {restaurant.googleRatingCount != null ? (
+                    <span className="tabular-nums">· {tMapNs('poiReviewCount', { count: restaurant.googleRatingCount })}</span>
+                  ) : null}
+                  <span className="text-faint">· Google</span>
+                </p>
+              ) : null}
+              {openNow != null || hours.length > 0 ? (
+                <div className={restaurant.googleRating != null ? 'mt-1.5' : ''}>
+                  <button
+                    type="button"
+                    onClick={() => setHoursOpen((v) => !v)}
+                    aria-expanded={hoursOpen}
+                    disabled={hours.length === 0}
+                    className="flex items-center gap-1.5 text-caption font-semibold"
+                  >
+                    {openNow != null ? (
+                      <span className={openNow ? 'text-success' : 'text-danger'}>
+                        {openNow ? tMapNs('poiOpenNow') : tMapNs('poiClosed')}
+                      </span>
+                    ) : (
+                      <span className="text-ink">{tMapNs('poiHours')}</span>
+                    )}
+                    {hours.length > 0 ? (
+                      <span aria-hidden="true" className="text-faint">{hoursOpen ? '▴' : '▾'}</span>
+                    ) : null}
+                  </button>
+                  {hoursOpen && hours.length > 0 ? (
+                    <ul className="mt-1.5 space-y-0.5">
+                      {hours.map((line) => (
+                        <li key={line} className="text-caption tabular-nums text-sub">{line}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          );
+        })()}
+
         {restaurant.notes ? <p className="mt-2 text-body text-ink">{restaurant.notes}</p> : null}
 
         {thumb.kind === 'photo' ? (

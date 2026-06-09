@@ -188,14 +188,19 @@ export function PlanMap({
       bucket === 'days'
         ? visibleDayGroups
             .map((g) => {
-              const pts: LatLngLiteral[] = g.places
+              const pts = g.places
                 .slice()
                 .sort((a, b) => a.orderIndex - b.orderIndex)
                 .filter(
                   (p): p is typeof p & { lat: number; lng: number } =>
                     typeof p.lat === 'number' && typeof p.lng === 'number',
                 )
-                .map((p) => ({ lat: p.lat, lng: p.lng }));
+                .map((p) => ({
+                  lat: p.lat,
+                  lng: p.lng,
+                  name: p.name,
+                  googlePlaceId: p.googlePlaceId,
+                }));
               if (pts.length === 0 || !g.date) return null;
               return {
                 date: g.date,

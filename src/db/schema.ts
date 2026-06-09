@@ -130,6 +130,14 @@ export const restaurants = sqliteTable(
     linkedPlaceId: text('linked_place_id').references(() => places.id, {
       onDelete: 'set null',
     }),
+    // Google place data, persisted on save/backfill when googlePlaceId is set
+    // (server-managed; offline-usable): star rating, review count, and the
+    // localized weekday hour lines (JSON string[]). Open-now is NOT stored —
+    // it's volatile and fetched live when the detail sheet opens online.
+    googleRating: real('google_rating'),
+    googleRatingCount: integer('google_rating_count'),
+    googleHours: text('google_hours'),
+    googleDataUpdatedAt: integer('google_data_updated_at', { mode: 'timestamp' }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
   },

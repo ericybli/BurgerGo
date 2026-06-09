@@ -3,6 +3,8 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
+import { env } from '@/src/env';
+import { now } from '@/src/lib/clock';
 import {
   addRestaurant,
   updateRestaurant,
@@ -12,6 +14,9 @@ import {
   unscheduleRestaurant,
   type Restaurant,
 } from '@/src/db/repos/restaurants';
+import { getCachedDetails, upsertDetails } from '@/src/db/repos/placeCache';
+import { fetchPoiDetailsRich } from '@/src/lib/google/server';
+import { fetchAndStoreGooglePhoto } from '@/src/lib/google/photo';
 import type { Place } from '@/src/db/repos/places';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
@@ -21,6 +26,60 @@ const priceLevel = z.number().int().min(1).max(4);
 
 function revalidateEats(tripId: string): void {
   revalidatePath(`/trip/${tripId}/eats`);
+}
+
+/**
+ * Fetch + persist a restaurant's Google place data (star rating, review count,
+ * weekday hour lines) and make sure its Google photo is cached for the Eats /
+ * map thumbnails. Quiet best-effort: any failure (offline, no key, Google
+ * error) returns null and leaves the restaurant untouched. Open-now is NOT
+ * persisted — it's volatile; the detail sheet fetches it live when online.
+ */
+export async function refreshRestaurantGoogleAction(
+  restaurantId: string,
+): Promise<Restaurant | null> {
+  const r = getRestaurant(db, restaurantId);
+  if (!r?.googlePlaceId || !env.GOOGLE_MAPS_SERVER_KEY) return null;
+  try {
+    const d = await fetchPoiDetailsRich({
+      placeId: r.googlePlaceId,
+      apiKey: env.GOOGLE_MAPS_SERVER_KEY,
+    });
+
+    // Cache the Google photo once (drives /api/photos/r/[id] thumbnails).
+    const cached = getCachedDetails(db, r.googlePlaceId);
+    if (!cached?.photoLocalPath && d.photoRefs[0]) {
+      const photoLocalPath = await fetchAndStoreGooglePhoto({
+        photoRef: d.photoRefs[0],
+        googlePlaceId: r.googlePlaceId,
+        apiKey: env.GOOGLE_MAPS_SERVER_KEY,
+        uploadsDir: env.UPLOADS_DIR,
+      });
+      upsertDetails(db, {
+        googlePlaceId: r.googlePlaceId,
+        name: cached?.name ?? d.name,
+        address: cached?.address ?? d.address,
+        lat: cached?.lat ?? d.lat,
+        lng: cached?.lng ?? d.lng,
+        categoryGuess: cached?.categoryGuess ?? d.categoryGuess,
+        photoRef: d.photoRefs[0],
+        photoLocalPath,
+        rawJson: cached?.rawJson ?? null,
+        fetchedAt: new Date(now()),
+      });
+    }
+
+    const updated = updateRestaurant(db, restaurantId, {
+      googleRating: d.rating,
+      googleRatingCount: d.ratingCount,
+      googleHours: d.hours.length > 0 ? JSON.stringify(d.hours) : null,
+      googleDataUpdatedAt: new Date(now()),
+    });
+    if (updated) revalidateEats(updated.tripId);
+    return updated ?? null;
+  } catch {
+    return null;
+  }
 }
 
 // --- addRestaurantAction --------------------------------------------------
@@ -64,6 +123,11 @@ export async function addRestaurantAction(input: AddRestaurantActionInput): Prom
     linkedPlaceId: data.linkedPlaceId ?? null,
   });
   revalidateEats(data.tripId);
+  // Pull Google rating/hours/photo for the new restaurant (best-effort).
+  if (r.googlePlaceId) {
+    const refreshed = await refreshRestaurantGoogleAction(r.id);
+    if (refreshed) return refreshed;
+  }
   return r;
 }
 
@@ -94,6 +158,15 @@ export async function updateRestaurantAction(
   const updated = updateRestaurant(db, id, data);
   if (!updated) throw new Error('Restaurant not found');
   revalidateEats(existing.tripId);
+  // Refresh Google data when the place id was just set/changed, or has never
+  // been fetched for this restaurant (best-effort).
+  if (
+    updated.googlePlaceId &&
+    (updated.googlePlaceId !== existing.googlePlaceId || !updated.googleDataUpdatedAt)
+  ) {
+    const refreshed = await refreshRestaurantGoogleAction(id);
+    if (refreshed) return refreshed;
+  }
   return updated;
 }
 

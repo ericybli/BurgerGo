@@ -46,6 +46,7 @@ import {
   renameSavedListAction,
   deleteSavedListAction,
 } from '@/app/_actions/savedLists';
+import { addRestaurantAction } from '@/app/_actions/restaurants';
 import { EmptyState } from '@/components/EmptyState';
 import { DayStrip } from '@/components/plan/DayStrip';
 import { DayItinerary } from '@/components/plan/DayItinerary';
@@ -156,8 +157,9 @@ export function PlanClient({
   // Tapped Google basemap landmark (POI toggle on): loading → details card →
   // optional "Add to places" (saves into the Saved bucket).
   const [poiPreview, setPoiPreview] = useState<PoiPreview | null>(null);
-  // Day picker for moving / copying a day place to another date.
-  const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy' | 'promote'; placeId: string } | null>(null);
+  // Day picker for moving / copying a day place to another date — or picking
+  // the target day for a tapped basemap POI ('poi' mode; placeId = google id).
+  const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy' | 'promote' | 'poi'; placeId: string } | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
   // FIX I2+I5: track in-flight mutations to prevent double-fire
   const [mutationError, setMutationError] = useState<string | null>(null);
@@ -410,12 +412,16 @@ export function PlanClient({
     void (async () => {
       const details = await fetchPoiDetails(googlePlaceId);
       if (!mountedRef.current) return;
-      setPoiPreview(details ? { status: 'loaded', details, added: false, saving: false } : { status: 'error' });
+      setPoiPreview(details ? { status: 'loaded', details, added: null, saving: false } : { status: 'error' });
     })();
   }
 
-  /** Add the previewed POI to the trip's Saved bucket (same flow as Add place). */
-  function handlePoiAdd() {
+  /**
+   * Add the previewed POI as a place — to a specific day (dayDate set) or the
+   * Saved bucket (dayDate null). Same flow as Add place: AI summary fired and
+   * the cached-details fetch populates the place's photo thumbnail.
+   */
+  function handlePoiAddPlace(dayDate: string | null) {
     if (!poiPreview || poiPreview.status !== 'loaded' || poiPreview.saving || poiPreview.added) return;
     const d = poiPreview.details;
     const name = (d.name ?? d.address ?? '').trim();
@@ -425,7 +431,7 @@ export function PlanClient({
       try {
         const created = await addPlaceAction({
           tripId,
-          dayDate: null, // Saved bucket; promote to a day from there.
+          dayDate,
           name,
           address: d.address,
           lat: d.lat,
@@ -435,10 +441,47 @@ export function PlanClient({
             : 'other',
           googlePlaceId: d.googlePlaceId,
         });
-        // Fire-and-forget AI summary, like AddPlaceSheet. Never blocks the add.
+        // Fire-and-forget: AI summary + cached-details fetch (downloads the
+        // place photo so the card thumbnail shows). Never blocks the add.
         void generatePlaceSummaryAction(created.id).catch(() => {});
+        void fetch(withBase(`/api/google/details?placeId=${encodeURIComponent(d.googlePlaceId)}`)).catch(() => {});
+        if (dayDate && online) await recomputeDayLegsAction(tripId, dayDate, dayMode);
         if (mountedRef.current) {
-          setPoiPreview((p) => (p && p.status === 'loaded' ? { ...p, added: true, saving: false } : p));
+          setPoiPreview((p) =>
+            p && p.status === 'loaded' ? { ...p, added: dayDate ? 'day' : 'saved', saving: false } : p,
+          );
+        }
+        await load({ full: true });
+      } catch {
+        if (mountedRef.current) {
+          setPoiPreview((p) => (p && p.status === 'loaded' ? { ...p, saving: false } : p));
+          setMutationError(t('saveFailed'));
+        }
+      }
+    })();
+  }
+
+  /** Save the previewed dining POI into Eats as want-to-try. */
+  function handlePoiSaveRestaurant() {
+    if (!poiPreview || poiPreview.status !== 'loaded' || poiPreview.saving || poiPreview.added) return;
+    const d = poiPreview.details;
+    const name = (d.name ?? d.address ?? '').trim();
+    if (!name) return;
+    setPoiPreview({ ...poiPreview, saving: true });
+    void (async () => {
+      try {
+        // The action itself pulls + persists Google rating/hours/photo.
+        await addRestaurantAction({
+          tripId,
+          name,
+          status: 'want-to-try',
+          address: d.address,
+          lat: d.lat,
+          lng: d.lng,
+          googlePlaceId: d.googlePlaceId,
+        });
+        if (mountedRef.current) {
+          setPoiPreview((p) => (p && p.status === 'loaded' ? { ...p, added: 'restaurant', saving: false } : p));
         }
         await load({ full: true });
       } catch {
@@ -536,17 +579,33 @@ export function PlanClient({
   function onOpenDayRoute(date: string) {
     const group = dayGroups.find((g) => g.date === date);
     if (!group || group.places.length === 0) return;
-    const coords = group.places
+    const stops = group.places
       .filter((p) => p.lat != null && p.lng != null)
-      .map((p) => ({ lat: p.lat as number, lng: p.lng as number }));
-    if (coords.length === 0) return;
-    window.open(dayRouteUrl(coords, dayMode), '_blank', 'noopener,noreferrer');
+      .map((p) => ({
+        lat: p.lat as number,
+        lng: p.lng as number,
+        name: p.name,
+        googlePlaceId: p.googlePlaceId,
+      }));
+    if (stops.length === 0) return;
+    window.open(dayRouteUrl(stops, dayMode), '_blank', 'noopener,noreferrer');
   }
+  // List ↔ Map day sync: picking a day on the map's filter chips also moves the
+  // list's selected day (and vice versa via selectDay below); "All days" on the
+  // map lands the list on day 1.
   function showOnlyDate(date: string) {
     setVisibleDates(new Set([date]));
+    setParams({ date });
   }
   function showAllDays() {
     setVisibleDates(new Set(days.map((d) => d.date)));
+    const first = days[0]?.date;
+    if (first) setParams({ date: first });
+  }
+  /** List DayStrip pick: select the day AND focus the map route on it. */
+  function selectDay(date: string) {
+    setParams({ date });
+    setVisibleDates(new Set([date]));
   }
 
   // FIX I2+I5: buttons are disabled both when offline AND when a mutation is in-flight
@@ -624,7 +683,7 @@ export function PlanClient({
           is hidden there to avoid two redundant day selectors. */}
       {params.bucket === 'days' && params.view === 'list' ? (
         <div className="mb-3">
-          <DayStrip days={days} selectedDate={params.date} onSelect={(date) => setParams({ date })} />
+          <DayStrip days={days} selectedDate={params.date} onSelect={selectDay} />
         </div>
       ) : null}
 
@@ -769,7 +828,13 @@ export function PlanClient({
               key={poiPreview.status === 'loaded' ? poiPreview.details.googlePlaceId : poiPreview.status}
               preview={poiPreview}
               online={online}
-              onAdd={handlePoiAdd}
+              onSavePlace={() => handlePoiAddPlace(null)}
+              onAddToDay={() => {
+                if (poiPreview.status === 'loaded') {
+                  setDayPicker({ mode: 'poi', placeId: poiPreview.details.googlePlaceId });
+                }
+              }}
+              onSaveRestaurant={handlePoiSaveRestaurant}
               onClose={() => setPoiPreview(null)}
             />
           </div>
@@ -778,12 +843,13 @@ export function PlanClient({
 
       <DayPickerSheet
         open={dayPicker !== null}
-        title={dayPicker?.mode === 'copy' ? t('copyToDayTitle') : dayPicker?.mode === 'promote' ? t('dayPickerTitle') : t('moveToDayTitle')}
+        title={dayPicker?.mode === 'copy' ? t('copyToDayTitle') : dayPicker?.mode === 'move' ? t('moveToDayTitle') : t('dayPickerTitle')}
         days={days}
         onPick={(date) => {
           if (!dayPicker) return;
           if (dayPicker.mode === 'copy') copyToDay(dayPicker.placeId, date);
           else if (dayPicker.mode === 'promote') mutateDay(date, () => promoteToDayAction(dayPicker.placeId, date));
+          else if (dayPicker.mode === 'poi') handlePoiAddPlace(date);
           else moveToDay(dayPicker.placeId, date);
         }}
         onClose={() => setDayPicker(null)}

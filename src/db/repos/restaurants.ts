@@ -72,6 +72,11 @@ export function addRestaurant(db: Db, input: AddRestaurantInput): Restaurant {
     lng: input.lng ?? null,
     googlePlaceId: input.googlePlaceId ?? null,
     linkedPlaceId: input.linkedPlaceId ?? null,
+    // Server-managed Google place data — filled by refreshRestaurantGoogleData.
+    googleRating: null,
+    googleRatingCount: null,
+    googleHours: null,
+    googleDataUpdatedAt: null,
     createdAt: ts,
     updatedAt: ts,
   };
@@ -79,7 +84,9 @@ export function addRestaurant(db: Db, input: AddRestaurantInput): Restaurant {
   return row;
 }
 
-/** Editable subset (never id/tripId/timestamps). */
+/** Editable subset (never id/tripId/timestamps). Google data fields are
+ *  server-managed (refreshRestaurantGoogleData), not user-editable, but flow
+ *  through the same patch path. */
 export type RestaurantPatch = Partial<
   Pick<
     Restaurant,
@@ -94,6 +101,10 @@ export type RestaurantPatch = Partial<
     | 'lng'
     | 'googlePlaceId'
     | 'linkedPlaceId'
+    | 'googleRating'
+    | 'googleRatingCount'
+    | 'googleHours'
+    | 'googleDataUpdatedAt'
   >
 >;
 

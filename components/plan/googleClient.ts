@@ -50,6 +50,8 @@ export interface PoiDetails {
   /** Photo references for the swipeable gallery — see poiPhotoUrl(). */
   photoRefs: string[];
   reviews: PoiReview[];
+  /** Dining POI (restaurant/cafe/bar…) → the card offers "Save restaurant". */
+  isFood: boolean;
 }
 
 /** URL for one POI gallery photo (server-proxied Google Place photo). */
@@ -84,6 +86,7 @@ export async function fetchPoiDetails(placeId: string): Promise<PoiDetails | nul
       summary: data.summary ?? null,
       photoRefs: Array.isArray(data.photoRefs) ? data.photoRefs : [],
       reviews: Array.isArray(data.reviews) ? data.reviews : [],
+      isFood: data.isFood === true,
     };
   } catch {
     return null;

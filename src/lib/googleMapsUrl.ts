@@ -65,13 +65,28 @@ export function placeUrl(input: PlaceUrlInput): string {
   return `https://www.google.com/maps/search/?${params.toString()}`;
 }
 
+/** One day-route stop: coordinates plus (when known) the Google POI identity. */
+export interface RouteStop extends LatLng {
+  name?: string | null;
+  googlePlaceId?: string | null;
+}
+
+/** Stop text for the directions URL: the place NAME when an exact place id
+ *  pins it down (Google then shows the real place with its name/photos),
+ *  otherwise precise coordinates. */
+function stopStr(s: RouteStop): string {
+  return s.googlePlaceId && s.name?.trim() ? s.name.trim() : coordStr(s);
+}
+
 /**
  * Multi-stop day-route deep link. Origin = first stop, destination = last
  * stop, intermediate stops as ordered pipe-separated `waypoints`, plus the
- * day's `travelmode`. Coordinates come straight from cached `places` rows in
- * `order_index` sequence, so the link is constructible offline.
+ * day's `travelmode`. Stops carrying a `googlePlaceId` are passed as real
+ * Google places (name + `*_place_id` params) so the Maps app shows named
+ * places with photos instead of bare coordinate pins; id-less stops fall back
+ * to coordinates. Constructible offline from cached `places` rows.
  */
-export function dayRouteUrl(orderedPlaces: LatLng[], mode: TravelMode): string {
+export function dayRouteUrl(orderedPlaces: RouteStop[], mode: TravelMode): string {
   if (orderedPlaces.length === 0) {
     throw new Error('dayRouteUrl requires at least one stop');
   }
@@ -81,12 +96,24 @@ export function dayRouteUrl(orderedPlaces: LatLng[], mode: TravelMode): string {
 
   const params = new URLSearchParams({
     api: '1',
-    origin: coordStr(first),
-    destination: coordStr(last),
+    origin: stopStr(first),
+    destination: stopStr(last),
     travelmode: MODE_PARAM[mode],
   });
+  if (first.googlePlaceId) params.set('origin_place_id', first.googlePlaceId);
+  if (last.googlePlaceId) params.set('destination_place_id', last.googlePlaceId);
   if (intermediate.length > 0) {
-    params.set('waypoints', intermediate.map(coordStr).join('|'));
+    // `waypoint_place_ids` must correspond 1:1 with `waypoints`, so place ids
+    // are only sent when EVERY intermediate stop has one; otherwise id-less
+    // stops use precise coordinates as their text.
+    const allHaveIds = intermediate.every((s) => !!s.googlePlaceId);
+    params.set(
+      'waypoints',
+      intermediate.map((s) => (allHaveIds ? stopStr(s) : coordStr(s))).join('|'),
+    );
+    if (allHaveIds) {
+      params.set('waypoint_place_ids', intermediate.map((s) => s.googlePlaceId!).join('|'));
+    }
   }
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }

@@ -12,6 +12,7 @@ function r(over: Partial<RestaurantDTO> = {}): RestaurantDTO {
     id: 'r1', tripId: 't1', name: 'A', cuisine: null, rating: null,
     status: 'want-to-try', priceLevel: null, notes: null, linkedPlaceId: null,
     address: null, lat: null, lng: null, googlePlaceId: null,
+    googleRating: null, googleRatingCount: null, googleHours: null, googleDataUpdatedAt: null,
     createdAt: new Date(0), updatedAt: new Date(0), scheduledDayDate: null, photoPath: null, photos: [], ...over,
   };
 }

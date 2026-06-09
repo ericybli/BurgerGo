@@ -6,10 +6,13 @@ import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { poiPhotoUrl, type PoiDetails } from '@/components/plan/googleClient';
 
+/** Which save action completed (drives the ✓ label + disables the buttons). */
+export type PoiAddedKind = 'saved' | 'day' | 'restaurant' | null;
+
 export type PoiPreview =
   | { status: 'loading' }
   | { status: 'error' }
-  | { status: 'loaded'; details: PoiDetails; added: boolean; saving: boolean };
+  | { status: 'loaded'; details: PoiDetails; added: PoiAddedKind; saving: boolean };
 
 /**
  * Info card for a tapped Google basemap landmark (POI): swipeable photo
@@ -21,12 +24,19 @@ export type PoiPreview =
 export function PoiInfoCard({
   preview,
   online,
-  onAdd,
+  onSavePlace,
+  onAddToDay,
+  onSaveRestaurant,
   onClose,
 }: {
   preview: PoiPreview;
   online: boolean;
-  onAdd: () => void;
+  /** Save into the trip's Saved bucket (non-dining POIs). */
+  onSavePlace: () => void;
+  /** Open the day picker, then add to that day (non-dining POIs). */
+  onAddToDay: () => void;
+  /** Save into Eats as want-to-try (dining POIs). */
+  onSaveRestaurant: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations('planMap');
@@ -168,14 +178,39 @@ export function PoiInfoCard({
             </div>
           ) : null}
 
-          <button
-            type="button"
-            disabled={!online || preview.added || preview.saving}
-            onClick={onAdd}
-            className="mt-3 block w-full rounded-control bg-orange px-3 py-2 text-center text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
-          >
-            {preview.added ? t('poiAdded') : preview.saving ? t('poiSaving') : t('poiAdd')}
-          </button>
+          {preview.details.isFood ? (
+            <button
+              type="button"
+              disabled={!online || preview.added != null || preview.saving}
+              onClick={onSaveRestaurant}
+              className="mt-3 block w-full rounded-control bg-orange px-3 py-2 text-center text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
+            >
+              {preview.added === 'restaurant'
+                ? t('poiAddedRestaurant')
+                : preview.saving
+                  ? t('poiSaving')
+                  : t('poiSaveRestaurant')}
+            </button>
+          ) : (
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                disabled={!online || preview.added != null || preview.saving}
+                onClick={onAddToDay}
+                className="flex-1 rounded-control bg-orange px-3 py-2 text-center text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
+              >
+                {preview.added === 'day' ? t('poiAddedDay') : preview.saving ? t('poiSaving') : t('poiAddToDay')}
+              </button>
+              <button
+                type="button"
+                disabled={!online || preview.added != null || preview.saving}
+                onClick={onSavePlace}
+                className="flex-1 rounded-control border border-line bg-bg px-3 py-2 text-center text-label text-ink transition hover:bg-surface active:opacity-70 disabled:bg-surface disabled:text-faint"
+              >
+                {preview.added === 'saved' ? t('poiAdded') : t('poiSavePlace')}
+              </button>
+            </div>
+          )}
           {typeof preview.details.lat === 'number' && typeof preview.details.lng === 'number' ? (
             <a
               href={placeUrl({
