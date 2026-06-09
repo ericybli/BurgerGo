@@ -143,7 +143,8 @@
     "layerSaved": "Saved places",
     "layerRestaurants": "Restaurants",
     "readCardLabel": "Place details",
-    "closeInfoCard": "Close"
+    "closeInfoCard": "Close",
+    "locate": "Show my location"
   },
   "category": {
     "sightseeing": "Sightseeing",

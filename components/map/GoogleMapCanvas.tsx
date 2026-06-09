@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { LocateFixed } from 'lucide-react';
 import { loadGoogleMaps } from '@/src/lib/googleLoader';
 import type { PlaceMarker } from '@/src/lib/map/markers';
 import type { DayPath } from '@/src/lib/map/types';
@@ -43,9 +44,17 @@ export function GoogleMapCanvas({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapsRef = useRef<any>(null);
   const overlaysRef = useRef<Array<{ setMap: (m: unknown) => void }>>([]);
+  // The "my location" blue dot — kept OUT of overlaysRef so marker/path redraws
+  // never clear it. eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const userDotRef = useRef<any>(null);
 
   // Bumped to 1 when the maps.Map instance is ready, triggering the overlay effect.
   const [mapReady, setMapReady] = useState(0);
+  // Roadmap ↔ hybrid (satellite + labels) toggle, mirroring MapboxCanvas's control.
+  const [mapType, setMapType] = useState<'roadmap' | 'hybrid'>('roadmap');
+  // True while a geolocation request is in flight (disables the locate button).
+  const [locating, setLocating] = useState(false);
 
   // Effect 1: load the API and create the maps.Map instance once.
   useEffect(() => {
@@ -67,23 +76,12 @@ export function GoogleMapCanvas({
       mapRef.current = new maps.Map(containerRef.current, {
         center: { lat: 0, lng: 0 },
         zoom: 12,
-        disableDefaultUI: false,
+        // No native Google chrome at all (map-type dropdown, zoom, pan, Street
+        // View pegman, fullscreen): the app provides its own Atlas-styled
+        // controls — Layers + fullscreen in PlanMap, satellite + locate here.
+        // Touch gestures (drag / pinch-zoom / double-tap) are unaffected.
+        disableDefaultUI: true,
         clickableIcons: false,
-        // Compact dropdown map-type control, pinned bottom-left so it never
-        // collides with PlanMap's Layers button (top-left), fullscreen button
-        // (top-right), or zoom (bottom-right).
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-          style: maps.MapTypeControlStyle?.DROPDOWN_MENU ?? 2,
-          position: maps.ControlPosition?.BOTTOM_LEFT ?? 6,
-        },
-        // PlanMap provides its own full-viewport overlay; the native control calls
-        // the Fullscreen API, which iOS Safari does not support for divs.
-        fullscreenControl: false,
-        zoomControl: true,
-        zoomControlOptions: {
-          position: maps.ControlPosition?.RIGHT_BOTTOM ?? 9,
-        },
       });
       // Signal that overlays can now be drawn.
       setMapReady((n) => n + 1);
@@ -217,17 +215,87 @@ export function GoogleMapCanvas({
     };
   }, [mapReady, fitSet]);
 
+  /** Roadmap ↔ hybrid (satellite imagery + labels), like Mapbox's style toggle. */
+  function toggleMapType() {
+    const map = mapRef.current;
+    if (!map) return;
+    const next = mapType === 'roadmap' ? 'hybrid' : 'roadmap';
+    setMapType(next);
+    map.setMapTypeId?.(next);
+  }
+
+  /** Center on the user's position and drop/update the blue location dot. */
+  function handleLocate() {
+    const maps = mapsRef.current;
+    const map = mapRef.current;
+    if (!maps || !map || locating || typeof navigator === 'undefined' || !navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLocating(false);
+        const here = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        if (userDotRef.current) {
+          userDotRef.current.setPosition?.(here);
+        } else {
+          userDotRef.current = new maps.Marker({
+            position: here,
+            map,
+            clickable: false,
+            zIndex: 9999,
+            icon: {
+              path: maps.SymbolPath?.CIRCLE ?? 0,
+              scale: 8,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 2.5,
+            },
+          });
+        }
+        map.panTo?.(here);
+        const zoom = typeof map.getZoom === 'function' ? map.getZoom() : 12;
+        if (typeof zoom === 'number' && zoom < 14) map.setZoom?.(14);
+      },
+      () => setLocating(false), // denied/unavailable — quietly release the button
+      { enableHighAccuracy: true, timeout: 10_000 },
+    );
+  }
+
   return (
-    <div
-      ref={containerRef}
-      role="application"
-      aria-label={t('mapAriaLabel')}
-      data-testid="google-map-canvas"
-      // absolute inset-0 fills the positioned parent (PlanMap wraps this in a
-      // `relative` flex-fill div, or `fixed` in fullscreen). This avoids the
-      // percentage-height-in-a-flex-item collapse that `h-full` hits when the
-      // parent's height comes from flex-grow rather than an explicit height.
-      className="absolute inset-0 h-full w-full"
-    />
+    // Wrapper owns the custom controls; Google owns (and rewrites) the inner
+    // container's DOM, so React-rendered buttons must live OUTSIDE it.
+    // absolute inset-0 fills the positioned parent (PlanMap wraps this in a
+    // `relative` flex-fill div, or `fixed` in fullscreen). This avoids the
+    // percentage-height-in-a-flex-item collapse that `h-full` hits when the
+    // parent's height comes from flex-grow rather than an explicit height.
+    <div className="absolute inset-0 h-full w-full">
+      <div
+        ref={containerRef}
+        role="application"
+        aria-label={t('mapAriaLabel')}
+        data-testid="google-map-canvas"
+        className="absolute inset-0 h-full w-full"
+      />
+      {/* Satellite ↔ map toggle — mirrors MapboxCanvas's control (bottom-left,
+          above the Google attribution bar). */}
+      <button
+        type="button"
+        onClick={toggleMapType}
+        aria-label={t('toggleMapStyle')}
+        className="absolute bottom-9 left-3 z-[2] rounded-chip bg-bg/95 px-3 py-1.5 text-[12.5px] font-semibold text-ink shadow-lift backdrop-blur"
+      >
+        {mapType === 'roadmap' ? t('styleSatellite') : t('styleMap')}
+      </button>
+      {/* Current-location button (bottom-right). */}
+      <button
+        type="button"
+        onClick={handleLocate}
+        disabled={locating}
+        aria-label={t('locate')}
+        className="absolute bottom-9 right-3 z-[2] flex h-10 w-10 items-center justify-center rounded-chip bg-bg/95 text-ink shadow-lift backdrop-blur active:scale-95 disabled:text-faint"
+      >
+        <LocateFixed size={18} strokeWidth={2} aria-hidden="true" />
+      </button>
+    </div>
   );
 }
