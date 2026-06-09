@@ -33,6 +33,12 @@ function todayInTz(tz: string): string {
   }).format(new Date());
 }
 
+/** Today's calendar date (YYYY-MM-DD) in `tz`. Public wrapper so callers (e.g. the
+ *  trip-overview countdown) can get the current date without re-deriving days. */
+export function today(tz: string): string {
+  return todayInTz(tz);
+}
+
 /** English long weekday for a calendar date string (timezone-stable via UTC). */
 function weekdayOf(dateStr: string): string {
   // Parse as a UTC midnight so the weekday never shifts with the host TZ.

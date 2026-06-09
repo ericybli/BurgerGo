@@ -47,6 +47,7 @@ import { DayStrip } from '@/components/plan/DayStrip';
 import { DayItinerary } from '@/components/plan/DayItinerary';
 import { SavedList } from '@/components/plan/SavedList';
 import { TodayHero } from '@/components/plan/TodayHero';
+import { TripOverview } from '@/components/plan/TripOverview';
 import { AddPlaceSheet } from '@/components/plan/AddPlaceSheet';
 import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
 import { PlaceReadCard } from '@/components/plan/PlaceReadCard';
@@ -477,6 +478,20 @@ export function PlanClient({
         <p role="alert" className="mb-2 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
           {mutationError}
         </p>
+      ) : null}
+
+      {/* F1: collapsible trip-at-a-glance panel (days bucket only). Default
+          collapsed; shows the relevant day's date, weather, next stop, plan + hotel. */}
+      {params.bucket === 'days' ? (
+        <TripOverview
+          tripId={tripId}
+          trip={trip}
+          tz={tz}
+          days={days}
+          places={places}
+          nowHHMM={nowHHMM(tz)}
+          onViewPlace={(id) => setViewPlace(placeById(id))}
+        />
       ) : null}
 
       {/* List/Map + Days/Saved toggles */}
