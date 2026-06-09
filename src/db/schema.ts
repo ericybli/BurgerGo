@@ -198,7 +198,7 @@ export const photos = sqliteTable(
     tripId: text('trip_id')
       .notNull()
       .references(() => trips.id, { onDelete: 'cascade' }),
-    ownerType: text('owner_type', { enum: ['place', 'journal', 'restaurant'] }).notNull(),
+    ownerType: text('owner_type', { enum: ['place', 'journal', 'restaurant', 'photo_list'] }).notNull(),
     ownerId: text('owner_id').notNull(), // places.id / journal_entries.id / restaurants.id
     path: text('path').notNull(), // base path `<tripId>/<photoId>`
     width: integer('width'), // of the `full` derivative
@@ -358,6 +358,31 @@ export const savedLists = sqliteTable(
   }),
 );
 
+/**
+ * A named, per-trip photography list (Journal ▸ Photography). Each list holds
+ * reference photos uploaded via the shared `photos` table with
+ * owner_type='photo_list' and owner_id = this row's id — a place to collect
+ * "how to shoot here" inspiration before the trip. Deleting a list also deletes
+ * its photos (rows + on-disk derivatives) in the delete action, since the
+ * generic photos.owner_id has no DB-level FK to cascade.
+ */
+export const photoLists = sqliteTable(
+  'photo_lists',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    orderIndex: integer('order_index').notNull(),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTrip: index('idx_photo_lists_trip').on(t.tripId, t.orderIndex),
+  }),
+);
+
 // Relations (groundwork; only trips/places/travelLegs participate in 1A).
 export const tripsRelations = relations(trips, ({ many }) => ({
   places: many(places),
@@ -465,3 +490,5 @@ export type DayMode = typeof dayModes.$inferSelect;
 export type NewDayMode = typeof dayModes.$inferInsert;
 export type SavedListRow = typeof savedLists.$inferSelect;
 export type NewSavedListRow = typeof savedLists.$inferInsert;
+export type PhotoList = typeof photoLists.$inferSelect;
+export type NewPhotoList = typeof photoLists.$inferInsert;

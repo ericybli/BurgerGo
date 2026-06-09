@@ -631,6 +631,9 @@ export function PlanClient({
       )}
 
       <AddPlaceSheet
+        // Remount on every open so the form always starts blank — never
+        // prefilled with the previous add's name/address/category.
+        key={addOpen ? 'add-open' : 'add-closed'}
         open={addOpen}
         tripId={tripId}
         dayDate={params.bucket === 'saved' ? null : params.date}

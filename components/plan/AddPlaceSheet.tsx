@@ -77,6 +77,13 @@ export function AddPlaceSheet({
     void search(value);
   }
 
+  /** Clear the whole address field in one tap (the × inside the input). */
+  function handleAddressClear() {
+    setAddress('');
+    setPicked(null);
+    clear();
+  }
+
   async function handlePick(placeId: string) {
     const filled = await select(placeId);
     if (!filled) return;
@@ -185,16 +192,31 @@ export function AddPlaceSheet({
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="add-address">
           {t('addressLabel')}
         </label>
-        <input
-          id="add-address"
-          type="text"
-          value={address}
-          disabled={disabled}
-          placeholder={t('addressSearchPlaceholder')}
-          autoComplete="off"
-          onChange={(e) => handleAddressChange(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
-        />
+        <div className="relative mt-1">
+          <input
+            id="add-address"
+            type="text"
+            value={address}
+            disabled={disabled}
+            placeholder={t('addressSearchPlaceholder')}
+            autoComplete="off"
+            onChange={(e) => handleAddressChange(e.target.value)}
+            className="w-full rounded-control border border-line bg-paper px-3 py-2 pr-10 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          />
+          {address && !disabled ? (
+            <button
+              type="button"
+              aria-label={t('clearAddress')}
+              onClick={handleAddressClear}
+              className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-chip text-ink-faint transition hover:bg-line hover:text-ink active:scale-90"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+          ) : null}
+        </div>
         <p className="mt-1 text-caption text-ink-muted">{t('addressSearchHint')}</p>
 
         {predictions.length > 0 ? (

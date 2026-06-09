@@ -4,6 +4,7 @@ import { db } from '@/src/db/client';
 import { getTrip } from '@/src/db/repos/trips';
 import { listEntriesForTrip, type JournalEntry } from '@/src/db/repos/journalEntries';
 import { listLinksForTrip, type SavedLink } from '@/src/db/repos/savedLinks';
+import { listByTrip as listPhotoLists, type PhotoList } from '@/src/db/repos/photoLists';
 import { photos, type Photo } from '@/src/db/schema';
 import { addEntryAction, type AddEntryActionInput } from '@/app/_actions/journal';
 import { restWrite } from '@/src/lib/restWrite';
@@ -12,6 +13,9 @@ export const dynamic = 'force-dynamic';
 
 /** EntryDTO: a journal entry row + its attached journal photos (order_index asc). */
 export type EntryDTO = JournalEntry & { photos: Photo[] };
+
+/** PhotoListDTO: a photography list row + its photos (order_index asc). */
+export type PhotoListDTO = PhotoList & { photos: Photo[] };
 
 export async function GET(
   _req: Request,
@@ -49,7 +53,29 @@ export async function GET(
 
   const links: SavedLink[] = listLinksForTrip(db, tripId);
 
-  return NextResponse.json({ entries, links });
+  // Photography lists + their photos (batched, no N+1).
+  const rawLists = listPhotoLists(db, tripId);
+  const listIds = rawLists.map((l) => l.id);
+  const listPhotoMap = new Map<string, Photo[]>();
+  if (listIds.length > 0) {
+    const rows = db
+      .select()
+      .from(photos)
+      .where(and(eq(photos.ownerType, 'photo_list'), inArray(photos.ownerId, listIds)))
+      .orderBy(photos.orderIndex)
+      .all();
+    for (const row of rows) {
+      const arr = listPhotoMap.get(row.ownerId) ?? [];
+      arr.push(row);
+      listPhotoMap.set(row.ownerId, arr);
+    }
+  }
+  const photoLists: PhotoListDTO[] = rawLists.map((l) => ({
+    ...l,
+    photos: listPhotoMap.get(l.id) ?? [],
+  }));
+
+  return NextResponse.json({ entries, links, photoLists });
 }
 
 /** Create a journal entry. POST { title, body?, entryDate? }. */

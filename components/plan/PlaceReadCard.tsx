@@ -40,7 +40,7 @@ export function PlaceReadCard({
   const tCat = useTranslations('placeCategory');
   const tMap = useTranslations('planMap');
   const thumb = thumbForPlace(place);
-  const mapsHref = placeUrl({ name: place.name, lat: place.lat ?? 0, lng: place.lng ?? 0, googlePlaceId: place.googlePlaceId });
+  const mapsHref = placeUrl({ name: place.name, lat: place.lat ?? 0, lng: place.lng ?? 0, googlePlaceId: place.googlePlaceId, address: place.address });
 
   return (
     <div className="pointer-events-auto max-h-[70vh] w-full overflow-y-auto rounded-card bg-card p-4 shadow-lift">

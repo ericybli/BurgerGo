@@ -17,21 +17,27 @@ describe('placeUrl', () => {
     expect(u.searchParams.get('query_place_id')).toBe('ChIJ8T1GpMGOGGARDYGSgpooDWw');
   });
 
-  it('falls back to coordinates as the query when googlePlaceId is null', () => {
+  it('searches by "name, address" when googlePlaceId is null but both are present', () => {
     const url = placeUrl({
-      name: 'Dropped pin',
+      name: 'Senso-ji Temple',
+      address: '2-3-1 Asakusa, Taito City',
       lat: 35.714765,
       lng: 139.796655,
       googlePlaceId: null,
     });
     const u = new URL(url);
     expect(u.origin + u.pathname).toBe('https://www.google.com/maps/search/');
-    expect(u.searchParams.get('query')).toBe('35.714765,139.796655');
+    expect(u.searchParams.get('query')).toBe('Senso-ji Temple, 2-3-1 Asakusa, Taito City');
     expect(u.searchParams.has('query_place_id')).toBe(false);
   });
 
-  it('uses coordinates when googlePlaceId is undefined', () => {
-    const url = placeUrl({ name: 'X', lat: 1, lng: 2 });
+  it('searches by name alone when there is no place id and no address', () => {
+    const url = placeUrl({ name: 'Senso-ji Temple', lat: 35.714765, lng: 139.796655, googlePlaceId: null });
+    expect(new URL(url).searchParams.get('query')).toBe('Senso-ji Temple');
+  });
+
+  it('falls back to coordinates only for a truly nameless pin', () => {
+    const url = placeUrl({ name: '', lat: 1, lng: 2 });
     expect(new URL(url).searchParams.get('query')).toBe('1,2');
   });
 });

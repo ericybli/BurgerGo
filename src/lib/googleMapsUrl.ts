@@ -21,8 +21,10 @@ export interface PlaceUrlInput {
   name: string;
   lat: number;
   lng: number;
-  /** Prefer this exact-POI id; null/undefined → fall back to coords. */
+  /** Prefer this exact-POI id; null/undefined → fall back to a name search. */
   googlePlaceId?: string | null;
+  /** Disambiguates the name search when there's no place id (street, city). */
+  address?: string | null;
 }
 
 /** A latitude/longitude pair, as stored on a `places` row. */
@@ -36,9 +38,11 @@ function coordStr(p: LatLng): string {
 }
 
 /**
- * "Open in Google Maps" for a single place. Prefers `googlePlaceId`
- * (exact POI, human-readable `query` label); falls back to coordinates
- * for map-drop pins that lack a place id.
+ * "Open in Google Maps" for a single place. Prefers `googlePlaceId` (exact POI
+ * — Google opens the place card with its name + photos). With no place id, a
+ * name (disambiguated by address) is used as the search `query` so Google still
+ * resolves the real place rather than dropping a bare coordinate pin. Only a
+ * truly nameless map-drop pin falls back to coordinates.
  */
 export function placeUrl(input: PlaceUrlInput): string {
   const params = new URLSearchParams({ api: '1' });
@@ -46,7 +50,17 @@ export function placeUrl(input: PlaceUrlInput): string {
     params.set('query', input.name);
     params.set('query_place_id', input.googlePlaceId);
   } else {
-    params.set('query', coordStr(input));
+    const name = input.name?.trim();
+    const address = input.address?.trim();
+    if (name && address) {
+      params.set('query', `${name}, ${address}`);
+    } else if (name) {
+      params.set('query', name);
+    } else if (address) {
+      params.set('query', address);
+    } else {
+      params.set('query', coordStr(input));
+    }
   }
   return `https://www.google.com/maps/search/?${params.toString()}`;
 }

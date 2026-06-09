@@ -24,6 +24,7 @@ export function RestaurantInfoCard({
     lat: restaurant.lat ?? 0,
     lng: restaurant.lng ?? 0,
     googlePlaceId: restaurant.googlePlaceId,
+    address: restaurant.address,
   });
 
   return (

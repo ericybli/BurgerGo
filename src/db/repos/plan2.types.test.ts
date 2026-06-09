@@ -20,7 +20,7 @@ describe('plan2 DTO type barrel', () => {
 
   it('re-exports the enum/union helper types', () => {
     expectTypeOf<RestaurantStatus>().toEqualTypeOf<'want-to-try' | 'been'>();
-    expectTypeOf<PhotoOwnerType>().toEqualTypeOf<'place' | 'journal' | 'restaurant'>();
+    expectTypeOf<PhotoOwnerType>().toEqualTypeOf<'place' | 'journal' | 'restaurant' | 'photo_list'>();
     expectTypeOf<ExpenseCategory>().toEqualTypeOf<
       'food' | 'lodging' | 'transport' | 'activities' | 'shopping' | 'other'
     >();

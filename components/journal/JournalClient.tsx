@@ -11,11 +11,12 @@ import { EntrySheet } from '@/components/journal/EntrySheet';
 import { EntryReader } from '@/components/journal/EntryReader';
 import { LinkRow } from '@/components/journal/LinkRow';
 import { LinkSheet } from '@/components/journal/LinkSheet';
-import type { EntryDTO } from '@/app/api/trips/[tripId]/journal/route';
+import { PhotographyTab } from '@/components/journal/PhotographyTab';
+import type { EntryDTO, PhotoListDTO } from '@/app/api/trips/[tripId]/journal/route';
 import type { SavedLink } from '@/src/db/repos/savedLinks';
 
-type Tab = 'entries' | 'links';
-type JournalData = { entries: EntryDTO[]; links: SavedLink[] };
+type Tab = 'entries' | 'links' | 'photography';
+type JournalData = { entries: EntryDTO[]; links: SavedLink[]; photoLists: PhotoListDTO[] };
 type LoadState =
   | { status: 'loading' }
   | { status: 'error' }
@@ -66,8 +67,8 @@ export function JournalClient({ tripId }: { tripId: string }) {
     try {
       const res = await fetch(withBase(`/api/trips/${tripId}/journal`), { credentials: 'same-origin' });
       if (!res.ok) throw new Error('load failed');
-      const { entries, links } = (await res.json()) as JournalData;
-      if (mountedRef.current) setState({ status: 'loaded', data: { entries, links } });
+      const { entries, links, photoLists } = (await res.json()) as JournalData;
+      if (mountedRef.current) setState({ status: 'loaded', data: { entries, links, photoLists: photoLists ?? [] } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
     }
@@ -100,7 +101,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
     return <EmptyState mascotAlt={t('entries')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
   }
 
-  const { entries, links } = state.data;
+  const { entries, links, photoLists } = state.data;
 
   // The reader is a full-view replacement (like opening a detail page).
   if (reading) {
@@ -121,38 +122,23 @@ export function JournalClient({ tripId }: { tripId: string }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
-      <div className="mt-2 flex items-center justify-between">
-        <div role="group" className="flex rounded-control bg-card p-0.5 shadow-inset">
+      <div role="group" aria-label={t('entries')} className="mt-2 flex rounded-control bg-card p-0.5 shadow-inset">
+        {(['entries', 'links', 'photography'] as const).map((tb) => (
           <button
+            key={tb}
             type="button"
-            aria-pressed={tab === 'entries'}
-            onClick={() => setTab('entries')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === 'entries' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
+            aria-pressed={tab === tb}
+            onClick={() => setTab(tb)}
+            className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === tb ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
           >
-            {t('entries')}
+            {tb === 'entries' ? t('entries') : tb === 'links' ? t('readingList') : t('photography')}
           </button>
-          <button
-            type="button"
-            aria-pressed={tab === 'links'}
-            onClick={() => setTab('links')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === 'links' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
-          >
-            {t('readingList')}
-          </button>
-        </div>
-        {tab === 'entries' ? (
-          <button
-            type="button"
-            disabled={!online}
-            onClick={() => setEntrySheet({ open: true })}
-            className="rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
-          >
-            {t('newEntry')}
-          </button>
-        ) : null}
+        ))}
       </div>
 
-      {tab === 'links' ? (
+      {tab === 'photography' ? (
+        <PhotographyTab tripId={tripId} lists={photoLists} online={online} onChanged={load} />
+      ) : tab === 'links' ? (
         <div className="flex flex-col gap-3 mt-4">
           <div className="flex justify-end">
             <button
@@ -202,7 +188,18 @@ export function JournalClient({ tripId }: { tripId: string }) {
           />
         </div>
       ) : (
-        <ul className="mt-4 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={!online}
+              onClick={() => setEntrySheet({ open: true })}
+              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+            >
+              {t('newEntry')}
+            </button>
+          </div>
+          <ul className="flex flex-col gap-3">
           {entries.map((e, i) => (
             <li
               key={e.id}
@@ -241,7 +238,8 @@ export function JournalClient({ tripId }: { tripId: string }) {
               </button>
             </li>
           ))}
-        </ul>
+          </ul>
+        </div>
       )}
 
       <EntrySheet

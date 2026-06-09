@@ -124,10 +124,11 @@ describe('PlaceDetailSheet', () => {
     expect(link).toHaveAttribute('target', '_blank');
   });
 
-  it('falls back to coordinates for map-drop pins (no googlePlaceId)', () => {
+  it('searches by name + address when there is no googlePlaceId (richer than a coordinate pin)', () => {
     renderSheet({ place: place({ googlePlaceId: null }) });
     const link = screen.getByRole('link', { name: en.plan.openInGoogleMaps });
-    expect(link).toHaveAttribute('href', expect.stringContaining('query=35.71%2C139.79'));
+    expect(link).toHaveAttribute('href', expect.stringContaining('query=Senso-ji%2C+Asakusa'));
+    expect(link).toHaveAttribute('href', expect.not.stringContaining('query_place_id'));
   });
 
   it('saves edited fields via updatePlaceAction', async () => {

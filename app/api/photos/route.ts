@@ -5,6 +5,7 @@ import { getTrip } from '@/src/db/repos/trips';
 import { getPlace } from '@/src/db/repos/places';
 import { getEntry } from '@/src/db/repos/journalEntries';
 import { getRestaurant } from '@/src/db/repos/restaurants';
+import { getPhotoList } from '@/src/db/repos/photoLists';
 import {
   addPhoto,
   listByOwner,
@@ -22,8 +23,8 @@ export const dynamic = 'force-dynamic';
 /** Per-owner max personal photos (Plan-2 public-app guard; reused for journal). */
 const MAX_PER_OWNER = 12;
 
-/** Owner types that may receive uploads (Plan 3 adds 'journal'; Plan 4 'restaurant'). */
-const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal', 'restaurant'];
+/** Owner types that may receive uploads (Plan 3 'journal'; Plan 4 'restaurant'; Photography 'photo_list'). */
+const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal', 'restaurant', 'photo_list'];
 
 /** Photo DTO returned to the client (full row). */
 export type PhotoDTO = Photo;
@@ -68,7 +69,9 @@ export async function POST(req: Request): Promise<Response> {
       ? getPlace(db, ownerId)?.tripId
       : owner === 'restaurant'
         ? getRestaurant(db, ownerId)?.tripId
-        : getEntry(db, ownerId)?.tripId;
+        : owner === 'photo_list'
+          ? getPhotoList(db, ownerId)?.tripId
+          : getEntry(db, ownerId)?.tripId;
   if (ownerTripId !== tripId) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

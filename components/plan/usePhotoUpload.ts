@@ -13,8 +13,8 @@ export interface UploadArgs {
   file: File;
   tripId: string;
   ownerId: string;
-  /** Photo owner type; defaults to 'place'. Restaurants pass 'restaurant'. */
-  ownerType?: 'place' | 'journal' | 'restaurant';
+  /** Photo owner type; defaults to 'place'. Restaurants pass 'restaurant'; Photography 'photo_list'. */
+  ownerType?: 'place' | 'journal' | 'restaurant' | 'photo_list';
 }
 
 export type UploadResult =
