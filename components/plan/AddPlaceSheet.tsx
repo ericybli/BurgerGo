@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { X } from 'lucide-react';
 import { useFocusTrap } from '@/src/lib/useFocusTrap';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { addPlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
@@ -160,24 +161,24 @@ export function AddPlaceSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t('addPlace')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
       onKeyDown={handleKeyDown}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet"
       >
-        <div className="mx-auto mt-2 mb-1 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="mb-3 font-serif text-title text-ink">{t('addPlace')}</h2>
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="mb-3 text-[18px] font-bold tracking-[-0.01em] text-ink">{t('addPlace')}</h2>
 
         {error ? (
-          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mb-3 rounded-control bg-orange-tint px-3 py-2 text-caption text-danger">
             {error}
           </p>
         ) : null}
 
-        <label className="block text-label font-medium text-ink" htmlFor="add-name">
+        <label className="block text-label text-ink" htmlFor="add-name">
           {t('nameLabel')}
         </label>
         <input
@@ -186,10 +187,10 @@ export function AddPlaceSheet({
           value={name}
           disabled={disabled}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="add-address">
+        <label className="mt-3 block text-label text-ink" htmlFor="add-address">
           {t('addressLabel')}
         </label>
         <div className="relative mt-1">
@@ -201,33 +202,30 @@ export function AddPlaceSheet({
             placeholder={t('addressSearchPlaceholder')}
             autoComplete="off"
             onChange={(e) => handleAddressChange(e.target.value)}
-            className="w-full rounded-control border border-line bg-paper px-3 py-2 pr-10 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+            className="w-full rounded-control border border-line bg-bg px-3 py-2.5 pr-10 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
           />
           {address && !disabled ? (
             <button
               type="button"
               aria-label={t('clearAddress')}
               onClick={handleAddressClear}
-              className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-chip text-ink-faint transition hover:bg-line hover:text-ink active:scale-90"
+              className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-chip text-faint transition hover:bg-surface hover:text-ink active:scale-90"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
+              <X size={16} aria-hidden="true" />
             </button>
           ) : null}
         </div>
-        <p className="mt-1 text-caption text-ink-muted">{t('addressSearchHint')}</p>
+        <p className="mt-1 text-caption text-sub">{t('addressSearchHint')}</p>
 
         {predictions.length > 0 ? (
-          <ul className="mt-2 flex flex-col overflow-hidden rounded-control border border-line bg-paper">
+          <ul className="mt-2 flex flex-col overflow-hidden rounded-control border border-line bg-bg">
             {predictions.map((p) => (
               <li key={p.placeId}>
                 <button
                   type="button"
                   disabled={disabled || isPending}
                   onClick={() => void handlePick(p.placeId)}
-                  className="w-full px-3 py-2 text-left text-body text-ink transition hover:bg-coral-tint active:bg-coral-tint disabled:opacity-40"
+                  className="w-full px-3 py-2 text-left text-body text-ink transition hover:bg-surface active:bg-surface disabled:opacity-40"
                 >
                   {p.description}
                 </button>
@@ -236,7 +234,7 @@ export function AddPlaceSheet({
           </ul>
         ) : null}
 
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="add-category">
+        <label className="mt-3 block text-label text-ink" htmlFor="add-category">
           {t('categoryLabel')}
         </label>
         <select
@@ -244,7 +242,7 @@ export function AddPlaceSheet({
           value={category}
           disabled={disabled}
           onChange={(e) => setCategory(e.target.value as PlaceDTO['category'])}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -257,14 +255,14 @@ export function AddPlaceSheet({
           type="button"
           disabled={disabled || isPending}
           onClick={handleSave}
-          className="mt-5 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="mt-5 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-40"
         >
           {t('save')}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
+          className="mt-2 w-full rounded-[12px] border border-line bg-bg px-4 py-3 text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70"
         >
           {t('cancel')}
         </button>

@@ -40,10 +40,10 @@ export function MapLegend({
         type="button"
         aria-pressed={allVisible}
         onClick={onToggleAll}
-        className={`shrink-0 rounded-chip border px-3 py-1.5 text-caption font-medium shadow-hair backdrop-blur-sm transition-[transform,background-color,box-shadow,color] duration-200 ease-spring active:scale-95 ${
+        className={`shrink-0 whitespace-nowrap rounded-chip border px-3 py-1.5 text-caption font-semibold transition-[transform,background-color,border-color,color] duration-200 ease-spring active:scale-95 ${
           allVisible
-            ? 'border-coral bg-coral-tint text-coral'
-            : 'border-line bg-card/90 text-ink-muted hover:bg-line'
+            ? 'border-ink bg-ink text-white'
+            : 'border-line bg-bg text-sub hover:bg-surface'
         }`}
       >
         {t('allDays')}
@@ -55,17 +55,16 @@ export function MapLegend({
           type="button"
           aria-pressed={e.visible}
           onClick={() => onSelectDay(e.date)}
-          className={`flex shrink-0 items-center gap-1.5 rounded-chip border px-3 py-1.5 text-caption font-medium shadow-hair backdrop-blur-sm transition-[transform,background-color,box-shadow,color] duration-200 ease-spring hover:bg-line active:scale-95 ${
-            e.visible ? 'border-line bg-card/90 text-ink' : 'border-line bg-card/90 text-ink-faint'
+          className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-chip border px-3 py-1.5 text-caption font-semibold transition-[transform,background-color,border-color,color] duration-200 ease-spring active:scale-95 ${
+            e.visible
+              ? 'border-ink bg-ink text-white'
+              : 'border-line bg-bg text-sub hover:bg-surface'
           }`}
         >
           <span
             aria-hidden="true"
-            className="h-2.5 w-2.5 rounded-chip"
-            style={{
-              backgroundColor: e.visible ? e.color : 'transparent',
-              boxShadow: `inset 0 0 0 2px ${e.color}`,
-            }}
+            className="h-[7px] w-[7px] rounded-chip"
+            style={{ backgroundColor: e.visible ? '#FFFFFF' : e.color }}
           />
           {t('dayChip', { n: e.dayNumber })}
         </button>

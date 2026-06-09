@@ -2,14 +2,15 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Pencil } from 'lucide-react';
 import type { Trip } from '@/src/db/schema';
-import { tripStatus } from '@/src/lib/days';
+import { tripStatus, today, diffDays } from '@/src/lib/days';
 
-// Pill background/text per spec §3.1: Upcoming=Sun, Active=Coral, Past=Teal-muted.
+// Atlas status pill: white pill, role-colored text (info=teal, active=orange, past=sub).
 const PILL_CLASS: Record<'upcoming' | 'active' | 'past', string> = {
-  upcoming: 'bg-sun-tint text-ink',
-  active: 'bg-coral text-white',
-  past: 'bg-teal-tint text-teal',
+  upcoming: 'text-accent',
+  active: 'text-orange',
+  past: 'text-sub',
 };
 
 function formatRange(startDate: string, endDate: string): {
@@ -35,54 +36,51 @@ export function TripCard({ trip, tz, onManage }: { trip: Trip; tz: string; onMan
   const t = useTranslations();
   const status = tripStatus(trip, tz);
   const { start, end, days } = formatRange(trip.startDate, trip.endDate);
+  // Display-only stat: upcoming trips count down to the start; others show length.
+  const statNumber = status === 'upcoming' ? diffDays(today(tz), trip.startDate) : days;
+  const statLabel = status === 'upcoming' ? t('tripCard.daysOut') : t('tripCard.daysLabel');
 
   return (
     <Link
       href={`/trip/${trip.id}`}
-      className="block overflow-hidden rounded-card shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
+      className="block overflow-hidden rounded-[18px] border border-line bg-bg transition active:scale-[0.99]"
     >
       <div
-        className="relative flex h-40 flex-col justify-end overflow-hidden bg-cover-gradient p-4"
+        className="relative block h-[180px] overflow-hidden bg-cover-gradient"
         // future: a later plan serves cover photos via /api/photos
       >
-        {/* Grain + bottom scrim keep white text legible over the warm gradient. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay"
-          style={{
-            backgroundSize: '160px 160px',
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
-          style={{ background: 'linear-gradient(to top, var(--scrim), transparent)' }}
-        />
+        <span
+          className={`absolute left-3 top-3 z-10 rounded-chip bg-white/95 px-3 py-[5px] text-[11.5px] font-bold ${PILL_CLASS[status]}`}
+        >
+          {t(`status.${status}`)}
+        </span>
         {onManage ? (
           <button
             type="button"
             aria-label={t('tripCard.edit')}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onManage(); }}
-            className="absolute left-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-chip bg-card/90 text-ink shadow-card backdrop-blur transition hover:bg-card active:scale-95 active:bg-line"
+            className="absolute right-3 top-3 z-10 flex h-[34px] w-[34px] items-center justify-center rounded-chip bg-white/95 text-ink transition hover:bg-white active:scale-95"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
+            <Pencil size={15} aria-hidden="true" />
           </button>
         ) : null}
-        <span
-          className={`absolute right-3 top-3 z-10 rounded-chip px-3 py-1 text-caption font-medium ${PILL_CLASS[status]}`}
-        >
-          {t(`status.${status}`)}
+      </div>
+      <div className="flex items-center justify-between gap-3 p-4">
+        <span className="min-w-0">
+          <span className="block text-[19px] font-bold tracking-[-0.02em] text-ink">
+            {trip.name}
+          </span>
+          <span className="mt-1 block text-[13px] text-sub [font-variant-numeric:tabular-nums]">
+            {t('tripCard.dateRange', { start, end, days })}
+          </span>
         </span>
-        <span className="relative z-10 font-serif text-display font-bold text-white drop-shadow">
-          {trip.name}
-        </span>
-        <span className="relative z-10 mt-1 text-caption font-medium text-white/90 [font-variant-numeric:tabular-nums]">
-          {t('tripCard.dateRange', { start, end, days })}
+        <span className="shrink-0 rounded-[12px] border border-line px-3 py-[7px] text-center">
+          <span className="block text-[17px] font-extrabold text-ink [font-variant-numeric:tabular-nums]">
+            {statNumber}
+          </span>
+          <span className="block text-[9.5px] font-bold uppercase tracking-[0.08em] text-faint">
+            {statLabel}
+          </span>
         </span>
       </div>
     </Link>

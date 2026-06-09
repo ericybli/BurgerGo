@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 /**
  * Standardized connectivity banner (spec §3.7, §7.6). Driven by navigator.onLine +
- * 'online'/'offline' events. Teal strip; copy from messages (bilingual-ready). Hidden online.
+ * 'online'/'offline' events. Ink strip; copy from messages (bilingual-ready). Hidden online.
  */
 export function OfflineBanner() {
   const t = useTranslations('offline');
@@ -29,7 +29,7 @@ export function OfflineBanner() {
     <div
       role="status"
       aria-live="polite"
-      className="bg-teal w-full px-4 py-2 text-center text-label font-medium text-white shadow-card"
+      className="w-full bg-ink px-4 py-2 text-center text-caption font-medium text-white"
     >
       {t('banner')}
     </div>

@@ -95,7 +95,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
   }
 
   if (state.status === 'loading') {
-    return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
+    return <p className="px-4 py-8 text-center text-body text-sub">{t('loading')}</p>;
   }
   if (state.status === 'error') {
     return <EmptyState mascotAlt={t('entries')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
@@ -122,14 +122,14 @@ export function JournalClient({ tripId }: { tripId: string }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
-      <div role="group" aria-label={t('entries')} className="mt-2 flex rounded-control bg-card p-0.5 shadow-inset">
+      <div role="group" aria-label={t('entries')} className="mt-2 flex rounded-[10px] bg-surface p-[3px] gap-0.5">
         {(['entries', 'links', 'photography'] as const).map((tb) => (
           <button
             key={tb}
             type="button"
             aria-pressed={tab === tb}
             onClick={() => setTab(tb)}
-            className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === tb ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
+            className={`flex-1 rounded-lg px-3 py-1.5 text-center text-label whitespace-nowrap transition ${tab === tb ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {tb === 'entries' ? t('entries') : tb === 'links' ? t('readingList') : t('photography')}
           </button>
@@ -145,7 +145,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
               type="button"
               onClick={openAddLink}
               disabled={!online}
-              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
             >
               {t('addLink')}
             </button>
@@ -194,7 +194,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
               type="button"
               disabled={!online}
               onClick={() => setEntrySheet({ open: true })}
-              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
             >
               {t('newEntry')}
             </button>
@@ -209,14 +209,14 @@ export function JournalClient({ tripId }: { tripId: string }) {
               <button
                 type="button"
                 onClick={() => setReading(e)}
-                className="block w-full rounded-card bg-card p-4 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
+                className="block w-full rounded-[14px] border border-line bg-bg p-[12px_14px] text-left active:scale-[0.99]"
               >
-                <span className="block font-serif text-heading font-semibold text-ink">{e.title}</span>
+                <span className="block text-[15.5px] font-bold tracking-[-0.01em] text-ink">{e.title}</span>
                 {e.entryDate ? (
-                  <span className="mt-0.5 block text-caption tabular-nums text-ink-muted">{e.entryDate}</span>
+                  <span className="mt-0.5 block text-[12px] tabular-nums text-faint">{e.entryDate}</span>
                 ) : null}
                 {e.body.trim() !== '' ? (
-                  <span className="mt-1 block line-clamp-2 text-body text-ink-muted">
+                  <span className="mt-1 block line-clamp-2 text-[13px] leading-[19px] text-sub">
                     {entrySnippet(e.body)}
                   </span>
                 ) : null}
@@ -230,7 +230,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
                         alt={e.title}
                         width={56}
                         height={56}
-                        className="h-14 w-14 shrink-0 rounded-control object-cover"
+                        className="h-14 w-14 shrink-0 rounded-[10px] object-cover"
                       />
                     ))}
                   </span>

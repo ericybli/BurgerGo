@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { MoreHorizontal } from 'lucide-react';
 import type { PlaceDTO, SavedListItem } from '@/src/lib/planView';
 import type { DerivedDay } from '@/src/lib/days';
 import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
@@ -50,34 +51,34 @@ function SavedPlaceCard({
   const thumb = thumbForPlace(place);
 
   return (
-    <div className="rounded-card bg-card p-3 shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]">
-      <button type="button" onClick={() => onTap(place.id)} className="block w-full text-left">
+    <div className="overflow-hidden rounded-card border border-line bg-bg">
+      <button type="button" onClick={() => onTap(place.id)} className="block w-full text-left transition active:opacity-70">
         {thumb.kind === 'photo' ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb.src} alt={place.name} className="mb-2 h-40 w-full rounded-control object-cover" />
+          <img src={thumb.src} alt={place.name} className="h-[130px] w-full object-cover" />
         ) : (
-          <PhotoPlaceholder category={place.category} />
+          <PhotoPlaceholder category={place.category} className="!mb-0 h-[130px] !rounded-none !shadow-none" />
         )}
-        <span className="block min-w-0">
+        <span className="block min-w-0 px-3 pt-2.5">
           <span className="flex items-center gap-1">
             <span aria-hidden="true">{categoryGlyph(place.category)}</span>
-            <span className="truncate text-body font-bold text-ink">{place.name}</span>
+            <span className="truncate text-heading text-ink">{place.name}</span>
           </span>
-          <span className="block truncate text-caption text-ink-muted">
+          <span className="block truncate text-[12px] text-sub">
             {tCat(place.category)}{place.address ? ` · ${place.address}` : ''}
           </span>
           {place.notes ? (
-            <span className="mt-1 block truncate text-caption text-ink-muted">{place.notes}</span>
+            <span className="mt-1 line-clamp-1 text-[12.5px] text-sub">{place.notes}</span>
           ) : null}
         </span>
       </button>
 
-      <div className="mt-2 flex flex-wrap gap-2 border-t border-line pt-2">
+      <div className="mt-2.5 flex flex-wrap gap-2 px-3 pb-3">
         <button
           type="button"
           disabled={disabled}
           onClick={() => onAddToDay(place.id)}
-          className="rounded-control bg-coral px-3 py-1.5 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-95 active:bg-coral-press disabled:opacity-40"
+          className="rounded-[10px] bg-orange px-4 py-[7px] text-[12.5px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('addToDay')}
         </button>
@@ -85,19 +86,19 @@ function SavedPlaceCard({
           type="button"
           aria-expanded={managing}
           onClick={() => setManaging((v) => !v)}
-          className="rounded-control border border-line px-2.5 py-1.5 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-95"
+          className="rounded-[10px] border border-line bg-bg px-4 py-[7px] text-[12.5px] font-semibold text-sub transition hover:bg-surface active:opacity-70"
         >
           {t('manage')}
         </button>
       </div>
 
       {managing ? (
-        <div className="mt-2 flex flex-wrap gap-2">
+        <div className="-mt-1 flex flex-wrap gap-2 px-3 pb-3">
           <button
             type="button"
             disabled={disabled}
             onClick={() => onMoveToList(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
+            className="rounded-[10px] border border-line bg-bg px-3 py-[7px] text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:opacity-70 disabled:opacity-40"
           >
             {tL('moveToList')}
           </button>
@@ -105,7 +106,7 @@ function SavedPlaceCard({
             type="button"
             disabled={disabled}
             onClick={() => onDelete(place.id)}
-            className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95 disabled:opacity-40"
+            className="rounded-[10px] border border-line bg-bg px-3 py-[7px] text-[12.5px] font-semibold text-danger transition hover:bg-surface active:opacity-70 disabled:opacity-40"
           >
             {t('delete')}
           </button>
@@ -187,7 +188,7 @@ export function SavedList({
         type="button"
         disabled={disabled}
         onClick={() => setNameSheet({ mode: 'createTop' })}
-        className="mb-3 w-full rounded-control border border-dashed border-line bg-paper px-4 py-2.5 text-label font-medium text-teal transition hover:border-teal hover:bg-teal-tint active:scale-[0.99] disabled:opacity-40"
+        className="mb-3 w-full rounded-[12px] border-[1.5px] border-dashed border-line bg-bg px-4 py-2.5 text-center text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:opacity-40"
       >
         {tL('newListOption')}
       </button>
@@ -198,7 +199,7 @@ export function SavedList({
         const isOpen = expanded.has(list.id);
         return (
           <section key={list.id} className="mt-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-[12px] border border-line bg-bg px-3 py-2.5">
               <button
                 type="button"
                 aria-expanded={isOpen}
@@ -210,11 +211,11 @@ export function SavedList({
                     return next;
                   })
                 }
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-control bg-card px-3 py-2 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
+                className="flex min-w-0 flex-1 items-center gap-2 text-left transition active:opacity-70"
               >
-                <span aria-hidden="true" className="text-ink-muted">{isOpen ? '▾' : '▸'}</span>
-                <span className="truncate text-label font-semibold text-ink">{list.name}</span>
-                <span className="ml-auto shrink-0 text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
+                <span aria-hidden="true" className="text-[13px] text-faint">{isOpen ? '▾' : '▸'}</span>
+                <span className="truncate text-[14px] font-semibold text-ink">{list.name}</span>
+                <span className="ml-auto shrink-0 text-[12.5px] text-faint [font-variant-numeric:tabular-nums]">
                   {items.length}
                 </span>
               </button>
@@ -223,9 +224,9 @@ export function SavedList({
                 aria-label={tL('listActions')}
                 disabled={disabled}
                 onClick={() => { setListMenuFor((cur) => (cur === list.id ? null : list.id)); setConfirmDeleteList(null); }}
-                className="flex shrink-0 items-center justify-center rounded-chip px-2 py-2 text-ink-muted transition hover:bg-line active:bg-line active:scale-95 disabled:opacity-40"
+                className="-my-1.5 -mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-chip text-faint transition hover:bg-surface active:scale-95 disabled:opacity-40"
               >
-                ⋯
+                <MoreHorizontal size={15} aria-hidden="true" />
               </button>
             </div>
 
@@ -234,7 +235,7 @@ export function SavedList({
                 <button
                   type="button"
                   onClick={() => { setNameSheet({ mode: 'rename', listId: list.id, initialName: list.name }); setListMenuFor(null); }}
-                  className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95"
+                  className="rounded-[10px] border border-line bg-bg px-3 py-[7px] text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:opacity-70"
                 >
                   {tL('rename')}
                 </button>
@@ -244,7 +245,7 @@ export function SavedList({
                     if (confirmDeleteList === list.id) { onDeleteList(list.id); setListMenuFor(null); setConfirmDeleteList(null); }
                     else setConfirmDeleteList(list.id);
                   }}
-                  className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95"
+                  className="rounded-[10px] border border-line bg-bg px-3 py-[7px] text-[12.5px] font-semibold text-danger transition hover:bg-surface active:opacity-70"
                 >
                   {confirmDeleteList === list.id ? tL('deleteListConfirm') : tL('deleteList')}
                 </button>
@@ -261,7 +262,7 @@ export function SavedList({
                   ))}
                 </ul>
               ) : (
-                <p className="mt-2 px-3 text-caption text-ink-faint">{tL('emptyListHint')}</p>
+                <p className="mt-2 px-3 text-caption text-faint">{tL('emptyListHint')}</p>
               )
             ) : null}
           </section>
@@ -283,7 +284,7 @@ export function SavedList({
         type="button"
         disabled={disabled}
         onClick={onAddPlace}
-        className="mt-4 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.99] active:bg-line disabled:opacity-40"
+        className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
       >
         {t('addPlace')}
       </button>

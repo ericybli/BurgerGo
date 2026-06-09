@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Layers, Maximize, Minimize } from 'lucide-react';
 import type { PlanBucket, DayGroup } from '@/src/lib/planUrl';
 import type { LegDTO, PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
@@ -244,10 +245,10 @@ export function PlanMap({
                   })}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-between rounded-card bg-card px-4 py-3 text-label text-ink shadow-card"
+                  className="flex items-center justify-between rounded-card border border-line bg-bg px-4 py-3 text-label text-ink"
                 >
                   <span className="truncate">{p.name}</span>
-                  <span aria-hidden="true" className="ml-2 shrink-0 text-teal">↗</span>
+                  <span aria-hidden="true" className="ml-2 shrink-0 text-accent">↗</span>
                 </a>
               </li>
             ))}
@@ -274,7 +275,7 @@ export function PlanMap({
       <div
         className={
           isFullscreen
-            ? 'fixed inset-0 z-50 w-full overflow-hidden bg-card pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
+            ? 'fixed inset-0 z-50 w-full overflow-hidden bg-bg pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]'
             : 'relative min-h-[40dvh] w-full flex-1 overflow-hidden rounded-card'
         }
       >
@@ -295,35 +296,33 @@ export function PlanMap({
               onClick={() => setLayersOpen((v) => !v)}
               aria-label={t('layers')}
               aria-expanded={layersOpen}
-              className="flex h-10 items-center gap-1.5 rounded-control bg-card/95 px-3 text-caption font-medium text-ink shadow-card backdrop-blur"
+              className="flex h-10 items-center gap-1.5 rounded-chip bg-bg/95 px-3 text-[12.5px] font-semibold text-ink shadow-lift backdrop-blur"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
+              <Layers size={16} strokeWidth={1.75} aria-hidden="true" />
               <span>{t('layers')}</span>
             </button>
             {layersOpen ? (
               <div
                 role="group"
                 aria-label={t('layers')}
-                className="mt-2 w-44 rounded-card bg-card/95 p-1.5 shadow-lift backdrop-blur"
+                className="mt-2 w-44 rounded-card bg-bg/95 p-1.5 shadow-lift backdrop-blur"
               >
-                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-line">
+                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-surface">
                   <span>{t('layerSaved')}</span>
                   <input
                     type="checkbox"
                     checked={showSaved}
                     onChange={(e) => setShowSaved(e.target.checked)}
-                    className="h-4 w-4 accent-teal"
+                    className="h-4 w-4 accent-accent"
                   />
                 </label>
-                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-line">
+                <label className="flex cursor-pointer items-center justify-between gap-2 rounded-control px-2 py-1.5 text-caption text-ink active:bg-surface">
                   <span>{t('layerRestaurants')}</span>
                   <input
                     type="checkbox"
                     checked={showRestaurants}
                     onChange={(e) => setShowRestaurants(e.target.checked)}
-                    className="h-4 w-4 accent-teal"
+                    className="h-4 w-4 accent-accent"
                   />
                 </label>
               </div>
@@ -335,16 +334,12 @@ export function PlanMap({
           type="button"
           onClick={() => setIsFullscreen((v) => !v)}
           aria-label={isFullscreen ? t('exitFullscreen') : t('enterFullscreen')}
-          className="absolute right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[2] flex h-10 w-10 items-center justify-center rounded-control bg-card/95 text-ink shadow-card backdrop-blur"
+          className="absolute right-3 top-[calc(env(safe-area-inset-top)+0.75rem)] z-[2] flex h-10 w-10 items-center justify-center rounded-chip bg-bg/95 text-ink shadow-lift backdrop-blur"
         >
           {isFullscreen ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M9 3v6H3M21 9h-6V3M3 15h6v6M15 21v-6h6" />
-            </svg>
+            <Minimize size={20} strokeWidth={1.75} aria-hidden="true" />
           ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6" />
-            </svg>
+            <Maximize size={20} strokeWidth={1.75} aria-hidden="true" />
           )}
         </button>
 
@@ -360,9 +355,9 @@ export function PlanMap({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => { e.preventDefault(); onOpenDayRoute(routeLinks[0]!.date); }}
-              className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+              className="flex items-center justify-center gap-2 rounded-[12px] border border-line bg-bg px-3 py-2 text-[12.5px] font-semibold text-accent active:opacity-70"
             >
-              <span aria-hidden="true" className="h-2.5 w-2.5 rounded-chip" style={{ backgroundColor: routeLinks[0]!.color }} />
+              <span aria-hidden="true" className="h-2 w-2 rounded-chip" style={{ backgroundColor: routeLinks[0]!.color }} />
               {t('openDayRoute')}
             </a>
           ) : (
@@ -371,10 +366,10 @@ export function PlanMap({
                 type="button"
                 onClick={() => setRoutesOpen((v) => !v)}
                 aria-expanded={routesOpen}
-                className="flex w-full items-center justify-between gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+                className="flex w-full items-center justify-between gap-2 rounded-[12px] border border-line bg-bg px-3 py-2 text-[12.5px] font-semibold text-accent active:opacity-70"
               >
                 <span>{t('openDayRoutes')}</span>
-                <span aria-hidden="true" className="text-ink-muted">{routesOpen ? '▾' : '▸'}</span>
+                <span aria-hidden="true" className="text-sub">{routesOpen ? '▾' : '▸'}</span>
               </button>
               {routesOpen ? (
                 <ul className="mt-2 space-y-2">
@@ -385,9 +380,9 @@ export function PlanMap({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => { e.preventDefault(); onOpenDayRoute(r.date); }}
-                        className="flex items-center gap-2 rounded-control border border-line bg-card px-3 py-2 text-caption font-medium text-teal"
+                        className="flex items-center justify-center gap-2 rounded-[12px] border border-line bg-bg px-3 py-2 text-[12.5px] font-semibold text-accent active:opacity-70"
                       >
-                        <span aria-hidden="true" className="h-2.5 w-2.5 rounded-chip" style={{ backgroundColor: r.color }} />
+                        <span aria-hidden="true" className="h-2 w-2 rounded-chip" style={{ backgroundColor: r.color }} />
                         {t('openDayRoute')}
                       </a>
                     </li>

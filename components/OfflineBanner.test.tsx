@@ -25,7 +25,7 @@ describe('OfflineBanner', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
-  it('shows the localized Teal banner when going offline', () => {
+  it('shows the localized ink banner when going offline', () => {
     renderBanner();
     act(() => {
       setOnline(false);
@@ -34,8 +34,8 @@ describe('OfflineBanner', () => {
     const banner = screen.getByRole('status');
     expect(banner).toBeInTheDocument();
     expect(banner).toHaveTextContent(messages.offline.banner);
-    // Teal strip (spec §3.7 / §9.2) — applied via the `bg-teal` Tailwind token.
-    expect(banner).toHaveClass('bg-teal');
+    // Atlas Light: solid ink strip — applied via the `bg-ink` Tailwind token.
+    expect(banner).toHaveClass('bg-ink');
   });
 
   it('renders offline immediately if the page mounts already offline', () => {

@@ -111,45 +111,45 @@ export function RestaurantDetailSheet({
       role="dialog"
       aria-modal="true"
       aria-label={restaurant.name}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet"
       >
-        <div className="mx-auto -mt-2 mb-3 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
 
         {actionError ? (
-          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mb-3 rounded-control border border-line px-3 py-2 text-caption text-danger">
             {actionError}
           </p>
         ) : null}
 
-        <h2 className="font-serif text-title font-bold text-ink">{restaurant.name}</h2>
-        <p className="mt-1 flex flex-wrap items-center gap-2 text-caption text-ink-muted">
+        <h2 className="text-[18px] font-bold tracking-[-0.01em] text-ink">{restaurant.name}</h2>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-caption text-sub">
           <span>{restaurant.cuisine ?? t('cuisineUnknown')}</span>
           {stars ? (
-            <span aria-label={`${restaurant.rating} out of 5`} className="text-coral">
+            <span aria-label={`${restaurant.rating} out of 5`} className="text-accent">
               {'★'.repeat(stars.filled)}<span className="text-line">{'★'.repeat(stars.empty)}</span>
             </span>
           ) : <span>{t('noRating')}</span>}
           {price ? <span className="font-medium text-ink [font-variant-numeric:tabular-nums]">{price}</span> : null}
         </p>
-        <p className="mt-1 text-micro font-medium uppercase tracking-wide text-teal">
+        <p className="mt-1 text-micro uppercase text-accent">
           {restaurant.scheduledDayDate ? t('scheduledOn', { date: restaurant.scheduledDayDate }) : t('notScheduled')}
         </p>
         {restaurant.notes ? <p className="mt-2 text-body text-ink">{restaurant.notes}</p> : null}
 
         {thumb.kind === 'photo' ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={thumb.src} alt={restaurant.name} className="mt-3 h-48 w-full rounded-card object-cover shadow-hair" />
+          <img src={thumb.src} alt={restaurant.name} className="mt-3 h-48 w-full rounded-card border border-line object-cover" />
         ) : null}
 
         {photoError ? (
-          <p role="alert" className="mt-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mt-3 rounded-control border border-line px-3 py-2 text-caption text-danger">
             {photoError}
           </p>
         ) : null}
@@ -161,10 +161,10 @@ export function RestaurantDetailSheet({
           onDelete={handlePhotoDelete}
         />
 
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="rd-photo">
+        <label className="mt-3 block text-label text-ink" htmlFor="rd-photo">
           {tPlan('addPhoto')}
         </label>
-        {disabled ? <p className="text-caption text-ink-muted">{tPlan('addPhotoOffline')}</p> : null}
+        {disabled ? <p className="text-caption text-sub">{tPlan('addPhotoOffline')}</p> : null}
         <input
           id="rd-photo"
           type="file"
@@ -174,27 +174,27 @@ export function RestaurantDetailSheet({
           className="mt-1 w-full text-body text-ink disabled:opacity-60"
         />
         {uploading ? (
-          <p className="mt-1 text-caption text-ink-muted">{tPlan('uploadingPhoto')}</p>
+          <p className="mt-1 text-caption text-sub">{tPlan('uploadingPhoto')}</p>
         ) : null}
 
         <button
           type="button" disabled={busy}
           onClick={() => run(() => updateRestaurantAction(restaurant.id, { status: nextStatus }))}
-          className="mt-4 w-full rounded-control bg-teal px-4 py-3 text-label font-medium text-white shadow-card transition hover:shadow-lift active:scale-[0.98] disabled:opacity-40"
+          className="mt-4 w-full rounded-[12px] bg-accent px-4 py-3 text-[14px] font-semibold text-white transition active:opacity-80 disabled:opacity-40"
         >
           {restaurant.status === 'been' ? t('markWantToTry') : t('markBeen')}
         </button>
 
         {picking ? (
           <div className="mt-3">
-            <p className="text-label font-medium text-ink">{t('dayPickerTitle')}</p>
+            <p className="text-label text-ink">{t('dayPickerTitle')}</p>
             <ul className="mt-2 flex flex-col gap-2">
               {days.map((d) => (
                 <li key={d.date}>
                   <button
                     type="button" disabled={busy}
                     onClick={() => run(() => scheduleRestaurantToDayAction(restaurant.id, d.date))}
-                    className="w-full rounded-control bg-paper px-3 py-2 text-left text-body text-ink shadow-inset transition hover:bg-line active:scale-[0.98] disabled:opacity-40 [font-variant-numeric:tabular-nums]"
+                    className="w-full rounded-control border border-line bg-bg px-3 py-2 text-left text-body text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-40 [font-variant-numeric:tabular-nums]"
                   >
                     Day {d.dayNumber} · {d.weekday} {d.date}
                   </button>
@@ -205,7 +205,7 @@ export function RestaurantDetailSheet({
         ) : (
           <button
             type="button" disabled={busy} onClick={() => setPicking(true)}
-            className="mt-3 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] disabled:opacity-40"
+            className="mt-3 w-full rounded-control border border-line bg-bg px-4 py-3 text-label text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-40"
           >
             {t('scheduleToDay')}
           </button>
@@ -215,7 +215,7 @@ export function RestaurantDetailSheet({
           <button
             type="button" disabled={busy}
             onClick={() => run(() => unscheduleRestaurantAction(restaurant.id))}
-            className="mt-3 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] disabled:opacity-40"
+            className="mt-3 w-full rounded-control border border-line bg-bg px-4 py-3 text-label text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-40"
           >
             {t('unschedule')}
           </button>
@@ -223,7 +223,7 @@ export function RestaurantDetailSheet({
 
         <button
           type="button" disabled={busy} onClick={() => onEdit(restaurant.id)}
-          className="mt-3 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] disabled:opacity-40"
+          className="mt-3 w-full rounded-control border border-line bg-bg px-4 py-3 text-label text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-40"
         >
           {t('editRestaurant')}
         </button>
@@ -232,14 +232,14 @@ export function RestaurantDetailSheet({
           <button
             type="button" disabled={busy}
             onClick={() => run(() => deleteRestaurantAction(restaurant.id))}
-            className="mt-3 w-full rounded-control bg-red-600 px-4 py-3 text-label font-medium text-white shadow-card transition hover:shadow-lift active:scale-[0.98] disabled:opacity-40"
+            className="mt-3 w-full rounded-control bg-danger px-4 py-3 text-label text-white transition active:opacity-80 disabled:opacity-40"
           >
             {t('confirmDelete')}
           </button>
         ) : (
           <button
             type="button" disabled={busy} onClick={() => setConfirmingDelete(true)}
-            className="mt-3 w-full rounded-control px-4 py-3 text-label font-medium text-red-600 transition hover:bg-red-50 active:scale-[0.98] disabled:opacity-40"
+            className="mt-3 w-full rounded-control px-4 py-3 text-label text-danger transition hover:bg-surface active:opacity-70 disabled:opacity-40"
           >
             {t('delete')}
           </button>
@@ -247,7 +247,7 @@ export function RestaurantDetailSheet({
 
         <button
           type="button" onClick={onClose}
-          className="mt-4 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98]"
+          className="mt-4 w-full rounded-control border border-line bg-bg px-4 py-3 text-label text-ink transition hover:bg-surface active:opacity-70"
         >
           {t('cancel')}
         </button>

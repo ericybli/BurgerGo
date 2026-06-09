@@ -23,17 +23,17 @@ function RemainingLabel({
 }) {
   const t = useTranslations('budget');
   if (row.planned === null) {
-    return <span className="text-caption text-ink-faint">{t('noTarget')}</span>;
+    return <span className="text-caption text-faint">{t('noTarget')}</span>;
   }
   if (row.over) {
     return (
-      <span className="text-caption font-medium text-red-600">
+      <span className="text-caption font-semibold text-danger">
         {t('overBudget', { amount: formatMoney(Math.abs(row.remaining ?? 0), currency, locale) })}
       </span>
     );
   }
   return (
-    <span className="text-caption text-ink-muted">
+    <span className="text-caption text-faint">
       {t('remaining', { amount: formatMoney(row.remaining ?? 0, currency, locale) })}
     </span>
   );
@@ -56,11 +56,11 @@ function Bar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={width}
-      className="mt-1 h-2 w-full overflow-hidden rounded-chip bg-line"
+      className="mt-1.5 h-[5px] w-full overflow-hidden rounded-[3px] bg-surface"
     >
       <div
         data-testid={testId}
-        className={`h-full rounded-chip transition-[width] duration-500 ease-spring ${row.over ? 'bg-danger' : 'bg-coral'}`}
+        className={`h-full rounded-[3px] transition-[width] duration-500 ease-spring ${row.over ? 'bg-danger' : 'bg-accent'}`}
         style={{ width: `${width}%` }}
       />
     </div>
@@ -71,19 +71,19 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
   const t = useTranslations('budget');
 
   return (
-    <section className="rounded-card bg-card p-4 shadow-card shadow-hair">
+    <section className="rounded-[16px] border border-line bg-bg px-4 py-3.5">
       <div className="flex items-center justify-between">
-        <h2 className="text-micro font-semibold uppercase tracking-wide text-ink-muted">{t('overall')}</h2>
+        <h2 className="text-micro uppercase text-faint">{t('overall')}</h2>
         <button
           type="button"
           onClick={onSetBudget}
-          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
+          className="rounded-control border border-line bg-bg px-3.5 py-2 text-label text-ink transition hover:bg-surface active:opacity-70"
         >
           {overall.planned === null ? t('setBudget') : t('editBudget')}
         </button>
       </div>
 
-      <p className="mt-2 font-serif text-title text-ink [font-variant-numeric:tabular-nums]">
+      <p className="mt-2 text-[30px] font-extrabold tracking-[-0.03em] text-ink [font-variant-numeric:tabular-nums]">
         {overall.planned === null
           ? formatMoney(overall.spent, currency, locale)
           : t('spentOfPlanned', {
@@ -96,14 +96,14 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
         <RemainingLabel row={overall} currency={currency} locale={locale} />
       </p>
 
-      <ul className="mt-4 flex flex-col gap-3">
+      <ul className="mt-3 flex flex-col">
         {categories.map((row) => (
-          <li key={row.category}>
-            <div className="flex items-center justify-between">
-              <span className="text-label font-medium text-ink">
+          <li key={row.category} className="border-b border-line py-[9px] last:border-b-0 last:pb-0">
+            <div className="flex items-center justify-between gap-3">
+              <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-ink">
                 {t(`categories.${row.category as BudgetCategory}`)}
               </span>
-              <span className="text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
+              <span className="shrink-0 text-body font-semibold text-sub [font-variant-numeric:tabular-nums]">
                 {row.planned === null
                   ? formatMoney(row.spent, currency, locale)
                   : t('spentOfPlanned', {
@@ -117,7 +117,7 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
               row={row}
               label={t(`categories.${row.category as BudgetCategory}`)}
             />
-            <p className="mt-1">
+            <p className="mt-1 text-right">
               <RemainingLabel row={row} currency={currency} locale={locale} />
             </p>
           </li>

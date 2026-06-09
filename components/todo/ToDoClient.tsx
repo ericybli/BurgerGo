@@ -19,12 +19,12 @@ export function ToDoClient({ tripId }: { tripId: string }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
-      <div role="group" className="mt-2 flex rounded-control bg-card p-0.5 shadow-inset">
+      <div role="group" className="mt-2 flex gap-0.5 rounded-[10px] bg-surface p-[3px]">
         <button
           type="button"
           aria-pressed={tab === 'packing'}
           onClick={() => setTab('packing')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-[0.98] ${tab === 'packing' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:text-ink'}`}
+          className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${tab === 'packing' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
         >
           {t('packingTab')}
         </button>
@@ -32,7 +32,7 @@ export function ToDoClient({ tripId }: { tripId: string }) {
           type="button"
           aria-pressed={tab === 'tasks'}
           onClick={() => setTab('tasks')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-[0.98] ${tab === 'tasks' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:text-ink'}`}
+          className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${tab === 'tasks' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
         >
           {t('tasksTab')}
         </button>

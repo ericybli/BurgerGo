@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Plus } from 'lucide-react';
 import type { Trip } from '@/src/db/schema';
 import { withBase } from '@/src/lib/basePath';
 import { TripCard } from '@/components/TripCard';
@@ -59,7 +60,7 @@ export function HomeClient({ tz }: { tz: string }) {
             height={96}
             className="mb-4 h-24 w-24 animate-pulse opacity-90"
           />
-          <p className="text-body text-ink-muted">{t('home.loading')}</p>
+          <p className="text-body text-sub">{t('home.loading')}</p>
         </div>
       ) : state.status === 'error' ? (
         <EmptyState
@@ -78,26 +79,31 @@ export function HomeClient({ tz }: { tz: string }) {
           onAction={() => setSheetOpen(true)}
         />
       ) : (
-        <ul className="flex flex-col gap-3">
-          {state.trips.map((trip, i) => (
-            <li
-              key={trip.id}
-              className="animate-fade-up"
-              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
-            >
-              <TripCard trip={trip} tz={tz} onManage={() => setManageTrip(trip)} />
-            </li>
-          ))}
-        </ul>
+        <>
+          <p className="mb-2.5 text-micro uppercase tracking-[0.1em] text-faint">
+            {t('home.tripsLabel')}
+          </p>
+          <ul className="flex flex-col gap-3">
+            {state.trips.map((trip, i) => (
+              <li
+                key={trip.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+              >
+                <TripCard trip={trip} tz={tz} onManage={() => setManageTrip(trip)} />
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       <button
         type="button"
         aria-label={t('home.newTrip')}
         onClick={() => setSheetOpen(true)}
-        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-chip bg-coral text-2xl font-bold text-white shadow-lift transition hover:bg-coral-press hover:shadow-lift active:scale-95 active:bg-coral-press"
+        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-chip bg-orange text-white shadow-fab transition hover:bg-orange-press active:scale-95 active:bg-orange-press"
       >
-        +
+        <Plus size={24} aria-hidden="true" />
       </button>
 
       <NewTripSheet

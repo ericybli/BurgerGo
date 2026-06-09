@@ -11,7 +11,7 @@ import type { EntryDTO } from '@/app/api/trips/[tripId]/journal/route';
 // client-fetched, so there is nothing to server-render. (perf)
 const Markdown = dynamic(() => import('@/components/journal/Markdown').then((m) => m.Markdown), {
   ssr: false,
-  loading: () => <p className="mt-2 text-body text-ink-muted">…</p>,
+  loading: () => <p className="mt-2 text-body text-sub">…</p>,
 });
 
 type Props = {
@@ -39,7 +39,7 @@ export function EntryReader({ entry, online, onEdit, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
+          className="rounded-control border border-line bg-bg px-3 py-1.5 text-label text-ink hover:bg-surface active:opacity-70"
         >
           {t('back')}
         </button>
@@ -47,15 +47,15 @@ export function EntryReader({ entry, online, onEdit, onClose }: Props) {
           type="button"
           disabled={!online}
           onClick={onEdit}
-          className="rounded-control bg-coral px-4 py-1.5 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="px-3 py-1.5 text-label text-accent active:opacity-70 disabled:opacity-40"
         >
           {t('edit')}
         </button>
       </div>
 
-      <h1 className="mt-5 font-serif text-title font-semibold leading-tight text-ink">{entry.title}</h1>
+      <h1 className="mt-5 text-title text-ink">{entry.title}</h1>
       {entry.entryDate ? (
-        <p className="mt-1.5 text-caption tabular-nums text-ink-muted">
+        <p className="mt-1.5 text-caption tabular-nums text-faint">
           {entry.entryDate}{wd ? ` · ${wd}` : ''}
         </p>
       ) : null}

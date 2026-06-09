@@ -4,7 +4,8 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
 
-const PAPER = { r: 0xf5, g: 0xee, b: 0xe1, alpha: 1 }; // #F5EEE1
+// Atlas Light brand: icons sit on the logo's cream field. #F7F1E4
+const CREAM = { r: 0xf7, g: 0xf1, b: 0xe4, alpha: 1 };
 
 export interface GenerateIconsOptions {
   /** Source logo (the high-res original). */
@@ -20,7 +21,7 @@ async function renderIcon(source: string, size: number, inset: number): Promise<
     .resize(logoSize, logoSize, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .toBuffer();
   return sharp({
-    create: { width: size, height: size, channels: 4, background: PAPER },
+    create: { width: size, height: size, channels: 4, background: CREAM },
   })
     .composite([{ input: logo, gravity: 'center' }])
     .png()

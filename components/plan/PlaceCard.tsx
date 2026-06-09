@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import type { PlaceDTO } from '@/src/lib/planView';
-import { categoryGlyph, thumbForPlace } from '@/src/lib/planUrl';
+import { thumbForPlace } from '@/src/lib/planUrl';
 import { PhotoPlaceholder } from '@/components/plan/PhotoPlaceholder';
 
 type PlaceCardProps = {
@@ -14,6 +15,8 @@ type PlaceCardProps = {
   disabled: boolean;
   isFirst: boolean;
   isLast: boolean;
+  /** Itinerary density: compact hairline rows vs large photo cards. */
+  density?: 'rows' | 'cards';
   onTap: (placeId: string) => void;
   /** Opens the rich read view (works offline). */
   onView: (placeId: string) => void;
@@ -34,6 +37,7 @@ export function PlaceCard({
   disabled,
   isFirst,
   isLast,
+  density = 'cards',
   onTap,
   onView,
   onMoveUp,
@@ -49,40 +53,137 @@ export function PlaceCard({
   const [managing, setManaging] = useState(false);
   const hasMeta = place.scheduledTime != null || place.durationMin != null;
 
-  return (
-    <div className="flex gap-3">
-      <div className="flex flex-col items-center">
-        <span
-          aria-hidden="true"
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-chip text-caption font-bold text-white"
-          style={{ backgroundColor: pinColor }}
-        >
-          {pinNumber}
-        </span>
-        <div className="mt-1 flex flex-col gap-0.5">
+  const stopNumber = (
+    <span
+      aria-hidden="true"
+      className="flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-chip text-[11.5px] font-bold text-white"
+      style={{ backgroundColor: pinColor }}
+    >
+      {pinNumber}
+    </span>
+  );
+
+  const manageButtons = (
+    <>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onMoveToSaved(place.id)}
+        className="rounded-lg border border-accent px-3 py-1 text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:bg-accent-tint active:scale-95 disabled:opacity-40"
+      >
+        {t('moveToSaved')}
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onMoveToDay(place.id)}
+        className="rounded-lg border border-accent px-3 py-1 text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:bg-accent-tint active:scale-95 disabled:opacity-40"
+      >
+        {t('move')}
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onCopyToDay(place.id)}
+        className="rounded-lg border border-accent px-3 py-1 text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:bg-accent-tint active:scale-95 disabled:opacity-40"
+      >
+        {t('copy')}
+      </button>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onDelete(place.id)}
+        className="rounded-lg border border-danger px-3 py-1 text-[12.5px] font-semibold text-danger transition hover:bg-danger/10 active:bg-danger/10 active:scale-95 disabled:opacity-40"
+      >
+        {t('delete')}
+      </button>
+    </>
+  );
+
+  if (density === 'rows') {
+    return (
+      <div className={`flex gap-2.5 py-3 ${isLast ? '' : 'border-b border-line'}`}>
+        <div className="flex w-6 shrink-0 justify-center pt-4">{stopNumber}</div>
+
+        <div className="min-w-0 flex-1">
+          <button type="button" onClick={() => onTap(place.id)} className="flex w-full items-center gap-2.5 text-left">
+            {thumb.kind === 'photo' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={thumb.src}
+                alt={place.name}
+                className="h-[54px] w-[54px] shrink-0 rounded-[10px] object-cover"
+              />
+            ) : (
+              <PhotoPlaceholder category={place.category} className="!mb-0 h-[54px] !w-[54px] shrink-0" />
+            )}
+            <span className="block min-w-0 flex-1">
+              <span className="block truncate text-[14px] font-semibold text-ink">{place.name}</span>
+              <span className="block truncate text-[11.5px] text-sub">
+                {tCat(place.category)}
+                {place.address ? ` · ${place.address}` : ''}
+              </span>
+              {hasMeta ? (
+                <span className="mt-0.5 flex flex-wrap gap-2 text-[11.5px] text-faint [font-variant-numeric:tabular-nums]">
+                  {place.scheduledTime ? <span>{place.scheduledTime}</span> : null}
+                  {place.durationMin != null ? <span>{place.durationMin} min</span> : null}
+                </span>
+              ) : null}
+            </span>
+          </button>
+
+          <div className="mt-1 flex items-center gap-3 pl-[64px]">
+            {/* View is enabled even offline — opens local read card */}
+            <button
+              type="button"
+              onClick={() => onView(place.id)}
+              className="py-0.5 text-[12px] font-semibold text-accent transition active:opacity-70"
+            >
+              {t('view')}
+            </button>
+            {/* Manage groups the secondary actions to keep the row clean */}
+            <button
+              type="button"
+              aria-expanded={managing}
+              onClick={() => setManaging((v) => !v)}
+              className="py-0.5 text-[12px] font-semibold text-sub transition active:opacity-70"
+            >
+              {t('manage')}
+            </button>
+          </div>
+
+          {managing ? <div className="mt-2 flex flex-wrap gap-2 pl-[64px]">{manageButtons}</div> : null}
+        </div>
+
+        <div className="flex shrink-0 flex-col items-center justify-center gap-0.5">
           <button
             type="button"
             aria-label={t('moveUp')}
             disabled={disabled || isFirst}
             onClick={() => onMoveUp(place.id)}
-            className="flex items-center justify-center rounded-chip text-ink-faint transition hover:bg-line active:scale-95 disabled:opacity-30"
+            className="flex h-6 w-6 items-center justify-center rounded-chip text-faint transition hover:bg-surface active:scale-95 disabled:opacity-30"
           >
-            ▲
+            <ChevronUp size={13} aria-hidden="true" />
           </button>
           <button
             type="button"
             aria-label={t('moveDown')}
             disabled={disabled || isLast}
             onClick={() => onMoveDown(place.id)}
-            className="flex items-center justify-center rounded-chip text-ink-faint transition hover:bg-line active:scale-95 disabled:opacity-30"
+            className="flex h-6 w-6 items-center justify-center rounded-chip text-faint transition hover:bg-surface active:scale-95 disabled:opacity-30"
           >
-            ▼
+            <ChevronDown size={13} aria-hidden="true" />
           </button>
         </div>
-        <span className="mt-1 w-px flex-1 bg-line" aria-hidden="true" />
       </div>
+    );
+  }
 
-      <div className="mb-3 min-w-0 flex-1 rounded-card bg-card p-3 shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]">
+  return (
+    <div className="flex gap-2.5">
+      <div className="flex w-6 shrink-0 justify-center pt-1">{stopNumber}</div>
+
+      <div className="mb-3 min-w-0 flex-1 overflow-hidden rounded-card border border-line bg-bg">
         <button
           type="button"
           onClick={() => onTap(place.id)}
@@ -93,22 +194,19 @@ export function PlaceCard({
             <img
               src={thumb.src}
               alt={place.name}
-              className="mb-2 h-40 w-full rounded-control object-cover"
+              className="h-[140px] w-full object-cover"
             />
           ) : (
-            <PhotoPlaceholder category={place.category} />
+            <PhotoPlaceholder category={place.category} className="!mb-0 h-[140px] !rounded-none" />
           )}
-          <span className="block min-w-0">
-            <span className="flex items-center gap-1">
-              <span aria-hidden="true">{categoryGlyph(place.category)}</span>
-              <span className="truncate text-body font-bold text-ink">{place.name}</span>
-            </span>
-            <span className="block truncate text-caption text-ink-muted">
+          <span className="block min-w-0 px-3 pt-2.5">
+            <span className="block truncate text-heading text-ink">{place.name}</span>
+            <span className="block truncate text-caption text-sub">
               {tCat(place.category)}
               {place.address ? ` · ${place.address}` : ''}
             </span>
             {hasMeta ? (
-              <span className="mt-1 flex flex-wrap gap-2 text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
+              <span className="mt-1 flex flex-wrap gap-2 text-caption text-faint [font-variant-numeric:tabular-nums]">
                 {place.scheduledTime ? <span>{place.scheduledTime}</span> : null}
                 {place.durationMin != null ? <span>{place.durationMin} min</span> : null}
               </span>
@@ -116,12 +214,12 @@ export function PlaceCard({
           </span>
         </button>
 
-        <div className="mt-2 flex flex-wrap gap-2 border-t border-line pt-2">
+        <div className="mt-2.5 flex items-center gap-2 px-3 pb-3">
           {/* View is enabled even offline — opens local read card */}
           <button
             type="button"
             onClick={() => onView(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-95"
+            className="rounded-lg border border-accent px-3 py-1 text-[12.5px] font-semibold text-accent transition hover:bg-accent-tint active:bg-accent-tint active:scale-95"
           >
             {t('view')}
           </button>
@@ -130,48 +228,33 @@ export function PlaceCard({
             type="button"
             aria-expanded={managing}
             onClick={() => setManaging((v) => !v)}
-            className="rounded-control border border-line px-2.5 py-1 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-95"
+            className="rounded-lg border border-line px-3 py-1 text-[12.5px] font-semibold text-sub transition hover:bg-surface active:bg-surface active:scale-95"
           >
             {t('manage')}
           </button>
+          <span className="ml-auto flex items-center gap-1">
+            <button
+              type="button"
+              aria-label={t('moveUp')}
+              disabled={disabled || isFirst}
+              onClick={() => onMoveUp(place.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-chip text-faint transition hover:bg-surface active:scale-95 disabled:opacity-30"
+            >
+              <ChevronUp size={13} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={t('moveDown')}
+              disabled={disabled || isLast}
+              onClick={() => onMoveDown(place.id)}
+              className="flex h-7 w-7 items-center justify-center rounded-chip text-faint transition hover:bg-surface active:scale-95 disabled:opacity-30"
+            >
+              <ChevronDown size={13} aria-hidden="true" />
+            </button>
+          </span>
         </div>
 
-        {managing ? (
-          <div className="mt-2 flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onMoveToSaved(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
-            >
-              {t('moveToSaved')}
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onMoveToDay(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
-            >
-              {t('move')}
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onCopyToDay(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
-            >
-              {t('copy')}
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onDelete(place.id)}
-              className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95 disabled:opacity-40"
-            >
-              {t('delete')}
-            </button>
-          </div>
-        ) : null}
+        {managing ? <div className="flex flex-wrap gap-2 px-3 pb-3">{manageButtons}</div> : null}
       </div>
     </div>
   );

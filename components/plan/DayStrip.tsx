@@ -21,7 +21,7 @@ function shortDate(dateStr: string): string {
 export function DayStrip({ days, selectedDate, onSelect }: DayStripProps) {
   const t = useTranslations('plan');
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {days.map((d) => {
         const active = d.date === selectedDate;
         return (
@@ -30,14 +30,12 @@ export function DayStrip({ days, selectedDate, onSelect }: DayStripProps) {
             type="button"
             aria-current={active ? 'true' : undefined}
             onClick={() => onSelect(d.date)}
-            className={`relative flex shrink-0 items-center gap-1 rounded-chip px-3 py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color] duration-200 ease-spring active:scale-95 ${
-              active
-                ? 'bg-coral text-white shadow-card'
-                : 'bg-card text-ink-muted shadow-hair hover:shadow-card'
+            className={`relative flex flex-1 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[12px] border px-3 py-2 text-[13px] font-semibold transition active:scale-[0.98] [font-variant-numeric:tabular-nums] ${
+              active ? 'border-ink bg-ink text-white' : 'border-line bg-bg text-ink'
             }`}
           >
             {d.isToday ? (
-              <span aria-label={t('todayDot')} className="h-1.5 w-1.5 rounded-full bg-sun" />
+              <span aria-label={t('todayDot')} className="h-1.5 w-1.5 shrink-0 rounded-full bg-day-2" />
             ) : null}
             <span>
               {t('dayChip', {

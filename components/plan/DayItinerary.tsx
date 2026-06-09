@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { LayoutGrid, Rows3 } from 'lucide-react';
 import type { PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import type { LegLookup } from '@/src/lib/legView';
@@ -75,6 +76,25 @@ export function DayItinerary({
   const t = useTranslations('plan');
   const tCat = useTranslations('placeCategory');
   const [exportOpen, setExportOpen] = useState(false);
+  // Itinerary density (approved Atlas affordance): compact rows vs large cards,
+  // remembered across visits. localStorage is only touched post-mount (SSR-safe).
+  const [density, setDensity] = useState<'rows' | 'cards'>('rows');
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem('bg.itineraryDensity');
+      if (stored === 'rows' || stored === 'cards') setDensity(stored);
+    } catch {
+      /* private mode etc. — keep the default */
+    }
+  }, []);
+  function changeDensity(next: 'rows' | 'cards') {
+    setDensity(next);
+    try {
+      window.localStorage.setItem('bg.itineraryDensity', next);
+    } catch {
+      /* ignore — preference just won't persist */
+    }
+  }
 
   function move(placeId: string, dir: 'up' | 'down') {
     const ids = stops.map((s) => s.id);
@@ -86,6 +106,34 @@ export function DayItinerary({
 
   return (
     <div>
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <span className="text-[13px] font-bold text-ink">{dayLabel}</span>
+        <div role="group" className="flex shrink-0 items-center gap-0.5 rounded-lg bg-surface p-[2px]">
+          <button
+            type="button"
+            aria-label={t('densityRows')}
+            aria-pressed={density === 'rows'}
+            onClick={() => changeDensity('rows')}
+            className={`rounded-md px-[7px] py-[3px] transition ${
+              density === 'rows' ? 'bg-bg text-ink shadow-thumb' : 'text-faint'
+            }`}
+          >
+            <Rows3 size={13} aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label={t('densityCards')}
+            aria-pressed={density === 'cards'}
+            onClick={() => changeDensity('cards')}
+            className={`rounded-md px-[7px] py-[3px] transition ${
+              density === 'cards' ? 'bg-bg text-ink shadow-thumb' : 'text-faint'
+            }`}
+          >
+            <LayoutGrid size={13} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+
       <div className="mb-3">
         <DayModeControl mode={mode} disabled={disabled} onChange={onModeChange} onRecompute={onRecompute} />
       </div>
@@ -117,6 +165,7 @@ export function DayItinerary({
                   place={stop}
                   pinNumber={pinLabel(stop)}
                   pinColor={dayColor}
+                  density={density}
                   disabled={disabled}
                   isFirst={i === 0}
                   isLast={i === stops.length - 1}
@@ -136,12 +185,12 @@ export function DayItinerary({
       )}
 
       {stops.length > 0 ? (
-        <div className="mt-2 flex gap-3">
+        <div className="mt-3 flex gap-2">
           <button
             type="button"
             disabled={disabled}
             onClick={onAddPlace}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+            className="flex-1 rounded-[12px] bg-orange px-4 py-[11px] text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
           >
             {t('addPlace')}
           </button>
@@ -149,27 +198,29 @@ export function DayItinerary({
             type="button"
             disabled={disabled}
             onClick={onAddFromSaved}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] active:bg-line disabled:opacity-40"
+            className="flex-1 rounded-[12px] border border-line bg-bg px-4 py-[11px] text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-40"
           >
             {t('addFromSaved')}
           </button>
         </div>
       ) : disabled ? null : (
         <div className="mt-2 text-center">
-          <button type="button" onClick={onAddFromSaved} className="rounded-control px-2 py-1 text-label font-medium text-teal transition hover:bg-teal-tint active:scale-95">
+          <button type="button" onClick={onAddFromSaved} className="rounded-control px-2 py-1 text-label text-accent transition hover:bg-accent-tint active:opacity-70">
             {t('addFromSaved')}
           </button>
         </div>
       )}
 
       {stops.length > 0 ? (
-        <button
-          type="button"
-          onClick={() => setExportOpen(true)}
-          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-[0.99]"
-        >
-          {t('exportDay')}
-        </button>
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => setExportOpen(true)}
+            className="px-3 py-1.5 text-[12px] font-semibold text-sub transition active:opacity-70"
+          >
+            {t('exportDay')}
+          </button>
+        </div>
       ) : null}
 
       {exportOpen ? (

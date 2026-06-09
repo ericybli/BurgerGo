@@ -76,7 +76,7 @@ export function TaskList({ tripId }: { tripId: string }) {
   }
 
   if (state.status === 'loading') {
-    return <p className="py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
+    return <p className="py-8 text-center text-body text-sub">{t('loading')}</p>;
   }
   if (state.status === 'error') {
     return <EmptyState mascotAlt={t('title')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
@@ -94,13 +94,13 @@ export function TaskList({ tripId }: { tripId: string }) {
           placeholder={t('taskPlaceholder')}
           onChange={(e) => setNewTitle(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void handleAdd(); }}
-          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
         <button
           type="button"
           disabled={!online || busy || newTitle.trim() === ''}
           onClick={() => void handleAdd()}
-          className="inline-flex shrink-0 items-center justify-center rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="inline-flex shrink-0 items-center justify-center rounded-control bg-orange px-[18px] py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('addTask')}
         </button>
@@ -109,7 +109,7 @@ export function TaskList({ tripId }: { tripId: string }) {
       {tasks.length === 0 ? (
         <EmptyState mascotAlt={t('title')} headline={t('emptyHeadline')} subtext={t('emptySubtext')} />
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2.5">
           {tasks.map((task, i) => (
             <li
               key={task.id}

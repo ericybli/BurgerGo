@@ -15,7 +15,8 @@
     "emptyCta": "New trip",
     "loading": "Fetching your trips…",
     "errorHeadline": "Couldn't load trips",
-    "errorSubtext": "Connect to the internet and try again."
+    "errorSubtext": "Connect to the internet and try again.",
+    "tripsLabel": "Trips"
   },
   "status": {
     "upcoming": "Upcoming",
@@ -24,7 +25,9 @@
   },
   "tripCard": {
     "dateRange": "{start} – {end} · {days, plural, one {# day} other {# days}}",
-    "edit": "Edit trip"
+    "edit": "Edit trip",
+    "daysOut": "days out",
+    "daysLabel": "days"
   },
   "manageTripSheet": {
     "title": "Manage trip",
@@ -202,6 +205,8 @@
     "mapTab": "Map",
     "daysTab": "Days",
     "savedTab": "Saved",
+    "densityRows": "Compact rows",
+    "densityCards": "Large cards",
     "dayChip": "Day {n} · {weekday} {date}",
     "todayDot": "Today",
     "travelModeWalk": "Walk",

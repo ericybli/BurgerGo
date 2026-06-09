@@ -23,8 +23,8 @@ export function DayModeControl({ mode, disabled, onChange, onRecompute }: DayMod
   return (
     <div className="flex items-center justify-between gap-2">
       <div className="flex items-center gap-2">
-        <span className="text-caption font-medium text-ink-muted">{t('defaultMode')}</span>
-        <div role="group" className="flex rounded-control bg-paper p-0.5 shadow-inset">
+        <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-faint">{t('defaultMode')}</span>
+        <div role="group" className="flex gap-0.5 rounded-[10px] bg-surface p-[3px]">
           {MODES.map((m) => {
             const active = m === mode;
             return (
@@ -34,8 +34,8 @@ export function DayModeControl({ mode, disabled, onChange, onRecompute }: DayMod
                 aria-pressed={active}
                 disabled={disabled}
                 onClick={() => onChange(m)}
-                className={`rounded-control px-3 py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 disabled:opacity-40 ${
-                  active ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'
+                className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition disabled:opacity-40 ${
+                  active ? 'bg-bg text-ink shadow-thumb' : 'text-sub'
                 }`}
               >
                 {t(LABEL_KEY[m])}
@@ -48,7 +48,7 @@ export function DayModeControl({ mode, disabled, onChange, onRecompute }: DayMod
         <button
           type="button"
           onClick={onRecompute}
-          className="rounded-control px-2 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95"
+          className="px-2 py-1 text-right text-[12.5px] font-semibold text-accent transition active:opacity-70"
         >
           {t('recompute')}
         </button>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { APP_VERSION } from '@/src/lib/appVersion';
@@ -121,19 +122,17 @@ export function SettingsClient() {
         <Link
           href="/"
           aria-label={t('trip.back')}
-          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink transition hover:bg-line active:scale-95"
+          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink transition hover:bg-surface active:scale-95"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
+          <ChevronLeft size={24} strokeWidth={1.75} aria-hidden="true" />
         </Link>
-        <h1 className="font-serif text-title font-bold text-ink">{t('settings.title')}</h1>
+        <h1 className="text-title text-ink">{t('settings.title')}</h1>
       </header>
 
-      <section className="mt-2 rounded-card bg-card p-4 shadow-card">
+      <section className="mt-2 rounded-card border border-line bg-bg p-4">
         <div className="flex items-center justify-between">
           <span className="text-body text-ink">{t('settings.language')}</span>
-          <span className="text-label font-medium text-ink-muted">{t('settings.languageEnglish')}</span>
+          <span className="text-label text-sub">{t('settings.languageEnglish')}</span>
         </div>
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
           <span className="text-body text-ink">{t('settings.currency')}</span>
@@ -142,7 +141,7 @@ export function SettingsClient() {
             value={currency}
             disabled={!online || isPending}
             onChange={(e) => saveCurrency(e.target.value)}
-            className="rounded-control border border-line bg-paper px-3 py-1.5 text-label font-medium text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+            className="rounded-control border border-line bg-bg px-3 py-1.5 text-label text-ink transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
           >
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -156,20 +155,20 @@ export function SettingsClient() {
           </select>
         </div>
         {curStatus === 'saved' ? (
-          <p className="mt-2 text-caption text-teal">{t('settings.currencySaved')}</p>
+          <p className="mt-2 text-caption text-accent">{t('settings.currencySaved')}</p>
         ) : curStatus === 'error' ? (
-          <p className="mt-2 text-caption text-red-600">{t('settings.saveError')}</p>
+          <p className="mt-2 text-caption text-danger">{t('settings.saveError')}</p>
         ) : (
-          <p className="mt-2 text-caption text-ink-faint">{t('settings.currencyHint')}</p>
+          <p className="mt-2 text-caption text-faint">{t('settings.currencyHint')}</p>
         )}
       </section>
 
-      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
-        <p className="font-serif text-title text-ink">{t('settings.mapTitle')}</p>
-        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-control -mx-2 px-2 py-1 transition-colors hover:bg-coral-tint/40">
+      <section className="mt-4 rounded-card border border-line bg-bg p-4">
+        <p className="text-heading text-ink">{t('settings.mapTitle')}</p>
+        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-control -mx-2 px-2 py-1 transition-colors hover:bg-accent-tint/40">
           <span className="min-w-0">
             <span className="block text-body text-ink">{t('settings.clusterLabel')}</span>
-            <span className="mt-0.5 block text-caption text-ink-muted">{t('settings.clusterHint')}</span>
+            <span className="mt-0.5 block text-caption text-sub">{t('settings.clusterHint')}</span>
           </span>
           <input
             type="checkbox"
@@ -177,19 +176,19 @@ export function SettingsClient() {
             checked={clusterPins}
             disabled={!online || isPending}
             onChange={(e) => saveCluster(e.target.checked)}
-            className="h-5 w-5 shrink-0 cursor-pointer accent-coral transition disabled:opacity-60"
+            className="h-5 w-5 shrink-0 cursor-pointer accent-accent transition disabled:opacity-60"
           />
         </label>
         {mapStatus === 'saved' ? (
-          <p className="mt-2 text-caption text-teal">{t('settings.mapSaved')}</p>
+          <p className="mt-2 text-caption text-accent">{t('settings.mapSaved')}</p>
         ) : mapStatus === 'error' ? (
-          <p className="mt-2 text-caption text-red-600">{t('settings.saveError')}</p>
+          <p className="mt-2 text-caption text-danger">{t('settings.saveError')}</p>
         ) : null}
       </section>
 
-      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
-        <p className="font-serif text-title text-ink">{t('settings.aiTitle')}</p>
-        <p className="mt-1 text-caption text-ink-muted">{t('settings.aiBody')}</p>
+      <section className="mt-4 rounded-card border border-line bg-bg p-4">
+        <p className="text-heading text-ink">{t('settings.aiTitle')}</p>
+        <p className="mt-1 text-caption text-sub">{t('settings.aiBody')}</p>
 
         <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-model">
           {t('settings.aiModelLabel')}
@@ -199,7 +198,7 @@ export function SettingsClient() {
           value={aiModel}
           disabled={!online || isPending}
           onChange={(e) => { setAiModel(e.target.value); setAiStatus('idle'); }}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         >
           {AI_MODELS.map((m) => (
             <option key={m} value={m}>{m}</option>
@@ -216,16 +215,16 @@ export function SettingsClient() {
           disabled={!online || isPending}
           placeholder={DEFAULT_AI_PROMPT}
           onChange={(e) => { setAiPrompt(e.target.value); setAiStatus('idle'); }}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-caption text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-caption text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
-        <p className="mt-1 text-caption text-ink-faint">{t('settings.aiPromptHint')}</p>
+        <p className="mt-1 text-caption text-faint">{t('settings.aiPromptHint')}</p>
 
         <div className="mt-3 flex items-center gap-3">
           <button
             type="button"
             disabled={!online || isPending}
             onClick={saveAi}
-            className="inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:scale-[0.98] active:bg-orange-press disabled:opacity-40"
           >
             {t('settings.aiSave')}
           </button>
@@ -233,20 +232,20 @@ export function SettingsClient() {
             type="button"
             disabled={!online || isPending}
             onClick={resetAi}
-            className="rounded-control px-2 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-[0.98] disabled:opacity-40"
+            className="rounded-control px-2 py-1 text-label text-accent transition active:opacity-70 disabled:opacity-40"
           >
             {t('settings.aiReset')}
           </button>
           {aiStatus === 'saved' ? (
-            <span role="status" className="text-caption text-ink-muted">{t('settings.aiSaved')}</span>
+            <span role="status" className="text-caption text-sub">{t('settings.aiSaved')}</span>
           ) : null}
           {aiStatus === 'error' ? (
-            <span role="alert" className="text-caption text-red-700">{t('settings.aiSaveFailed')}</span>
+            <span role="alert" className="text-caption text-danger">{t('settings.aiSaveFailed')}</span>
           ) : null}
         </div>
       </section>
 
-      <section className="mt-4 rounded-card bg-card p-6 text-center shadow-card">
+      <section className="mt-4 rounded-card border border-line bg-bg p-6 text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={withBase('/burgergo-logo.png')}
@@ -255,22 +254,22 @@ export function SettingsClient() {
           height={88}
           className="mx-auto h-[88px] w-[88px] opacity-90"
         />
-        <p className="mt-3 font-serif text-title font-semibold text-ink">{t('app.name')}</p>
-        <p className="mt-1 text-caption text-ink-muted">{t('settings.aboutTagline')}</p>
-        <p className="mt-2 text-caption text-ink-faint [font-variant-numeric:tabular-nums]">
+        <p className="mt-3 text-heading text-ink">{t('app.name')}</p>
+        <p className="mt-1 text-caption text-sub">{t('settings.aboutTagline')}</p>
+        <p className="mt-2 text-caption text-faint [font-variant-numeric:tabular-nums]">
           {t('settings.aboutVersion', { version: APP_VERSION })}
         </p>
       </section>
 
-      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
+      <section className="mt-4 rounded-card border border-line bg-bg p-4">
         <div>
-          <p className="text-label font-medium text-ink">{t('settings.offlineInstallTitle')}</p>
-          <p className="mt-1 text-caption text-ink-muted">{t('settings.offlineInstallBody')}</p>
+          <p className="text-heading text-ink">{t('settings.offlineInstallTitle')}</p>
+          <p className="mt-1 text-caption text-sub">{t('settings.offlineInstallBody')}</p>
         </div>
         <div className="mt-3 border-t border-line pt-3">
-          <p className="text-label font-medium text-ink">{t('settings.yourDataTitle')}</p>
-          <p className="mt-1 text-caption text-ink-muted">{t('settings.yourDataBody')}</p>
-          <p className="mt-1 text-caption text-ink-faint">{t('settings.yourDataBackup')}</p>
+          <p className="text-heading text-ink">{t('settings.yourDataTitle')}</p>
+          <p className="mt-1 text-caption text-sub">{t('settings.yourDataBody')}</p>
+          <p className="mt-1 text-caption text-faint">{t('settings.yourDataBackup')}</p>
         </div>
       </section>
     </main>

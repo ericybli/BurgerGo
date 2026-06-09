@@ -139,23 +139,23 @@ export function AiImportSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t('title')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[88vh] w-full flex-col rounded-t-sheet bg-card shadow-lift animate-fade-up"
+        className="flex max-h-[88vh] w-full flex-col rounded-t-sheet bg-bg shadow-sheet animate-fade-up"
       >
-        <div className="mx-auto mt-2 mb-1 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
         <header className="flex items-center justify-between px-5 pt-3">
-          <h2 className="font-serif text-title text-ink">
+          <h2 className="text-[18px] font-bold tracking-[-0.01em] text-ink">
             {phase === 'done' ? t('doneTitle') : t('title')}
           </h2>
           <button
             type="button"
             aria-label={t('close')}
             onClick={onClose}
-            className="-mr-1 flex items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:bg-line active:scale-95"
+            className="-mr-1 flex items-center justify-center rounded-chip p-1 text-faint transition hover:bg-surface active:bg-surface active:scale-95"
           >
             ✕
           </button>
@@ -171,7 +171,7 @@ export function AiImportSheet({
               <button
                 type="button"
                 onClick={onClose}
-                className="mt-5 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98]"
+                className="mt-5 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98]"
               >
                 {t('close')}
               </button>
@@ -179,23 +179,23 @@ export function AiImportSheet({
           ) : reviewing ? (
             /* --- Preview --- */
             <>
-              <p className="text-caption text-ink-muted">{t('reviewTitle', { count: rows.length })}</p>
+              <p className="text-caption text-sub">{t('reviewTitle', { count: rows.length })}</p>
               <ul className="mt-3 flex flex-col gap-3">
                 {rows.map((r, i) => (
                   <li
                     key={r.id}
-                    className="rounded-card bg-paper p-3 shadow-hair animate-fade-up"
+                    className="rounded-card border border-line bg-bg p-3 animate-fade-up"
                     style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div role="group" className="flex rounded-control bg-card p-0.5 shadow-inset">
+                      <div role="group" className="flex gap-0.5 rounded-[10px] bg-surface p-[3px]">
                         {(['restaurant', 'place'] as const).map((tp) => (
                           <button
                             key={tp}
                             type="button"
                             aria-pressed={r.type === tp}
                             onClick={() => updateRow(r.id, { type: tp })}
-                            className={`rounded-control px-2.5 py-1 text-caption font-medium transition active:scale-95 ${r.type === tp ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:text-ink'}`}
+                            className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${r.type === tp ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
                           >
                             {tp === 'restaurant' ? t('typeRestaurant') : t('typePlace')}
                           </button>
@@ -205,7 +205,7 @@ export function AiImportSheet({
                         type="button"
                         aria-label={t('removeItem')}
                         onClick={() => removeRow(r.id)}
-                        className="flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:bg-line active:scale-95"
+                        className="flex shrink-0 items-center justify-center rounded-chip p-1 text-faint transition hover:bg-surface active:bg-surface active:scale-95"
                       >
                         ✕
                       </button>
@@ -216,7 +216,7 @@ export function AiImportSheet({
                       aria-label={t('namePlaceholder')}
                       placeholder={t('namePlaceholder')}
                       onChange={(e) => updateRow(r.id, { name: e.target.value })}
-                      className="mt-2 w-full rounded-control border border-line bg-card px-3 py-2 text-body font-medium text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+                      className="mt-2 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] font-medium text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
                     />
                     <input
                       type="text"
@@ -224,10 +224,10 @@ export function AiImportSheet({
                       aria-label={t('addressPlaceholder')}
                       placeholder={t('addressPlaceholder')}
                       onChange={(e) => updateRow(r.id, { address: e.target.value })}
-                      className="mt-2 w-full rounded-control border border-line bg-card px-3 py-2 text-caption text-ink-muted transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+                      className="mt-2 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[13px] text-sub placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
                     />
                     {!r.resolved ? (
-                      <p className="mt-1 text-caption text-ink-faint">⚠ {t('unmatched')}</p>
+                      <p className="mt-1 text-caption text-faint">⚠ {t('unmatched')}</p>
                     ) : null}
                   </li>
                 ))}
@@ -240,7 +240,7 @@ export function AiImportSheet({
                   type="button"
                   onClick={() => setPhase('input')}
                   disabled={isPending}
-                  className="rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98] disabled:opacity-50"
+                  className="rounded-[12px] border border-line bg-bg px-4 py-3 text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70 disabled:opacity-50"
                 >
                   {t('back')}
                 </button>
@@ -248,7 +248,7 @@ export function AiImportSheet({
                   type="button"
                   onClick={create}
                   disabled={isPending || rows.length === 0 || !online}
-                  className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-50"
+                  className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
                 >
                   {phase === 'creating' ? t('creating') : t('create', { count: rows.length })}
                 </button>
@@ -257,7 +257,7 @@ export function AiImportSheet({
           ) : (
             /* --- Input --- */
             <>
-              <p className="text-caption text-ink-muted">{t('subtitle')}</p>
+              <p className="text-caption text-sub">{t('subtitle')}</p>
 
               {images.length > 0 ? (
                 <ul className="mt-3 grid grid-cols-4 gap-2">
@@ -269,7 +269,7 @@ export function AiImportSheet({
                         type="button"
                         aria-label={t('removeItem')}
                         onClick={() => setImages((cur) => cur.filter((i) => i.id !== img.id))}
-                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ink/70 text-caption text-white shadow-card transition hover:bg-ink active:scale-95"
+                        className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ink/70 text-caption text-white transition hover:bg-ink active:scale-95"
                       >
                         ✕
                       </button>
@@ -278,7 +278,7 @@ export function AiImportSheet({
                 </ul>
               ) : null}
 
-              <label className="mt-3 flex cursor-pointer items-center justify-center rounded-control border border-dashed border-line bg-paper px-4 py-3 text-label font-medium text-teal transition hover:border-teal hover:bg-teal-tint active:scale-[0.99]">
+              <label className="mt-3 flex cursor-pointer items-center justify-center rounded-control border border-dashed border-line bg-bg px-4 py-3 text-label text-accent transition hover:border-accent hover:bg-accent-tint active:scale-[0.99]">
                 <input
                   type="file"
                   accept="image/*"
@@ -288,7 +288,7 @@ export function AiImportSheet({
                   onChange={onPickFiles}
                 />
                 {t('addImages')}
-                <span className="ml-2 text-caption text-ink-faint">{t('imagesHint', { count: images.length, max: MAX_IMAGES })}</span>
+                <span className="ml-2 text-caption text-faint">{t('imagesHint', { count: images.length, max: MAX_IMAGES })}</span>
               </label>
 
               <textarea
@@ -296,7 +296,7 @@ export function AiImportSheet({
                 value={text}
                 placeholder={t('textPlaceholder')}
                 onChange={(e) => setText(e.target.value)}
-                className="mt-3 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+                className="mt-3 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
               />
 
               {error ? <p role="alert" className="mt-3 text-caption font-medium text-danger">{error}</p> : null}
@@ -305,7 +305,7 @@ export function AiImportSheet({
                 type="button"
                 onClick={extract}
                 disabled={!canExtract}
-                className="mt-4 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-50"
+                className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
               >
                 {phase === 'extracting' ? t('extracting') : t('extract')}
               </button>

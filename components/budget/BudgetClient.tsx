@@ -110,7 +110,7 @@ export function BudgetClient({
   }
 
   if (state.status === 'loading') {
-    return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
+    return <p className="px-4 py-8 text-center text-body text-sub">{t('loading')}</p>;
   }
   if (state.status === 'error') {
     return <EmptyState mascotAlt={t('summaryTitle')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
@@ -133,19 +133,19 @@ export function BudgetClient({
           type="button"
           disabled={!online}
           onClick={() => setExpenseSheet({ open: true, expense: e })}
-          className="flex w-full items-center justify-between rounded-card bg-card px-4 py-3 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99] disabled:opacity-60"
+          className="flex w-full items-center justify-between border-b border-line bg-bg px-1 py-3 text-left transition active:opacity-70 disabled:opacity-60"
         >
           <span className="min-w-0">
-            <span className="block truncate text-body text-ink">
+            <span className="block truncate text-[14px] font-semibold text-ink">
               {e.note ?? t(`categories.${e.category as BudgetCategory}`)}
             </span>
             {e.placeName ? (
-              <span className="mt-0.5 inline-block rounded-chip bg-paper px-2 py-0.5 text-caption text-ink-muted">
+              <span className="mt-0.5 inline-block rounded-chip bg-surface px-2 py-0.5 text-caption text-sub">
                 {e.placeName}
               </span>
             ) : null}
           </span>
-          <span className="ml-3 shrink-0 text-label font-medium text-ink [font-variant-numeric:tabular-nums]">
+          <span className="ml-3 shrink-0 text-[14px] font-bold text-ink [font-variant-numeric:tabular-nums]">
             {formatMoney(e.amount, currency, locale)}
           </span>
         </button>
@@ -170,12 +170,12 @@ export function BudgetClient({
       />
 
       <div className="mt-4 flex items-center justify-between">
-        <div role="group" className="flex rounded-control bg-card p-0.5 shadow-inset">
+        <div role="group" className="flex rounded-[10px] bg-surface p-[3px] gap-0.5">
           <button
             type="button"
             aria-pressed={groupMode === 'category'}
             onClick={() => setGroupMode('category')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${groupMode === 'category' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
+            className={`rounded-lg px-3 py-1.5 text-center text-label whitespace-nowrap transition ${groupMode === 'category' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('byCategory')}
           </button>
@@ -183,7 +183,7 @@ export function BudgetClient({
             type="button"
             aria-pressed={groupMode === 'day'}
             onClick={() => setGroupMode('day')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${groupMode === 'day' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
+            className={`rounded-lg px-3 py-1.5 text-center text-label whitespace-nowrap transition ${groupMode === 'day' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('byDay')}
           </button>
@@ -192,7 +192,7 @@ export function BudgetClient({
           type="button"
           disabled={!online}
           onClick={() => setExpenseSheet({ open: true })}
-          className="inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="inline-flex items-center justify-center rounded-[10px] bg-orange px-3.5 py-[9px] text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('addExpense')}
         </button>
@@ -210,13 +210,13 @@ export function BudgetClient({
               className="animate-fade-up"
               style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
             >
-              <div className="mb-2 flex items-center justify-between">
-                <h3 className="text-label font-semibold text-ink">{g.date}</h3>
-                <span className="text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
+              <div className="mb-1 flex items-center justify-between">
+                <h3 className="text-micro uppercase text-faint [font-variant-numeric:tabular-nums]">{g.date}</h3>
+                <span className="text-caption text-sub [font-variant-numeric:tabular-nums]">
                   {formatMoney(g.total, currency, locale)}
                 </span>
               </div>
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col">
                 {g.items.map((e) => (
                   <li key={e.id}>
                     <ExpenseRow e={e} />
@@ -234,8 +234,8 @@ export function BudgetClient({
               className="animate-fade-up"
               style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
             >
-              <h3 className="mb-2 text-label font-semibold text-ink">{t(`categories.${g.category}`)}</h3>
-              <ul className="flex flex-col gap-2">
+              <h3 className="mb-1 text-micro uppercase text-faint">{t(`categories.${g.category}`)}</h3>
+              <ul className="flex flex-col">
                 {g.items.map((e) => (
                   <li key={e.id}>
                     <ExpenseRow e={e} />

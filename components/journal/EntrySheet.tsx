@@ -160,30 +160,30 @@ export function EntrySheet({
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? t('editEntry') : t('newEntry')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
       onKeyDown={handleKeyDown}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet"
       >
-        <div className="mx-auto mt-2 mb-1 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="mb-3 font-serif text-title font-semibold text-ink">
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="mb-3 text-[18px] font-bold tracking-[-0.01em] text-ink">
           {isEdit ? t('editEntry') : t('newEntry')}
         </h2>
 
         {error ? (
-          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mb-3 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
             {error}
           </p>
         ) : null}
 
         {disabled ? (
-          <p className="mb-3 text-caption text-ink-muted">{t('offlineHint')}</p>
+          <p className="mb-3 text-caption text-sub">{t('offlineHint')}</p>
         ) : null}
 
-        <label className="block text-label font-medium text-ink" htmlFor="je-title">
+        <label className="block text-micro uppercase text-faint" htmlFor="je-title">
           {t('titleLabel')}
         </label>
         <input
@@ -192,10 +192,10 @@ export function EntrySheet({
           value={title}
           disabled={disabled}
           onChange={(e) => setTitle(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="je-date">
+        <label className="mt-3 block text-micro uppercase text-faint" htmlFor="je-date">
           {t('dateLabel')}
         </label>
         <input
@@ -204,10 +204,10 @@ export function EntrySheet({
           value={entryDate}
           disabled={disabled}
           onChange={(e) => setEntryDate(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body tabular-nums text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] tabular-nums text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
-        <label className="mt-3 block text-label font-medium text-ink" htmlFor="je-body">
+        <label className="mt-3 block text-micro uppercase text-faint" htmlFor="je-body">
           {t('bodyLabel')}
         </label>
         <div role="toolbar" aria-label={t('mdToolbar')} className="mt-1 flex flex-wrap gap-1">
@@ -217,7 +217,7 @@ export function EntrySheet({
               type="button"
               disabled={disabled}
               onClick={() => applyMarkdown(a)}
-              className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95 disabled:opacity-40"
+              className="rounded-lg bg-surface px-[11px] py-[5px] text-[12px] font-semibold text-sub hover:bg-line active:scale-95 disabled:opacity-40"
             >
               {t(`md${a.id.charAt(0).toUpperCase()}${a.id.slice(1)}` as `md${'Bold' | 'Italic' | 'Heading' | 'List' | 'Link'}`)}
             </button>
@@ -230,11 +230,11 @@ export function EntrySheet({
           value={body}
           onChange={(e) => setBody(e.target.value)}
           disabled={disabled}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 font-mono text-body leading-relaxed text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-[10px] border border-line bg-bg px-3 py-2.5 text-[14px] leading-[24px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
         {photoError ? (
-          <p role="alert" className="mt-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mt-3 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
             {photoError}
           </p>
         ) : null}
@@ -247,34 +247,43 @@ export function EntrySheet({
               disabled={disabled}
               onDelete={handlePhotoDelete}
             />
-            <label className="mt-3 block text-label font-medium text-ink" htmlFor="je-photo">
+            <label className="mt-3 block text-micro uppercase text-faint" htmlFor="je-photo">
               {t('addPhoto')}
             </label>
-            {disabled ? <p className="text-caption text-ink-muted">{t('addPhotoOffline')}</p> : null}
+            {disabled ? <p className="text-caption text-faint">{t('addPhotoOffline')}</p> : null}
             <input
               id="je-photo"
               type="file"
               accept="image/*"
               disabled={disabled || uploading}
               onChange={handlePhotoChange}
-              className="mt-1 w-full text-body text-ink disabled:opacity-60"
+              className="mt-1 w-full text-[13px] text-sub disabled:opacity-60"
             />
             {uploading ? (
-              <p className="mt-1 text-caption text-ink-muted">{t('uploadingPhoto')}</p>
+              <p className="mt-1 text-caption text-faint">{t('uploadingPhoto')}</p>
             ) : null}
           </>
         ) : (
-          <p className="mt-3 text-caption text-ink-muted">{t('photosAfterSaveHint')}</p>
+          <p className="mt-3 text-caption text-faint">{t('photosAfterSaveHint')}</p>
         )}
 
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={disabled || isPending}
-          className="mt-5 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
-        >
-          {t('save')}
-        </button>
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={disabled || isPending}
+            className="flex-1 rounded-[12px] bg-orange py-3 text-[14px] font-semibold text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+          >
+            {t('save')}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-[90px] rounded-[12px] border border-line bg-bg py-3 text-[14px] font-semibold text-ink hover:bg-surface active:opacity-70"
+          >
+            {t('cancel')}
+          </button>
+        </div>
 
         {isEdit ? (
           <>
@@ -283,7 +292,7 @@ export function EntrySheet({
                 type="button"
                 onClick={handleDeleteClick}
                 disabled={disabled || isPending}
-                className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-red-600 shadow-inset transition hover:bg-line active:scale-[0.98] disabled:opacity-40"
+                className="mt-3 w-full rounded-control px-4 py-2.5 text-label text-danger active:opacity-70 disabled:opacity-40"
               >
                 {t('delete')}
               </button>
@@ -292,21 +301,13 @@ export function EntrySheet({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={disabled || isPending}
-                className="mt-2 w-full rounded-control bg-red-50 px-4 py-3 text-label font-medium text-red-700 shadow-inset transition hover:bg-red-100 active:scale-[0.98] disabled:opacity-40"
+                className="mt-3 w-full rounded-control bg-danger px-4 py-2.5 text-label text-white active:opacity-80 disabled:opacity-40"
               >
                 {t('confirmDelete')}
               </button>
             )}
           </>
         ) : null}
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98]"
-        >
-          {t('cancel')}
-        </button>
       </div>
     </div>
   );

@@ -93,7 +93,7 @@ export function EatsClient({
   );
 
   if (state.status === 'loading') {
-    return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
+    return <p className="px-4 py-8 text-center text-body text-sub">{t('loading')}</p>;
   }
   if (state.status === 'error') {
     return <EmptyState mascotAlt={t('title')} headline={t('errorHeadline')} subtext={t('errorSubtext')} />;
@@ -108,26 +108,26 @@ export function EatsClient({
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h1 className="font-serif text-title font-bold text-ink">{t('title')}</h1>
+        <h1 className="flex-1 text-[21px] font-bold tracking-[-0.02em] text-ink">{t('title')}</h1>
         <button
           type="button"
           disabled={!online}
           onClick={() => setAddOpen(true)}
-          className="inline-flex items-center justify-center rounded-control bg-coral px-3 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="inline-flex items-center justify-center rounded-[10px] bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('addRestaurant')}
         </button>
       </div>
 
-      <div role="group" className="mb-3 flex rounded-control bg-card p-0.5 shadow-inset">
+      <div role="group" className="mb-3 flex gap-0.5 rounded-[10px] bg-surface p-[3px]">
         {FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
             aria-pressed={filter === f.value}
             onClick={() => setFilter(f.value)}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition active:scale-[0.98] ${
-              filter === f.value ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${
+              filter === f.value ? 'bg-bg text-ink shadow-thumb' : 'text-sub'
             }`}
           >
             {t(f.key)}
@@ -144,7 +144,7 @@ export function EatsClient({
           onAction={online ? () => setAddOpen(true) : undefined}
         />
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col">
           {visible.map((r, i) => (
             <li
               key={r.id}

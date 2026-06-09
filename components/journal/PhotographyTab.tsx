@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
+import { Pencil, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/components/EmptyState';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
@@ -47,7 +48,7 @@ export function PhotographyTab({
           type="button"
           disabled={!online}
           onClick={openCreate}
-          className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('newPhotoList')}
         </button>
@@ -161,11 +162,11 @@ function PhotoListCard({
   const addDisabled = !online || uploading;
 
   return (
-    <div className="rounded-card bg-card p-4 shadow-card">
+    <div className="rounded-[14px] border border-line bg-bg p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="truncate font-serif text-heading font-semibold text-ink">{list.name}</h3>
-          <p className="mt-0.5 text-caption tabular-nums text-ink-muted">
+          <h3 className="truncate text-[15px] font-semibold text-ink">{list.name}</h3>
+          <p className="mt-0.5 text-caption tabular-nums text-faint">
             {t('photoCount', { count: list.photos.length })}
           </p>
         </div>
@@ -175,24 +176,18 @@ function PhotoListCard({
             disabled={!online}
             onClick={onRename}
             aria-label={t('renameList')}
-            className="flex h-8 w-8 items-center justify-center rounded-chip text-ink-muted transition hover:bg-line active:scale-95 disabled:opacity-40"
+            className="flex h-8 w-8 items-center justify-center rounded-chip bg-surface text-ink transition hover:bg-line active:scale-95 disabled:opacity-40"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
+            <Pencil size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
           <button
             type="button"
             disabled={!online}
             onClick={handleDeleteList}
             aria-label={t('deleteList')}
-            className={`flex h-8 w-8 items-center justify-center rounded-chip transition active:scale-95 disabled:opacity-40 ${confirmDelete ? 'bg-danger text-white' : 'text-ink-muted hover:bg-line'}`}
+            className={`flex h-8 w-8 items-center justify-center rounded-chip transition active:scale-95 disabled:opacity-40 ${confirmDelete ? 'bg-danger text-white' : 'bg-surface text-ink hover:bg-line'}`}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 6h18" />
-              <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-            </svg>
+            <Trash2 size={16} strokeWidth={1.75} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -200,17 +195,17 @@ function PhotoListCard({
 
       <PhotoGallery photos={list.photos} placeName={list.name} disabled={!online} onDelete={handleDeletePhoto} />
       {list.photos.length === 0 ? (
-        <p className="mt-3 text-caption text-ink-muted">{t('photoListEmpty')}</p>
+        <p className="mt-3 text-caption text-faint">{t('photoListEmpty')}</p>
       ) : null}
 
       {error ? (
-        <p role="alert" className="mt-2 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+        <p role="alert" className="mt-2 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
           {error}
         </p>
       ) : null}
 
       <label
-        className={`mt-3 inline-flex cursor-pointer items-center justify-center rounded-control border border-line px-4 py-2 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-[0.98] ${addDisabled ? 'pointer-events-none opacity-40' : ''}`}
+        className={`mt-3 inline-flex cursor-pointer items-center justify-center rounded-control border border-line bg-bg px-3.5 py-2 text-label text-accent transition hover:bg-accent-tint active:opacity-70 ${addDisabled ? 'pointer-events-none opacity-40' : ''}`}
       >
         {uploading ? t('uploadingPhoto') : t('addPhotos')}
         <input
@@ -222,7 +217,7 @@ function PhotoListCard({
           className="sr-only"
         />
       </label>
-      {!online ? <p className="mt-1 text-caption text-ink-muted">{t('addPhotoOffline')}</p> : null}
+      {!online ? <p className="mt-1 text-caption text-faint">{t('addPhotoOffline')}</p> : null}
     </div>
   );
 }

@@ -3,9 +3,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { MapPin, Utensils, CreditCard, SquareCheck, Book } from 'lucide-react';
 
 const TABS = ['plan', 'eats', 'budget', 'packing', 'journal'] as const;
 type Tab = (typeof TABS)[number];
+
+// Atlas tab icons: 2px-stroke outline set (pin / fork+knife / card / checkbox / book).
+const TAB_ICONS: Record<Tab, typeof MapPin> = {
+  plan: MapPin,
+  eats: Utensils,
+  budget: CreditCard,
+  packing: SquareCheck,
+  journal: Book,
+};
 
 export function BottomTabBar({ tripId }: { tripId: string }) {
   const t = useTranslations('tabs');
@@ -18,10 +28,11 @@ export function BottomTabBar({ tripId }: { tripId: string }) {
   return (
     <nav
       aria-label="Trip sections"
-      className="flex shrink-0 border-t border-line bg-card shadow-lift [padding-bottom:env(safe-area-inset-bottom)]"
+      className="flex shrink-0 border-t border-line bg-bg [padding-bottom:env(safe-area-inset-bottom)]"
     >
       {TABS.map((tab) => {
         const active = isActive(tab);
+        const Icon = TAB_ICONS[tab];
         return (
           <Link
             key={tab}
@@ -33,17 +44,12 @@ export function BottomTabBar({ tripId }: { tripId: string }) {
             // prefetch buys little; disable it. (perf)
             prefetch={false}
             aria-current={active ? 'page' : undefined}
-            className={`relative flex min-h-[44px] flex-1 flex-col items-center justify-center py-2 text-label font-medium transition-colors duration-200 active:scale-95 ${
-              active ? 'text-coral' : 'text-ink-muted hover:text-ink'
+            className={`flex min-h-[44px] flex-1 flex-col items-center justify-center gap-[3px] py-2 transition-colors duration-200 active:scale-95 ${
+              active ? 'text-accent' : 'text-faint hover:text-sub'
             }`}
           >
-            {active ? (
-              <span
-                aria-hidden="true"
-                className="absolute inset-x-0 top-0 mx-auto h-[3px] w-8 rounded-chip bg-coral shadow-[0_1px_4px_var(--coral-tint)]"
-              />
-            ) : null}
-            {t(tab)}
+            <Icon size={21} strokeWidth={2} aria-hidden="true" />
+            <span className="text-[10px] font-semibold leading-none">{t(tab)}</span>
           </Link>
         );
       })}

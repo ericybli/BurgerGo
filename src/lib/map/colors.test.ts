@@ -9,9 +9,12 @@ describe('DAY_COLORS', () => {
     }
   });
 
-  it('leads with the spec route Coral (#EE5B3C) and includes Teal (#4F8A86)', () => {
-    expect(DAY_COLORS[0]).toBe('#EE5B3C');
-    expect(DAY_COLORS).toContain('#4F8A86');
+  it('leads with the Atlas Day-1 teal (#33677A) and cycles the handoff palette', () => {
+    // Atlas Light handoff: Day 1–4 route/pin colors, cycling.
+    expect(DAY_COLORS[0]).toBe('#33677A');
+    expect(DAY_COLORS).toContain('#C99231');
+    expect(DAY_COLORS).toContain('#7A5FA0');
+    expect(DAY_COLORS).toContain('#B3402C');
   });
 });
 

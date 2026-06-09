@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placesForDay } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
@@ -108,34 +109,42 @@ export function TripOverview({ tripId, trip, tz, days, places, nowHHMM, onViewPl
   const dayHeading = `${t('overviewDayLabel', { n: relevant.dayNumber })} · ${shortDate(relevant.date)}`;
 
   return (
-    <section className="mb-3 overflow-hidden rounded-card bg-card shadow-card">
+    <section className="mb-3 overflow-hidden rounded-[12px] border border-line bg-bg">
       <button
         type="button"
         onClick={toggle}
         aria-expanded={!collapsed}
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition hover:bg-paper active:bg-paper"
+        className="flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-surface active:bg-surface"
       >
-        <span aria-hidden="true" className="text-ink-muted">{collapsed ? '▸' : '▾'}</span>
-        <span className="text-label font-semibold text-ink">{t('overview')}</span>
+        <span aria-hidden="true" className="shrink-0 text-faint">
+          {collapsed ? <ChevronRight size={13} strokeWidth={2.5} /> : <ChevronDown size={13} strokeWidth={2.5} />}
+        </span>
+        <span className="text-label text-ink">{t('overview')}</span>
         {collapsed ? (
-          <span className="ml-1 min-w-0 flex-1 truncate text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
-            {dayHeading}
-            {wInfo ? ` · ${wInfo.emoji} ${Math.round(weather!.tMaxC)}°` : ''}
-          </span>
+          <>
+            <span className="ml-1 min-w-0 flex-1 truncate text-[12.5px] text-sub [font-variant-numeric:tabular-nums]">
+              {dayHeading}
+            </span>
+            {wInfo ? (
+              <span className="shrink-0 text-[12.5px] text-sub [font-variant-numeric:tabular-nums]">
+                {wInfo.emoji} {Math.round(weather!.tMaxC)}°
+              </span>
+            ) : null}
+          </>
         ) : null}
       </button>
 
       {collapsed ? null : (
-        <div className="space-y-2 px-4 pb-3 pt-1">
-          <div className="flex items-baseline justify-between gap-2">
+        <div className="divide-y divide-line border-t border-line bg-bg px-3 pb-1.5">
+          <div className="flex items-baseline justify-between gap-2 py-2">
             <span className="text-body font-semibold text-ink [font-variant-numeric:tabular-nums]">{dayHeading}</span>
             {status === 'upcoming' && daysToStart > 0 ? (
-              <span className="shrink-0 text-caption text-ink-muted">{t('overviewStartsIn', { days: daysToStart })}</span>
+              <span className="shrink-0 text-caption text-sub">{t('overviewStartsIn', { days: daysToStart })}</span>
             ) : null}
           </div>
 
           {weather && wInfo ? (
-            <p className="text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
+            <p className="py-2 text-caption text-sub [font-variant-numeric:tabular-nums]">
               {wInfo.emoji} {Math.round(weather.tMaxC)}°/{Math.round(weather.tMinC)}° {wInfo.label}
               {weather.precipProb != null && weather.precipProb > 0 ? ` · ${weather.precipProb}% ${t('overviewRain')}` : ''}
               {weather.source === 'normal' ? ` · ${t('overviewTypical')}` : ''}
@@ -143,16 +152,16 @@ export function TripOverview({ tripId, trip, tz, days, places, nowHHMM, onViewPl
           ) : null}
 
           {nextStop ? (
-            <div className="flex items-center gap-2">
-              <span className="shrink-0 text-micro font-semibold uppercase tracking-[0.12em] text-coral">{t('upNext')}</span>
+            <div className="flex items-center gap-2 py-2">
+              <span className="shrink-0 text-micro uppercase text-faint">{t('upNext')}</span>
               <button
                 type="button"
                 onClick={() => onViewPlace(nextStop.id)}
-                className="min-w-0 flex-1 truncate rounded-control px-1 py-0.5 text-left text-body text-ink transition hover:bg-paper active:scale-[0.99]"
+                className="min-w-0 flex-1 truncate rounded-control px-1 py-0.5 text-left text-body text-ink transition hover:bg-surface active:opacity-70"
               >
                 <span aria-hidden="true" className="mr-1">{categoryGlyph(nextStop.category)}</span>
                 {nextStop.scheduledTime ? (
-                  <span className="mr-1 text-ink-muted [font-variant-numeric:tabular-nums]">{nextStop.scheduledTime}</span>
+                  <span className="mr-1 text-sub [font-variant-numeric:tabular-nums]">{nextStop.scheduledTime}</span>
                 ) : null}
                 {nextStop.name}
               </button>
@@ -161,7 +170,7 @@ export function TripOverview({ tripId, trip, tz, days, places, nowHHMM, onViewPl
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t('openInGoogleMaps')}
-                className="flex shrink-0 items-center justify-center rounded-chip px-1 text-teal transition hover:bg-teal-tint active:scale-95"
+                className="flex shrink-0 items-center justify-center rounded-chip px-1 text-accent transition hover:bg-accent-tint active:opacity-70"
               >
                 ↗
               </a>
@@ -172,26 +181,26 @@ export function TripOverview({ tripId, trip, tz, days, places, nowHHMM, onViewPl
             <button
               type="button"
               onClick={() => onViewPlace(hotel.id)}
-              className="flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left transition hover:bg-paper active:scale-[0.99]"
+              className="flex w-full items-center gap-2 px-1 py-2 text-left transition hover:bg-surface active:opacity-70"
             >
               <span aria-hidden="true">🛏</span>
-              <span className="shrink-0 text-caption text-ink-muted">{t('overviewHotel')}</span>
+              <span className="shrink-0 text-caption text-sub">{t('overviewHotel')}</span>
               <span className="min-w-0 flex-1 truncate text-body text-ink">{hotel.name}</span>
             </button>
           ) : null}
 
           {stops.length > 0 ? (
-            <div>
-              <p className="text-micro font-semibold uppercase tracking-[0.12em] text-ink-muted">{t('overviewDayPlan')}</p>
+            <div className="py-2">
+              <p className="text-micro uppercase text-faint">{t('overviewDayPlan')}</p>
               <ol className="mt-1 space-y-0.5">
                 {stops.map((s) => (
                   <li key={s.id}>
                     <button
                       type="button"
                       onClick={() => onViewPlace(s.id)}
-                      className="flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left text-caption transition hover:bg-paper active:scale-[0.99]"
+                      className="flex w-full items-center gap-2 rounded-control px-1 py-0.5 text-left text-caption transition hover:bg-surface active:opacity-70"
                     >
-                      <span className="w-10 shrink-0 text-ink-muted [font-variant-numeric:tabular-nums]">{s.scheduledTime ?? ''}</span>
+                      <span className="w-10 shrink-0 text-sub [font-variant-numeric:tabular-nums]">{s.scheduledTime ?? ''}</span>
                       <span aria-hidden="true">{categoryGlyph(s.category)}</span>
                       <span className="min-w-0 flex-1 truncate text-ink">{s.name}</span>
                     </button>
@@ -200,7 +209,7 @@ export function TripOverview({ tripId, trip, tz, days, places, nowHHMM, onViewPl
               </ol>
             </div>
           ) : (
-            <p className="text-caption text-ink-muted">{t('overviewNoStops')}</p>
+            <p className="py-2 text-caption text-sub">{t('overviewNoStops')}</p>
           )}
         </div>
       )}

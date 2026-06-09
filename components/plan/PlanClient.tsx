@@ -317,7 +317,7 @@ export function PlanClient({
   );
 
   if (state.status === 'loading') {
-    return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
+    return <p className="px-4 py-8 text-center text-body text-sub">{t('loading')}</p>;
   }
   if (state.status === 'error') {
     return (
@@ -500,7 +500,7 @@ export function PlanClient({
     >
       {/* FIX I2: transient mutation error banner */}
       {mutationError ? (
-        <p role="alert" className="mb-2 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
+        <p role="alert" className="mb-2 rounded-card border border-line bg-bg px-3 py-2 text-caption text-danger">
           {mutationError}
         </p>
       ) : null}
@@ -521,12 +521,12 @@ export function PlanClient({
 
       {/* List/Map + Days/Saved toggles */}
       <div className="mb-3 flex gap-2">
-        <div role="group" className="flex flex-1 rounded-control bg-paper p-0.5 shadow-inset">
+        <div role="group" className="flex flex-1 gap-0.5 rounded-[10px] bg-surface p-[3px]">
           <button
             type="button"
             aria-pressed={params.view === 'list'}
             onClick={() => setParams({ view: 'list' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.view === 'list' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${params.view === 'list' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('listTab')}
           </button>
@@ -534,17 +534,17 @@ export function PlanClient({
             type="button"
             aria-pressed={params.view === 'map'}
             onClick={() => setParams({ view: 'map' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.view === 'map' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${params.view === 'map' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('mapTab')}
           </button>
         </div>
-        <div role="group" className="flex flex-1 rounded-control bg-paper p-0.5 shadow-inset">
+        <div role="group" className="flex flex-1 gap-0.5 rounded-[10px] bg-surface p-[3px]">
           <button
             type="button"
             aria-pressed={params.bucket === 'days'}
             onClick={() => setParams({ bucket: 'days' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.bucket === 'days' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${params.bucket === 'days' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('daysTab')}
           </button>
@@ -552,7 +552,7 @@ export function PlanClient({
             type="button"
             aria-pressed={params.bucket === 'saved'}
             onClick={() => setParams({ bucket: 'saved' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.bucket === 'saved' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
+            className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-center text-label transition ${params.bucket === 'saved' ? 'bg-bg text-ink shadow-thumb' : 'text-sub'}`}
           >
             {t('savedTab')}
           </button>
@@ -662,7 +662,7 @@ export function PlanClient({
           role="dialog"
           aria-modal="true"
           aria-label={viewPlace.name}
-          className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
           onClick={() => setViewPlace(null)}
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full p-3">
@@ -685,7 +685,7 @@ export function PlanClient({
           role="dialog"
           aria-modal="true"
           aria-label={viewRestaurant.name}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--scrim)] backdrop-blur-sm px-3 pb-24"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--scrim)] backdrop-blur-[3px] px-3 pb-24"
           onClick={() => setViewRestaurant(null)}
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">

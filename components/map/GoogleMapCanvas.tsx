@@ -107,21 +107,36 @@ export function GoogleMapCanvas({
     }
     overlaysRef.current = [];
 
-    // Polylines under the markers.
+    // Polylines under the markers — Atlas route style: 3px dotted day-color
+    // line (round dot symbols repeated along an invisible stroke).
     for (const dp of paths) {
       if (dp.path.length < 2) continue;
       const line = new maps.Polyline({
         path: dp.path,
         strokeColor: dp.color,
-        strokeOpacity: 0.9,
-        strokeWeight: 4,
+        strokeOpacity: 0,
+        strokeWeight: 3,
+        icons: [
+          {
+            icon: {
+              path: maps.SymbolPath?.CIRCLE ?? 0,
+              fillColor: dp.color,
+              fillOpacity: 0.9,
+              strokeOpacity: 0,
+              scale: 1.5,
+            },
+            offset: '0',
+            repeat: '9px',
+          },
+        ],
         map,
       });
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });
     }
 
-    // Colored discs labeled with the category glyph so categories are
-    // distinguishable; day color (or teal for saved/layer pins) keeps days apart.
+    // Atlas pins: white discs ringed in the day color (or accent teal for
+    // saved/layer pins), labeled with the category glyph so categories are
+    // distinguishable.
     for (const m of markers) {
       const marker = new maps.Marker({
         position: m.position,
@@ -131,9 +146,9 @@ export function GoogleMapCanvas({
         icon: {
           path: maps.SymbolPath?.CIRCLE ?? 0,
           scale: m.label ? 14 : 12,
-          fillColor: m.color ?? '#4F8A86',
+          fillColor: '#FFFFFF',
           fillOpacity: 1,
-          strokeColor: '#FFFFFF',
+          strokeColor: m.color ?? '#33677A',
           strokeWeight: 2,
         },
       });

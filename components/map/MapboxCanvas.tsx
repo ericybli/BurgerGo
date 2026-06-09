@@ -27,7 +27,7 @@ const STYLES = {
 } as const;
 type StyleId = keyof typeof STYLES;
 
-const SAVED_COLOR = '#4F8A86';
+const SAVED_COLOR = '#33677A';
 
 /**
  * Build the DOM element for one marker. The element itself is a 0×0 anchor point
@@ -40,14 +40,15 @@ const SAVED_COLOR = '#4F8A86';
  */
 function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButtonElement {
   const isDay = m.label != null;
-  const bg = m.color ?? SAVED_COLOR;
-  const size = isDay ? 30 : 26;
+  const tone = m.color ?? SAVED_COLOR;
+  const size = isDay ? 34 : 28;
 
   const el = document.createElement('button');
   el.type = 'button';
   el.setAttribute('aria-label', m.name);
   el.style.cssText = 'position:relative;width:0;height:0;padding:0;border:0;background:none;cursor:pointer';
 
+  // Atlas pin: white disc, 2px day-color ring, category glyph centered.
   const disc = document.createElement('span');
   disc.style.cssText = [
     'position:absolute',
@@ -58,13 +59,14 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
     'display:flex',
     'align-items:center',
     'justify-content:center',
-    'border:2px solid #fff',
+    `border:2px solid ${tone}`,
     'border-radius:9999px',
-    'box-shadow:0 1px 3px rgba(0,0,0,0.35)',
+    'box-shadow:0 2px 6px rgba(27,31,28,0.18)',
     'line-height:1',
     `width:${size}px`,
     `height:${size}px`,
-    `background-color:${bg}`,
+    'background-color:#fff',
+    `color:${tone}`,
   ].join(';');
 
   const glyph = document.createElement('span');
@@ -74,13 +76,14 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
   disc.appendChild(glyph);
 
   if (isDay) {
+    // Stop-number badge: day-color disc, white number, white ring.
     const badge = document.createElement('span');
     badge.textContent = m.label;
     badge.setAttribute('aria-hidden', 'true');
     badge.style.cssText = [
       'position:absolute',
-      'top:-7px',
-      'right:-7px',
+      'top:-6px',
+      'right:-6px',
       'min-width:16px',
       'height:16px',
       'padding:0 4px',
@@ -89,12 +92,12 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
       'align-items:center',
       'justify-content:center',
       'border-radius:9999px',
-      'background:#fff',
-      `color:${bg}`,
-      'font-size:10px',
+      'border:1.5px solid #fff',
+      `background:${tone}`,
+      'color:#fff',
+      'font-size:9.5px',
       'font-weight:700',
       'line-height:1',
-      'box-shadow:0 1px 2px rgba(0,0,0,0.3)',
     ].join(';');
     disc.appendChild(badge);
   }
@@ -102,6 +105,7 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
   el.appendChild(disc);
 
   if (isDay && m.scheduledTime) {
+    // Time chip under the pin: white pill, hairline border, tabular ink digits.
     const time = document.createElement('span');
     time.textContent = m.scheduledTime;
     time.setAttribute('aria-hidden', 'true');
@@ -110,15 +114,17 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
       `top:${size / 2 + 3}px`,
       'left:0',
       'transform:translateX(-50%)',
-      'padding:1px 4px',
-      'border-radius:9999px',
+      'padding:1px 6px',
+      'border-radius:6px',
+      'border:1px solid #E9EBE6',
       'background:#fff',
-      `color:${bg}`,
-      'font-size:9px',
+      'color:#1B1F1C',
+      'font-size:10px',
       'font-weight:700',
+      'font-variant-numeric:tabular-nums',
       'line-height:1.2',
       'white-space:nowrap',
-      'box-shadow:0 1px 2px rgba(0,0,0,0.3)',
+      'box-shadow:0 1px 3px rgba(27,31,28,0.12)',
     ].join(';');
     el.appendChild(time);
   }
@@ -131,9 +137,10 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
 }
 
 /**
- * Build the DOM element for a cluster bubble — a coral disc showing how many pins
- * it groups. Same 0×0-anchor trick as `createMarkerEl` so the disc centres on the
- * cluster coordinate. Tapping it asks the caller to zoom in (expansion zoom).
+ * Build the DOM element for a cluster bubble — an accent-teal disc showing how
+ * many pins it groups. Same 0×0-anchor trick as `createMarkerEl` so the disc
+ * centres on the cluster coordinate. Tapping it asks the caller to zoom in
+ * (expansion zoom).
  */
 function createClusterEl(count: number, onClick: () => void): HTMLButtonElement {
   const size = count < 10 ? 34 : count < 100 ? 40 : 46;
@@ -146,9 +153,9 @@ function createClusterEl(count: number, onClick: () => void): HTMLButtonElement 
   disc.style.cssText = [
     'position:absolute', 'left:0', 'top:0', 'transform:translate(-50%,-50%)',
     'box-sizing:border-box', 'display:flex', 'align-items:center', 'justify-content:center',
-    'border:2px solid #fff', 'border-radius:9999px', 'box-shadow:0 1px 4px rgba(0,0,0,0.35)',
-    `width:${size}px`, `height:${size}px`, 'background-color:#EE5B3C', 'color:#fff',
-    'font-size:13px', 'font-weight:700', 'line-height:1',
+    'border:2px solid #fff', 'border-radius:9999px', 'box-shadow:0 2px 6px rgba(27,31,28,0.18)',
+    `width:${size}px`, `height:${size}px`, 'background-color:#33677A', 'color:#fff',
+    'font-size:13px', 'font-weight:700', 'font-variant-numeric:tabular-nums', 'line-height:1',
   ].join(';');
   disc.textContent = String(count);
   el.appendChild(disc);
@@ -275,7 +282,13 @@ export function MapboxCanvas({
         type: 'line',
         source: id,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        paint: { 'line-color': dp.color, 'line-width': 4, 'line-opacity': 0.9 },
+        // Atlas route style: 3px dotted day-color line with round caps.
+        paint: {
+          'line-color': dp.color,
+          'line-width': 3,
+          'line-opacity': 0.9,
+          'line-dasharray': [0.1, 2],
+        },
       });
       layerIdsRef.current.push(id);
     });
@@ -421,7 +434,7 @@ export function MapboxCanvas({
         type="button"
         onClick={toggleStyle}
         aria-label={t('toggleMapStyle')}
-        className="absolute bottom-9 left-3 z-[2] rounded-control bg-card/95 px-3 py-1.5 text-caption font-medium text-ink shadow-card backdrop-blur"
+        className="absolute bottom-9 left-3 z-[2] rounded-chip bg-bg/95 px-3 py-1.5 text-[12.5px] font-semibold text-ink shadow-lift backdrop-blur"
       >
         {styleId === 'streets' ? t('styleSatellite') : t('styleMap')}
       </button>

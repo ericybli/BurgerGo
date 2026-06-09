@@ -21,9 +21,9 @@ describe('manifest.webmanifest', () => {
     expect(manifest.dir).toBe('ltr');
   });
 
-  it('uses the Sunset Wanderer splash + theme colors', () => {
-    expect(manifest.background_color).toBe('#F5EEE1'); // Paper
-    expect(manifest.theme_color).toBe('#EE5B3C'); // Coral
+  it('uses the Atlas Light splash + theme colors', () => {
+    expect(manifest.background_color).toBe('#F7F1E4'); // Cream (logo field) — PWA splash bg
+    expect(manifest.theme_color).toBe('#FFFFFF'); // Atlas white chrome
   });
 
   it('lists the generated icon set with any + maskable purposes (relative src)', () => {

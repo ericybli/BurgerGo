@@ -17,11 +17,11 @@ export default function PlanError({
 
   return (
     <div className="flex flex-col items-center gap-5 px-4 py-16 text-center">
-      <p className="font-serif text-title text-ink">{t('routeError')}</p>
+      <p className="text-title text-ink">{t('routeError')}</p>
       <button
         type="button"
         onClick={reset}
-        className="inline-flex items-center justify-center rounded-control bg-coral px-6 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
+        className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] border border-line bg-bg px-6 py-3 text-label text-ink transition hover:bg-surface active:opacity-70"
       >
         {tCommon('retry')}
       </button>

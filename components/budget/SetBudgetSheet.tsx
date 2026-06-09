@@ -91,28 +91,28 @@ export function SetBudgetSheet({
       role="dialog"
       aria-modal="true"
       aria-label={t('setBudget')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
       onKeyDown={handleKeyDown}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet"
       >
-        <div className="mx-auto mb-3 mt-[-8px] h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="mb-3 font-serif text-title text-ink">{t('setBudget')}</h2>
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="mb-3 text-[18px] font-bold tracking-[-0.01em] text-ink">{t('setBudget')}</h2>
 
         {error ? (
-          <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+          <p role="alert" className="mb-3 rounded-control border border-line bg-bg px-3 py-2 text-caption font-medium text-danger">
             {error}
           </p>
         ) : null}
 
         {disabled ? (
-          <p className="mb-3 text-caption text-ink-muted">{t('offlineHint')}</p>
+          <p className="mb-3 text-caption text-sub">{t('offlineHint')}</p>
         ) : null}
 
-        <label className="block text-label font-medium text-ink" htmlFor="tgt-overall">
+        <label className="block text-label text-ink" htmlFor="tgt-overall">
           {t('overallPlannedLabel')}
         </label>
         <input
@@ -122,7 +122,7 @@ export function SetBudgetSheet({
           value={values.overall}
           disabled={disabled}
           onChange={(e) => setValue('overall', e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition [font-variant-numeric:tabular-nums] focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition [font-variant-numeric:tabular-nums] focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
         <ul className="mt-3 flex flex-col gap-3">
@@ -130,7 +130,7 @@ export function SetBudgetSheet({
             const label = t('categoryPlannedLabel', { category: t(`categories.${c}`) });
             return (
               <li key={c}>
-                <label className="block text-label font-medium text-ink" htmlFor={`tgt-${c}`}>
+                <label className="block text-label text-ink" htmlFor={`tgt-${c}`}>
                   {label}
                 </label>
                 <input
@@ -141,7 +141,7 @@ export function SetBudgetSheet({
                   value={values[c]}
                   disabled={disabled}
                   onChange={(e) => setValue(c, e.target.value)}
-                  className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition [font-variant-numeric:tabular-nums] focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+                  className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition [font-variant-numeric:tabular-nums] focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
                 />
               </li>
             );
@@ -152,14 +152,14 @@ export function SetBudgetSheet({
           type="button"
           onClick={handleSave}
           disabled={disabled || isPending}
-          className="mt-5 inline-flex w-full items-center justify-center rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
+          className="mt-5 inline-flex w-full items-center justify-center rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
         >
           {t('save')}
         </button>
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] active:bg-line"
+          className="mt-2 w-full rounded-control border border-line bg-bg px-4 py-3 text-label text-ink transition hover:bg-surface active:opacity-70"
         >
           {t('cancel')}
         </button>

@@ -28,13 +28,13 @@ export function EmptyState({
         height={112}
         className="mb-6 h-28 w-28 opacity-90"
       />
-      <h2 className="font-serif text-title font-semibold text-ink">{headline}</h2>
-      <p className="mt-2 max-w-xs text-body text-ink-muted">{subtext}</p>
+      <h2 className="text-heading text-ink">{headline}</h2>
+      <p className="mt-2 max-w-xs text-body text-sub">{subtext}</p>
       {actionLabel && onAction ? (
         <button
           type="button"
           onClick={onAction}
-          className="mt-6 inline-flex items-center justify-center rounded-control bg-coral px-5 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
+          className="mt-6 inline-flex items-center justify-center rounded-[12px] bg-orange px-6 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:scale-[0.98] active:bg-orange-press"
         >
           {actionLabel}
         </button>

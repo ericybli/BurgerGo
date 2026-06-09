@@ -51,35 +51,35 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
     });
   }
 
-  const inputCls = 'rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60';
-  const tealBtn = 'shrink-0 rounded-control border border-teal px-3 py-2 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-[0.98] disabled:opacity-40';
+  const inputCls = 'rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60';
+  const tealBtn = 'shrink-0 rounded-control border border-line bg-bg px-3 py-2 text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:opacity-40';
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={t('title')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
       tabIndex={-1}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift animate-fade-up"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet animate-fade-up"
       >
-        <div className="mx-auto -mt-2 mb-3 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="font-serif text-title text-ink">{t('title')}</h2>
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="text-[18px] font-bold tracking-[-0.01em] text-ink">{t('title')}</h2>
 
         {error ? (
           <p role="alert" className="mt-3 text-caption font-medium text-danger">{error}</p>
         ) : null}
         {status && !error ? (
-          <p className="mt-3 text-caption font-medium text-teal">{status}</p>
+          <p className="mt-3 text-caption font-medium text-accent">{status}</p>
         ) : null}
 
         {/* Rename */}
-        <label className="mt-4 block text-label font-medium text-ink" htmlFor="mt-name">{t('nameLabel')}</label>
+        <label className="mt-4 block text-label text-ink" htmlFor="mt-name">{t('nameLabel')}</label>
         <div className="mt-1 flex gap-2">
           <input
             id="mt-name" type="text" value={name} disabled={isPending}
@@ -97,8 +97,8 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
         </div>
 
         {/* Move the whole window */}
-        <p className="mt-6 text-label font-semibold text-ink">{t('datesTitle')}</p>
-        <label className="mt-2 block text-label font-medium text-ink" htmlFor="mt-start">{t('startLabel')}</label>
+        <p className="mt-6 text-heading text-ink">{t('datesTitle')}</p>
+        <label className="mt-2 block text-label text-ink" htmlFor="mt-start">{t('startLabel')}</label>
         <div className="mt-1 flex gap-2">
           <input
             id="mt-start" type="date" value={startDate} disabled={isPending}
@@ -114,10 +114,10 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
             {t('move')}
           </button>
         </div>
-        <p className="mt-1 text-caption text-ink-muted">{t('datesHint')}</p>
+        <p className="mt-1 text-caption text-sub">{t('datesHint')}</p>
 
         {/* Length: add / remove a day at the end */}
-        <p className="mt-6 text-label font-semibold text-ink">{t('lengthTitle')}</p>
+        <p className="mt-6 text-heading text-ink">{t('lengthTitle')}</p>
         <div className="mt-2 flex items-center gap-2">
           <span className="flex-1 text-body text-ink [font-variant-numeric:tabular-nums]">{t('lengthDays', { days: lengthDays })}</span>
           <button
@@ -132,17 +132,17 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
             type="button"
             disabled={isPending}
             onClick={() => run(() => addTripDayAction(current.id))}
-            className="shrink-0 rounded-control bg-coral px-3 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-40"
+            className="shrink-0 rounded-control bg-orange px-3 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-40"
           >
             {t('addDay')}
           </button>
         </div>
-        <p className="mt-1 text-caption text-ink-muted">{t('removeDayHint')}</p>
+        <p className="mt-1 text-caption text-sub">{t('removeDayHint')}</p>
 
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
+          className="mt-6 w-full rounded-[12px] border border-line bg-bg px-4 py-3 text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70"
         >
           {t('close')}
         </button>

@@ -16,7 +16,7 @@ export interface PlaceMarker {
   googlePlaceId: string | null;
   photoPath: string | null;
   position: LatLngLiteral;
-  /** "1".."n" for day stops (Coral text, spec §3.4); null for Saved pins. */
+  /** "1".."n" for day stops (day-color badge, spec §3.4); null for Saved pins. */
   label: string | null;
   /** Day palette color for day markers; null for Saved markers. */
   color: string | null;
@@ -26,11 +26,11 @@ export interface PlaceMarker {
   scheduledTime: string | null;
 }
 
-/** Teal used for non-day pins (Saved bucket / saved-places layer). */
-export const SAVED_PIN_COLOR = '#4F8A86';
+/** Teal (Atlas accent) used for non-day pins (Saved bucket / saved-places layer). */
+export const SAVED_PIN_COLOR = '#33677A';
 
-/** Amber used for the Restaurants layer, distinct from day + saved pins. */
-export const RESTAURANT_PIN_COLOR = '#E8902E';
+/** Amber (Atlas day-2) used for the Restaurants layer, distinct from saved pins. */
+export const RESTAURANT_PIN_COLOR = '#C99231';
 
 /** Glyph shown on Restaurants-layer pins. */
 export const RESTAURANT_GLYPH = '🍽️';

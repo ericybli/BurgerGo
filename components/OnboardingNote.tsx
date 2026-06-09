@@ -36,13 +36,13 @@ export function OnboardingNote() {
   }
 
   return (
-    <section className="mb-4 rounded-card bg-card p-4 shadow-card">
-      <h2 className="text-label font-semibold text-ink">{t('onboardTitle')}</h2>
-      <p className="mt-1 text-caption leading-relaxed text-ink-muted">{t('onboardBody')}</p>
+    <section className="mb-4 rounded-card border border-line bg-bg p-4">
+      <h2 className="text-heading text-ink">{t('onboardTitle')}</h2>
+      <p className="mt-1 text-caption leading-relaxed text-sub">{t('onboardBody')}</p>
       <button
         type="button"
         onClick={dismiss}
-        className="mt-3 inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-caption font-medium text-white transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
+        className="mt-3 inline-flex items-center justify-center rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:scale-[0.98] active:bg-orange-press"
       >
         {t('onboardDismiss')}
       </button>

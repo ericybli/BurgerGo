@@ -41,16 +41,16 @@ export function ListNameSheet({
       role="dialog"
       aria-modal="true"
       aria-label={title}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
-        className="w-full rounded-t-sheet bg-card p-6 shadow-lift"
+        className="w-full rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet"
       >
-        <div className="mx-auto mt-2 mb-1 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="font-serif text-title text-ink">{title}</h2>
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="text-[18px] font-bold tracking-[-0.01em] text-ink">{title}</h2>
         <input
           type="text"
           aria-label={t('namePlaceholder')}
@@ -58,20 +58,20 @@ export function ListNameSheet({
           value={name}
           autoFocus
           onChange={(e) => setName(e.target.value)}
-          className="mt-4 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+          className="mt-4 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
         />
         <div className="mt-6 flex gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
+            className="flex-1 rounded-[12px] border border-line bg-bg px-4 py-3 text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70"
           >
             {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={name.trim().length === 0}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-50"
+            className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
           >
             {submitLabel}
           </button>

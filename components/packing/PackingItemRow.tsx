@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Check } from 'lucide-react';
 import { updateItemAction, deleteItemAction, type UpdateItemActionPatch } from '@/app/_actions/packing';
 import type { PackingItem } from '@/src/db/repos/packing';
 
@@ -65,15 +66,22 @@ export function PackingItemRow({
   }
 
   return (
-    <div className="flex items-center gap-2 py-1.5">
-      <input
-        type="checkbox"
-        checked={item.packed}
-        disabled={disabled || busy}
-        aria-label={t('packedLabel', { name: item.name })}
-        onChange={(e) => void save({ packed: e.target.checked })}
-        className="h-5 w-5 shrink-0 cursor-pointer accent-coral transition"
-      />
+    <div className="flex items-center gap-2.5 py-2">
+      <span className="relative flex h-[21px] w-[21px] shrink-0 items-center justify-center">
+        <input
+          type="checkbox"
+          checked={item.packed}
+          disabled={disabled || busy}
+          aria-label={t('packedLabel', { name: item.name })}
+          onChange={(e) => void save({ packed: e.target.checked })}
+          className="peer h-[21px] w-[21px] shrink-0 cursor-pointer appearance-none rounded-[7px] border-[1.5px] border-faint bg-bg transition checked:border-accent checked:bg-accent disabled:opacity-40"
+        />
+        <Check
+          aria-hidden
+          strokeWidth={3}
+          className="pointer-events-none absolute h-3.5 w-3.5 text-white opacity-0 transition peer-checked:opacity-100"
+        />
+      </span>
       <input
         type="text"
         value={name}
@@ -83,8 +91,8 @@ export function PackingItemRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-ink transition-colors focus:border-line focus:bg-paper focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60 ${
-          item.packed ? 'text-ink-faint line-through' : ''
+        className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-[14px] transition-colors focus:border-line focus:bg-bg focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60 ${
+          item.packed ? 'text-faint line-through' : 'text-ink'
         }`}
       />
       <input
@@ -99,14 +107,14 @@ export function PackingItemRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="w-14 shrink-0 rounded-control border border-line bg-paper px-2 py-1 text-center text-body text-ink [font-variant-numeric:tabular-nums] transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
+        className="min-w-[30px] w-[38px] shrink-0 rounded-lg border border-transparent bg-surface px-1 py-1 text-center text-[12.5px] font-semibold text-ink [font-variant-numeric:tabular-nums] transition focus:border-accent focus:bg-bg focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
       />
       <button
         type="button"
         disabled={disabled || busy}
         onClick={handleDelete}
         aria-label={t('deleteItem')}
-        className="flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:scale-95 active:bg-line disabled:opacity-40"
+        className="flex shrink-0 items-center justify-center rounded-chip p-1 text-faint transition hover:bg-surface active:scale-95 active:text-danger disabled:opacity-40"
       >
         ✕
       </button>

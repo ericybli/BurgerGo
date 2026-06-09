@@ -18,9 +18,9 @@ export function PhotoPlaceholder({ category, className = 'h-40' }: PhotoPlacehol
   return (
     <span
       aria-hidden="true"
-      className={`mb-2 flex w-full items-center justify-center rounded-control bg-paper bg-card-placeholder shadow-inset ${className}`}
+      className={`mb-2 flex w-full items-center justify-center rounded-control bg-surface bg-card-placeholder text-faint ${className}`}
     >
-      <span className="text-5xl opacity-30">{categoryGlyph(category)}</span>
+      <span className="text-3xl opacity-40 grayscale">{categoryGlyph(category)}</span>
     </span>
   );
 }

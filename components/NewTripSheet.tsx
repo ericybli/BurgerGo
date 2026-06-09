@@ -48,19 +48,19 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
       role="dialog"
       aria-modal="true"
       aria-label={t('title')}
-      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-[3px]"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         noValidate
-        className="w-full rounded-t-sheet bg-card p-6 shadow-lift animate-fade-up"
+        className="w-full rounded-t-sheet bg-bg p-[18px] pb-8 shadow-sheet animate-fade-up"
       >
-        <div className="mx-auto -mt-2 mb-3 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
-        <h2 className="font-serif text-title text-ink">{t('title')}</h2>
+        <div className="mx-auto mb-3.5 h-1 w-10 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="text-[18px] font-bold tracking-[-0.01em] text-ink">{t('title')}</h2>
 
-        <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-name">
+        <label className="mt-4 block text-label text-ink" htmlFor="trip-name">
           {t('nameLabel')}
         </label>
         <input
@@ -69,10 +69,10 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           value={name}
           placeholder={t('namePlaceholder')}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
         />
 
-        <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-start">
+        <label className="mt-4 block text-label text-ink" htmlFor="trip-start">
           {t('startLabel')}
         </label>
         <input
@@ -80,10 +80,10 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
         />
 
-        <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-end">
+        <label className="mt-4 block text-label text-ink" htmlFor="trip-end">
           {t('endLabel')}
         </label>
         <input
@@ -92,7 +92,7 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           value={endDate}
           min={startDate || undefined}
           onChange={(e) => setEndDate(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
+          className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)]"
         />
 
         {error ? (
@@ -105,14 +105,14 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
+            className="flex-1 rounded-[12px] border border-line bg-bg px-4 py-3 text-[14px] font-semibold text-ink transition hover:bg-surface active:opacity-70"
           >
             {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-50"
+            className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
           >
             {t('create')}
           </button>

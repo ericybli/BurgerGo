@@ -37,17 +37,17 @@ describe('generateIcons', () => {
     expect(meta.format).toBe('png');
   });
 
-  it('renders maskable icons on the Paper safe-zone field (no full-bleed transparency)', async () => {
-    // Maskable variants are flattened onto Paper #F5EEE1 so adaptive masks never clip the mascot.
+  it('renders maskable icons on the Cream safe-zone field (no full-bleed transparency)', async () => {
+    // Maskable variants are flattened onto Atlas Cream #F7F1E4 so adaptive masks never clip the mascot.
     const { data, info } = await sharp(join(outDir, 'icons/maskable-512.png'))
       .raw()
       .toBuffer({ resolveWithObject: true });
-    // Sample the top-left corner pixel; it must be the opaque Paper field, not transparent.
+    // Sample the top-left corner pixel; it must be the opaque Cream field, not transparent.
     const channels = info.channels;
     const [r, g, b] = [data[0], data[1], data[2]];
-    expect(r).toBe(0xf5);
-    expect(g).toBe(0xee);
-    expect(b).toBe(0xe1);
+    expect(r).toBe(0xf7);
+    expect(g).toBe(0xf1);
+    expect(b).toBe(0xe4);
     if (channels === 4) expect(data[3]).toBe(255);
   });
 });

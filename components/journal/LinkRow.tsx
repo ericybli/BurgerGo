@@ -21,27 +21,32 @@ export function LinkRow({ link, onEdit, onDelete }: Props) {
     : withBase('/burgergo-logo.png');
 
   return (
-    <div className="flex items-stretch gap-3 rounded-card bg-card p-3 shadow-card transition-shadow duration-200 ease-spring hover:shadow-lift">
+    <div className="flex items-stretch gap-3 rounded-[14px] border border-line bg-bg p-[10px_12px]">
       <a
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={heading}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]"
+        className="flex min-w-0 flex-1 items-center gap-3 text-left active:opacity-70"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={thumbSrc}
-          alt={heading}
-          className={`h-14 w-14 shrink-0 rounded-control object-cover ${
-            link.thumbnail ? 'bg-paper' : 'bg-sun/20 p-1'
-          }`}
-        />
+        {link.thumbnail ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={thumbSrc}
+            alt={heading}
+            className="h-12 w-12 shrink-0 rounded-[10px] object-cover"
+          />
+        ) : (
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] bg-cream">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={thumbSrc} alt={heading} className="w-9" />
+          </span>
+        )}
         <span className="flex min-w-0 flex-col gap-0.5">
-          <span className="truncate text-body font-bold text-ink">{heading}</span>
-          <span className="truncate text-caption text-ink-muted">{domain}</span>
+          <span className="truncate text-[13.5px] font-semibold text-ink">{heading}</span>
+          <span className="truncate text-[11.5px] text-faint">{domain}</span>
           {link.note ? (
-            <span className="truncate text-caption text-ink-muted">{link.note}</span>
+            <span className="truncate text-[11.5px] text-faint">{link.note}</span>
           ) : null}
         </span>
       </a>
@@ -50,14 +55,14 @@ export function LinkRow({ link, onEdit, onDelete }: Props) {
         <button
           type="button"
           onClick={() => onEdit(link.id)}
-          className="rounded-control px-2 py-1 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
+          className="rounded-control px-2 py-1 text-[12px] font-semibold text-accent active:opacity-70"
         >
           {t('edit')}
         </button>
         <button
           type="button"
           onClick={() => onDelete(link.id)}
-          className="rounded-control px-2 py-1 text-caption font-medium text-red-600 shadow-inset transition hover:bg-line active:scale-95"
+          className="rounded-control px-2 py-1 text-[12px] font-semibold text-danger active:opacity-70"
         >
           {t('delete')}
         </button>
