@@ -10,6 +10,7 @@ import {
   buildOverallBudget,
   groupByDate,
   clampPercent,
+  placeCategoryToBudget,
 } from '@/src/lib/budgetView';
 
 const expenses: ExpenseLite[] = [
@@ -105,5 +106,17 @@ describe('budgetView', () => {
     expect(clampPercent(150)).toBe(100);
     expect(clampPercent(-3)).toBe(0);
     expect(clampPercent(null)).toBe(0);
+  });
+
+  it('placeCategoryToBudget maps place categories to the six budget buckets', () => {
+    expect(placeCategoryToBudget('hotel')).toBe('lodging');
+    expect(placeCategoryToBudget('airbnb')).toBe('lodging');
+    expect(placeCategoryToBudget('airport')).toBe('transport');
+    expect(placeCategoryToBudget('parking')).toBe('transport');
+    expect(placeCategoryToBudget('shopping')).toBe('shopping');
+    expect(placeCategoryToBudget('sightseeing')).toBe('activities');
+    expect(placeCategoryToBudget('museum')).toBe('activities');
+    expect(placeCategoryToBudget('entrance')).toBe('activities');
+    expect(placeCategoryToBudget('other')).toBe('other');
   });
 });

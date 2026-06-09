@@ -7,6 +7,7 @@ import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
 import { listDayModes } from '@/src/db/repos/dayModes';
 import { listByTrip as listSavedLists, addList } from '@/src/db/repos/savedLists';
+import { getSettings } from '@/src/db/repos/settings';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
 import { isWriteAuthorized } from '@/src/lib/apiKey';
 import { travelLegs, placeDetailsCache, photos as photosTable, savedLinks, type Place, type TravelLeg, type Photo } from '@/src/db/schema';
@@ -154,7 +155,10 @@ export async function GET(
   // Saved-place grouping lists for this trip (slim: id + name), in display order.
   const lists = listSavedLists(db, tripId).map((l) => ({ id: l.id, name: l.name }));
 
-  return NextResponse.json({ places: placesResult, legs, dayModes, lists });
+  // Global display currency — lets the place-cost field format correctly (F3).
+  const currency = getSettings(db)?.currency ?? env.DEFAULT_CURRENCY;
+
+  return NextResponse.json({ places: placesResult, legs, dayModes, lists, currency });
 }
 
 const CATEGORY = z.enum([

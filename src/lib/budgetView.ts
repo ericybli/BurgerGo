@@ -17,6 +17,33 @@ export const BUDGET_CATEGORIES = [
 
 export type BudgetCategory = (typeof BUDGET_CATEGORIES)[number];
 
+/**
+ * Map a place's category to the closest budget category, for the "add as expense"
+ * shortcut (F3). Place categories are finer-grained than the six budget buckets.
+ */
+export function placeCategoryToBudget(placeCategory: string): BudgetCategory {
+  switch (placeCategory) {
+    case 'lodging':
+    case 'hotel':
+    case 'airbnb':
+      return 'lodging';
+    case 'airport':
+    case 'transport':
+    case 'parking':
+      return 'transport';
+    case 'shopping':
+      return 'shopping';
+    case 'sightseeing':
+    case 'activity':
+    case 'entrance':
+    case 'museum':
+    case 'event':
+      return 'activities';
+    default:
+      return 'other';
+  }
+}
+
 export interface ExpenseLite {
   id: string;
   amount: number;

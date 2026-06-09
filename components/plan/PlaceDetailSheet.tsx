@@ -6,6 +6,9 @@ import { useFocusTrap } from '@/src/lib/useFocusTrap';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
+import { addExpenseAction } from '@/app/_actions/expenses';
+import { minorToInput, inputToMinor } from '@/src/lib/currency';
+import { placeCategoryToBudget } from '@/src/lib/budgetView';
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
 import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
@@ -17,9 +20,16 @@ const CATEGORIES: PlaceDTO['category'][] = [
   'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
 ];
 
+/** Today's calendar date (YYYY-MM-DD) — default `spentOn` for a saved place's expense. */
+function todayISO(): string {
+  return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+}
+
 type PlaceDetailSheetProps = {
   open: boolean;
   place: PlaceDTO;
+  /** Trip display currency — formats the cost field + the "add as expense" amount. */
+  currency: string;
   disabled: boolean;
   onClose: () => void;
   /**
@@ -34,6 +44,7 @@ type PlaceDetailSheetProps = {
 export function PlaceDetailSheet({
   open,
   place,
+  currency,
   disabled,
   onClose,
   onSaved,
@@ -47,6 +58,10 @@ export function PlaceDetailSheet({
   const [notes, setNotes] = useState(place.notes ?? '');
   const [aiSummary, setAiSummary] = useState(place.aiSummary ?? '');
   const [regenerating, setRegenerating] = useState(false);
+  // Cost as a major-unit string (e.g. "300.00"); empty = unset. Saved as integer
+  // minor units. F3: this field was modeled but never surfaced until now.
+  const [cost, setCost] = useState(place.cost != null ? minorToInput(place.cost, currency) : '');
+  const [expenseStatus, setExpenseStatus] = useState<'idle' | 'added' | 'error'>('idle');
   // Coords + place id captured when the user re-pins via an address suggestion.
   // null → keep the place's existing coordinates on save.
   const [picked, setPicked] = useState<{ lat: number; lng: number; googlePlaceId: string } | null>(null);
@@ -127,6 +142,28 @@ export function PlaceDetailSheet({
     clear();
   }
 
+  /** F3: log the entered cost as a budget expense linked back to this place. */
+  function handleAddExpense() {
+    const minor = inputToMinor(cost, currency);
+    if (minor == null) return; // needs a positive cost
+    setExpenseStatus('idle');
+    startTransition(async () => {
+      try {
+        await addExpenseAction({
+          tripId: place.tripId,
+          amount: minor,
+          category: placeCategoryToBudget(place.category),
+          spentOn: place.dayDate ?? todayISO(),
+          note: place.name,
+          linkedPlaceId: place.id,
+        });
+        setExpenseStatus('added');
+      } catch {
+        setExpenseStatus('error');
+      }
+    });
+  }
+
   // FIX I1: wrap action in try/catch; on error show message and keep sheet open
   function handleSave() {
     setSaveError(null);
@@ -135,6 +172,7 @@ export function PlaceDetailSheet({
       address: address.trim() || null,
       category,
       scheduledTime: time || null,
+      cost: cost.trim() === '' ? null : inputToMinor(cost, currency),
       notes: notes.trim() || null,
       aiSummary: aiSummary.trim() || null,
       // Only move the pin when the user re-picked an address suggestion.
@@ -234,6 +272,28 @@ export function PlaceDetailSheet({
             </button>
           ) : null}
         </div>
+
+        <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-cost">{t('costLabel')}</label>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="shrink-0 text-caption font-medium text-ink-muted">{currency}</span>
+          <input
+            id="pd-cost" type="text" inputMode="decimal" value={cost} disabled={disabled}
+            placeholder="0"
+            onChange={(e) => { setCost(e.target.value); setExpenseStatus('idle'); }}
+            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink [font-variant-numeric:tabular-nums] disabled:opacity-60"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={disabled || isPending || inputToMinor(cost, currency) == null || expenseStatus === 'added'}
+          onClick={handleAddExpense}
+          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-teal disabled:opacity-40"
+        >
+          {expenseStatus === 'added' ? t('addedToBudget') : t('addAsExpense')}
+        </button>
+        {expenseStatus === 'error' ? (
+          <p role="alert" className="mt-1 text-caption text-red-600">{t('saveFailed')}</p>
+        ) : null}
 
         <div className="mt-3 flex items-center justify-between">
           <label className="block text-label font-medium text-ink" htmlFor="pd-ai">{t('aiSummary')}</label>

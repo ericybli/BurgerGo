@@ -132,6 +132,8 @@ export function PlanClient({
 
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [online, setOnline] = useState(true);
+  // Trip display currency (from the places response), for the place-cost field (F3).
+  const [currency, setCurrency] = useState('USD');
   const [addOpen, setAddOpen] = useState(false);
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
@@ -187,12 +189,14 @@ export function PlanClient({
       ]);
       if (!placesRes.ok) throw new Error('load failed');
       const trip: TripLite = tripData.trip;
-      const { places, legs, dayModes, lists } = (await placesRes.json()) as {
+      const { places, legs, dayModes, lists, currency: cur } = (await placesRes.json()) as {
         places: PlaceDTO[];
         legs: LegDTO[];
         dayModes: Record<string, TravelMode>;
         lists: SavedListItem[];
+        currency?: string;
       };
+      if (cur) setCurrency(cur);
       let restaurants: RestaurantMarkerInput[] = [];
       if (restaurantsRes && restaurantsRes.ok) {
         const { restaurants: rows } = (await restaurantsRes.json()) as {
@@ -617,6 +621,7 @@ export function PlanClient({
         <PlaceDetailSheet
           open
           place={detailFor}
+          currency={currency}
           disabled={!online}
           onClose={() => setDetailFor(null)}
           onSaved={(placeId, patch) => {

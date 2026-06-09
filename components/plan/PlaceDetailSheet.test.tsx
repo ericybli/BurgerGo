@@ -29,6 +29,13 @@ vi.mock('@/app/_actions/photos', () => {
   };
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const addExpenseAction = vi.fn(async (..._a: any[]) => ({ id: 'e1' }));
+vi.mock('@/app/_actions/expenses', () => ({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  addExpenseAction: (...a: any[]) => addExpenseAction(...a),
+}));
+
 const uploadFn = vi.fn(async () => ({ photo: { id: 'new-photo', width: 1600, height: 800 }, errorCode: null }));
 const uploadState = { uploading: false, error: null as string | null };
 vi.mock('@/components/plan/usePhotoUpload', () => ({
@@ -69,6 +76,7 @@ function renderSheet(props: Partial<React.ComponentProps<typeof PlaceDetailSheet
       <PlaceDetailSheet
         open
         place={place()}
+        currency="USD"
         disabled={false}
         onClose={onClose}
         onSaved={onSaved}
@@ -85,6 +93,7 @@ beforeEach(() => {
   uploadFn.mockClear();
   generatePlaceSummaryAction.mockClear();
   selectFn.mockClear();
+  addExpenseAction.mockClear();
   autocompleteState.predictions = [];
 });
 
@@ -151,9 +160,34 @@ describe('PlaceDetailSheet', () => {
     expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ scheduledTime: null }));
   });
 
-  it('does not render a cost field', () => {
+  it('renders the cost field reflecting the place cost (minor → major units)', () => {
+    renderSheet(); // place() has cost 1500 → "15.00" in USD
+    expect(screen.getByLabelText('Cost')).toHaveValue('15.00');
+  });
+
+  it('saves the edited cost as integer minor units', async () => {
     renderSheet();
-    expect(screen.queryByLabelText('Cost')).not.toBeInTheDocument();
+    const costInput = screen.getByLabelText('Cost');
+    await userEvent.clear(costInput);
+    await userEvent.type(costInput, '42');
+    await userEvent.click(screen.getByRole('button', { name: en.plan.save }));
+    await waitFor(() => expect(updatePlaceAction).toHaveBeenCalled());
+    expect(updatePlaceAction).toHaveBeenCalledWith('p1', expect.objectContaining({ cost: 4200 }));
+  });
+
+  it('adds the cost as a budget expense linked to the place (mapped category)', async () => {
+    const { onSaved } = renderSheet(); // place() cost 1500, sightseeing, dayDate 2026-05-03
+    await userEvent.click(screen.getByRole('button', { name: en.plan.addAsExpense }));
+    await waitFor(() => expect(addExpenseAction).toHaveBeenCalled());
+    expect(addExpenseAction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tripId: 't1', amount: 1500, category: 'activities',
+        linkedPlaceId: 'p1', note: 'Senso-ji', spentOn: '2026-05-03',
+      }),
+    );
+    // Adding an expense is independent of saving the place fields.
+    expect(onSaved).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: en.plan.addedToBudget })).toBeInTheDocument();
   });
 
   it('disables editable fields + Save when offline but keeps Open in Maps enabled', () => {
