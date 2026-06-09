@@ -168,11 +168,14 @@ export function MapboxCanvas({
   paths,
   onMarkerClick,
   fitMarkers,
+  cluster = true,
 }: {
   markers: PlaceMarker[];
   paths: DayPath[];
   onMarkerClick: (placeId: string) => void;
   fitMarkers?: PlaceMarker[];
+  /** Cluster nearby pins into count bubbles. When false, every pin renders. */
+  cluster?: boolean;
 }) {
   // The viewport tracks the base markers (day/saved pins); overlay toggles pass
   // the same `fitMarkers`, so the view stays put when layers turn on/off.
@@ -279,24 +282,30 @@ export function MapboxCanvas({
 
     // Cluster the pins so dense areas (a packed city day, or the "All days" view)
     // collapse into count bubbles instead of a pin-pile; they break apart as you
-    // zoom in. Build the index from the current marker set, then render the
-    // clusters for the current viewport — and re-render on every pan/zoom.
-    const index = new Supercluster<LeafProps>({ radius: 56, maxZoom: 16 });
-    index.load(
-      markers.map((m) => ({
-        type: 'Feature' as const,
-        properties: { marker: m },
-        geometry: { type: 'Point' as const, coordinates: [m.position.lng, m.position.lat] },
-      })),
-    );
-    clusterRef.current = index;
+    // zoom in. `radius` is the grouping distance in px; `maxZoom` is the last zoom
+    // that still clusters — kept low (13) so pins separate once you're zoomed into
+    // a neighbourhood, not still merged at street level. When the Settings toggle
+    // turns clustering off, skip the index entirely and render every pin flat.
+    if (cluster) {
+      const index = new Supercluster<LeafProps>({ radius: 48, maxZoom: 13 });
+      index.load(
+        markers.map((m) => ({
+          type: 'Feature' as const,
+          properties: { marker: m },
+          geometry: { type: 'Point' as const, coordinates: [m.position.lng, m.position.lat] },
+        })),
+      );
+      clusterRef.current = index;
+    } else {
+      clusterRef.current = null;
+    }
     renderMarkers();
     map.on('moveend', renderMarkers);
     return () => {
       map.off('moveend', renderMarkers);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [styleReady, markers, paths]);
+  }, [styleReady, markers, paths, cluster]);
 
   /**
    * Draw the clusters/leaves for the current viewport. Clears the previous DOM
@@ -307,8 +316,8 @@ export function MapboxCanvas({
    */
   function renderMarkers() {
     const map = mapRef.current;
+    if (!map) return;
     const index = clusterRef.current;
-    if (!map || !index) return;
 
     markerObjsRef.current.forEach((mk) => mk.remove());
     markerObjsRef.current = [];
@@ -322,8 +331,9 @@ export function MapboxCanvas({
 
     const bounds = typeof map.getBounds === 'function' ? map.getBounds() : null;
     const zoom = typeof map.getZoom === 'function' ? map.getZoom() : null;
-    if (!bounds || zoom == null) {
-      // No viewport info (e.g. before first render) → draw every pin flat.
+    if (!index || !bounds || zoom == null) {
+      // Clustering off, or no viewport info yet (before first render) → draw every
+      // pin flat (1:1 markers).
       for (const m of markers) addMarker(m.position.lng, m.position.lat, createMarkerEl(m, (id) => clickRef.current(id)));
       return;
     }

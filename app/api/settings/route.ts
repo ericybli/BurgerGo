@@ -4,6 +4,7 @@ import { getSettings } from '@/src/db/repos/settings';
 import {
   updateAiSettingsAction,
   updateCurrencyAction,
+  updateMapSettingsAction,
 } from '@/app/_actions/settings';
 import { restWrite } from '@/src/lib/restWrite';
 import type { Settings } from '@/src/db/schema';
@@ -34,6 +35,7 @@ export async function PATCH(req: Request) {
       currency?: string;
       prompt?: string | null;
       model?: string | null;
+      clusterPins?: boolean;
     };
     let settings: Settings | undefined;
     if (patch.currency !== undefined) {
@@ -41,6 +43,9 @@ export async function PATCH(req: Request) {
     }
     if ('prompt' in patch || 'model' in patch) {
       settings = await updateAiSettingsAction({ prompt: patch.prompt, model: patch.model });
+    }
+    if (patch.clusterPins !== undefined) {
+      settings = await updateMapSettingsAction({ clusterPins: patch.clusterPins });
     }
     return { settings: settings ?? getSettings(db) ?? null };
   });

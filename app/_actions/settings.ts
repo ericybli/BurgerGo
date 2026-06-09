@@ -39,6 +39,23 @@ const currencySchema = z.object({
 
 export type UpdateCurrencyInput = z.input<typeof currencySchema>;
 
+// --- updateMapSettingsAction ----------------------------------------------
+
+const mapSchema = z.object({ clusterPins: z.boolean() });
+
+export type UpdateMapSettingsInput = z.input<typeof mapSchema>;
+
+/**
+ * Toggle Plan▸Map pin clustering. `false` stops nearby pins from collapsing into
+ * count bubbles (every pin always renders); `true` restores clustering.
+ */
+export async function updateMapSettingsAction(input: UpdateMapSettingsInput): Promise<Settings> {
+  const { clusterPins } = mapSchema.parse(input);
+  const updated = updateSettings(db, { clusterPins });
+  revalidatePath('/settings');
+  return updated;
+}
+
 /**
  * Set the global display currency (drives all money formatting). The Budget tab
  * reads it live from its own dynamic route, so changing it here reflects there on

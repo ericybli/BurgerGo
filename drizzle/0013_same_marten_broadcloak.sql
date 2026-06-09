@@ -1,0 +1,1 @@
+ALTER TABLE `settings` ADD `cluster_pins` integer;

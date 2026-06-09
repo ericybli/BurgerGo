@@ -33,6 +33,8 @@ export interface PlanMapProps {
   /** Tapping a restaurant-layer pin opens its info card (name/cuisine/address/notes). */
   onViewRestaurant: (restaurantId: string) => void;
   online: boolean;
+  /** Whether to cluster nearby pins (Settings toggle); defaults to true. */
+  clusterPins?: boolean;
   /** Saved-bucket places, shown as an optional teal overlay in the days view. */
   savedPlaces?: PlaceDTO[];
   /** Trip restaurants, shown as an optional amber overlay in the days view. */
@@ -63,6 +65,7 @@ export function PlanMap({
   onViewPlace,
   onViewRestaurant,
   online,
+  clusterPins = true,
   savedPlaces = [],
   restaurants = [],
 }: PlanMapProps) {
@@ -279,6 +282,7 @@ export function PlanMap({
           markers={activeMarkers}
           fitMarkers={baseMarkers}
           paths={dayPaths}
+          cluster={clusterPins}
           onMarkerClick={(id) =>
             restaurantMarkerIds.has(id) ? onViewRestaurant(id) : onViewPlace(id)
           }

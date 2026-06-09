@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { APP_VERSION } from '@/src/lib/appVersion';
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT, AI_MODELS } from '@/src/lib/openai/defaults';
-import { updateAiSettingsAction, updateCurrencyAction } from '@/app/_actions/settings';
+import { updateAiSettingsAction, updateCurrencyAction, updateMapSettingsAction } from '@/app/_actions/settings';
 import { CURRENCIES } from '@/src/lib/currency';
 
 type SettingsRow = {
@@ -14,6 +14,7 @@ type SettingsRow = {
   currency: string;
   aiPrompt: string | null;
   aiModel: string | null;
+  clusterPins: boolean | null;
 } | null;
 
 /**
@@ -30,6 +31,9 @@ export function SettingsClient() {
   const [aiStatus, setAiStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [currency, setCurrency] = useState('USD');
   const [curStatus, setCurStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  // Map pin clustering: on by default (null/true → true); only false turns it off.
+  const [clusterPins, setClusterPins] = useState(true);
+  const [mapStatus, setMapStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -52,6 +56,7 @@ export function SettingsClient() {
         const row = (await res.json()) as SettingsRow;
         if (!cancelled) {
           setCurrency(row?.currency ?? 'USD');
+          setClusterPins(row?.clusterPins !== false);
           setAiPrompt(row?.aiPrompt ?? '');
           // Coerce any stored value to one of the dropdown options (else default).
           setAiModel(row?.aiModel && AI_MODELS.includes(row.aiModel) ? row.aiModel : DEFAULT_AI_MODEL);
@@ -92,6 +97,20 @@ export function SettingsClient() {
         setCurStatus('saved');
       } catch {
         setCurStatus('error');
+      }
+    });
+  }
+
+  function saveCluster(next: boolean) {
+    setClusterPins(next);
+    setMapStatus('idle');
+    startTransition(async () => {
+      try {
+        await updateMapSettingsAction({ clusterPins: next });
+        setMapStatus('saved');
+      } catch {
+        setClusterPins(!next); // revert optimistic toggle on failure
+        setMapStatus('error');
       }
     });
   }
@@ -143,6 +162,29 @@ export function SettingsClient() {
         ) : (
           <p className="mt-2 text-caption text-ink-faint">{t('settings.currencyHint')}</p>
         )}
+      </section>
+
+      <section className="mt-4 rounded-card bg-card p-4 shadow-card">
+        <p className="text-label font-medium text-ink">{t('settings.mapTitle')}</p>
+        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-body text-ink">{t('settings.clusterLabel')}</span>
+            <span className="mt-0.5 block text-caption text-ink-muted">{t('settings.clusterHint')}</span>
+          </span>
+          <input
+            type="checkbox"
+            aria-label={t('settings.clusterLabel')}
+            checked={clusterPins}
+            disabled={!online || isPending}
+            onChange={(e) => saveCluster(e.target.checked)}
+            className="h-5 w-5 shrink-0 accent-coral disabled:opacity-60"
+          />
+        </label>
+        {mapStatus === 'saved' ? (
+          <p className="mt-2 text-caption text-teal">{t('settings.mapSaved')}</p>
+        ) : mapStatus === 'error' ? (
+          <p className="mt-2 text-caption text-red-600">{t('settings.saveError')}</p>
+        ) : null}
       </section>
 
       <section className="mt-4 rounded-card bg-card p-4 shadow-card">

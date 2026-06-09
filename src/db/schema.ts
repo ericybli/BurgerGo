@@ -103,6 +103,8 @@ export const settings = sqliteTable('settings', {
   currency: text('currency').notNull(), // ISO 4217, single global currency
   aiPrompt: text('ai_prompt'), // custom AI-summary system prompt; null → built-in default
   aiModel: text('ai_model'), // custom OpenAI model id; null → built-in default
+  // Plan▸Map pin clustering toggle. NULL = default (clustering ON); 0 = off, 1 = on.
+  clusterPins: integer('cluster_pins', { mode: 'boolean' }),
 });
 
 export const restaurants = sqliteTable(

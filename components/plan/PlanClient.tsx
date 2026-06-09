@@ -132,6 +132,10 @@ export function PlanClient({
 
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [online, setOnline] = useState(true);
+  // Map pin clustering preference (Settings). On by default; only an explicit
+  // `false` from the settings row turns it off. Client-fetched (the page is a
+  // static shell, so it can't be read server-side).
+  const [clusterPins, setClusterPins] = useState(true);
   // Trip display currency (from the places response), for the place-cost field (F3).
   const [currency, setCurrency] = useState('USD');
   const [addOpen, setAddOpen] = useState(false);
@@ -160,6 +164,23 @@ export function PlanClient({
       window.removeEventListener('online', update);
       window.removeEventListener('offline', update);
     };
+  }, []);
+
+  // Read the map clustering preference once (SW-cached /api/settings). Defaults to
+  // on if offline/unset; only a stored `false` disables clustering on the map.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(withBase('/api/settings'), { credentials: 'same-origin' });
+        if (!res.ok) return;
+        const row = (await res.json()) as { clusterPins?: boolean | null } | null;
+        if (!cancelled) setClusterPins(row?.clusterPins !== false);
+      } catch {
+        // offline / no cached settings → keep clustering on
+      }
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // FIX C1: flip mountedRef on unmount (also reset on tripId change via cleanup)
@@ -560,6 +581,7 @@ export function PlanClient({
           onViewPlace={(id) => setViewPlace(placeById(id))}
           onViewRestaurant={(id) => setViewRestaurant(restaurants.find((r) => r.id === id) ?? null)}
           online={online}
+          clusterPins={clusterPins}
           savedPlaces={saved}
           restaurants={restaurants}
         />

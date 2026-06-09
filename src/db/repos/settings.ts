@@ -16,6 +16,7 @@ export type SettingsPatch = Partial<{
   currency: string;
   aiPrompt: string | null; // null clears → built-in default
   aiModel: string | null;
+  clusterPins: boolean | null; // null = default (clustering on); false = off
 }>;
 
 /** Read the single global settings row, or undefined if not yet seeded. */
@@ -57,6 +58,7 @@ export function updateSettings(db: Db, patch: SettingsPatch): Settings {
   // (so a language/currency change never wipes them); null clears the override.
   if ('aiPrompt' in patch) set.aiPrompt = patch.aiPrompt ?? null;
   if ('aiModel' in patch) set.aiModel = patch.aiModel ?? null;
+  if ('clusterPins' in patch) set.clusterPins = patch.clusterPins ?? null;
   db.update(settings).set(set).where(eq(settings.id, SETTINGS_ID)).run();
   return getSettings(db) as Settings;
 }

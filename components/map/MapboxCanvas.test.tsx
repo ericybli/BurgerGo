@@ -151,6 +151,24 @@ describe('MapboxCanvas', () => {
     expect(fakeMap.easeTo).toHaveBeenCalled();
   });
 
+  it('renders every pin flat (no cluster bubble) when cluster={false}', async () => {
+    const close: PlaceMarker[] = [
+      { ...markers[0]!, id: 'a', position: { lat: 1, lng: 2 } },
+      { ...markers[1]!, id: 'b', position: { lat: 1.001, lng: 2.001 } },
+    ];
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <MapboxCanvas markers={close} paths={[]} cluster={false} onMarkerClick={vi.fn()} />
+      </NextIntlClientProvider>,
+    );
+    await fireMapLoad();
+    // Clustering off → two overlapping pins stay as two separate markers.
+    await waitFor(() => expect(fakeMapbox.Marker).toHaveBeenCalledTimes(2));
+    for (const call of fakeMapbox.Marker.mock.calls) {
+      expect((call[0].element as HTMLElement).textContent).not.toBe('2');
+    }
+  });
+
   it('toggles the base style via the compact Map/Satellite button', async () => {
     renderCanvas();
     await fireMapLoad();
