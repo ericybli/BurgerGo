@@ -28,6 +28,41 @@ export interface ForwardGeocodeResult {
   googlePlaceId: string | null;
 }
 
+export interface PoiDetails {
+  googlePlaceId: string;
+  name: string | null;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  categoryGuess: string | null;
+}
+
+/**
+ * Place Details for a tapped basemap POI via the server proxy (cache-gated,
+ * server key; also caches the place photo server-side). Standalone lookup —
+ * no autocomplete session token. Returns null on failure.
+ */
+export async function fetchPoiDetails(placeId: string): Promise<PoiDetails | null> {
+  try {
+    const res = await fetch(
+      withBase(`/api/google/details?placeId=${encodeURIComponent(placeId)}`),
+      { credentials: 'same-origin' },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<PoiDetails>;
+    return {
+      googlePlaceId: data.googlePlaceId ?? placeId,
+      name: data.name ?? null,
+      address: data.address ?? null,
+      lat: typeof data.lat === 'number' ? data.lat : null,
+      lng: typeof data.lng === 'number' ? data.lng : null,
+      categoryGuess: data.categoryGuess ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Forward-geocode a free-text address to coordinates via the server proxy.
  * Returns null on no-match, network failure, or missing key — callers save the

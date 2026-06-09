@@ -40,6 +40,8 @@ export interface PlanMapProps {
   savedPlaces?: PlaceDTO[];
   /** Trip restaurants, shown as an optional amber overlay in the days view. */
   restaurants?: RestaurantMarkerInput[];
+  /** Tapping a Google basemap landmark while the POI toggle is on (Google provider only). */
+  onPoiClick?: (googlePlaceId: string) => void;
 }
 
 /**
@@ -69,6 +71,7 @@ export function PlanMap({
   clusterPins = true,
   savedPlaces = [],
   restaurants = [],
+  onPoiClick,
 }: PlanMapProps) {
   const t = useTranslations('planMap');
   const tm = useTranslations('mascot');
@@ -287,6 +290,7 @@ export function PlanMap({
           onMarkerClick={(id) =>
             restaurantMarkerIds.has(id) ? onViewRestaurant(id) : onViewPlace(id)
           }
+          onPoiClick={onPoiClick}
         />
 
         {bucket === 'days' ? (

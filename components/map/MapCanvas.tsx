@@ -18,15 +18,21 @@ export interface MapCanvasProps {
   fitMarkers?: PlaceMarker[];
   /** Cluster nearby pins (Settings toggle). Defaults to true; only Mapbox clusters. */
   cluster?: boolean;
+  /**
+   * Tapping a Google basemap landmark (POI) while the in-map POI toggle is on.
+   * Google-only: the Mapbox basemap has no equivalent tappable-POI affordance.
+   */
+  onPoiClick?: (googlePlaceId: string) => void;
 }
 
 /**
  * Provider-agnostic map. Renders Mapbox or Google based on the build-time
  * `NEXT_PUBLIC_MAP_PROVIDER` flag — both renderers implement the same props, so
  * PlanMap consumes this one component and never knows which engine is active.
- * `cluster` is Mapbox-only (Google renders flat), so it's kept off the Google spread.
+ * `cluster` is Mapbox-only (Google renders flat) and `onPoiClick` is
+ * Google-only, so each is kept off the other provider's spread.
  */
-export function MapCanvas({ cluster = true, ...props }: MapCanvasProps) {
+export function MapCanvas({ cluster = true, onPoiClick, ...props }: MapCanvasProps) {
   if (MAP_PROVIDER === 'mapbox') return <MapboxCanvas {...props} cluster={cluster} />;
-  return <GoogleMapCanvas {...props} />;
+  return <GoogleMapCanvas {...props} onPoiClick={onPoiClick} />;
 }

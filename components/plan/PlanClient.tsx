@@ -27,6 +27,8 @@ import {
 import { indexLegs } from '@/src/lib/legView';
 import type { RestaurantMarkerInput } from '@/src/lib/map/markers';
 import {
+  addPlaceAction,
+  generatePlaceSummaryAction,
   reorderDayAction,
   promoteToDayAction,
   copyPlaceToDayAction,
@@ -37,6 +39,8 @@ import {
   setDayModeAction,
   setPlaceListAction,
 } from '@/app/_actions/places';
+import { fetchPoiDetails } from '@/components/plan/googleClient';
+import { PoiInfoCard, type PoiPreview } from '@/components/plan/PoiInfoCard';
 import {
   addSavedListAction,
   renameSavedListAction,
@@ -85,6 +89,12 @@ function nowHHMM(tz: string): string {
   }).format(new Date());
 }
 
+/** Valid place categories (mirrors the add/edit sheets); unknown POI guesses → 'other'. */
+const POI_CATEGORIES: readonly PlaceDTO['category'][] = [
+  'sightseeing', 'lodging', 'hotel', 'airbnb', 'airport', 'transport',
+  'activity', 'shopping', 'parking', 'entrance', 'museum', 'event', 'other',
+];
+
 /** Stable identity for a leg (matches `buildDayPaths` / `indexLegs`). */
 // Structural key so both full LegDTOs and the slim heavy-hydrate legs match.
 const legKey = (l: { fromPlaceId: string; toPlaceId: string; mode: TravelMode }) =>
@@ -126,6 +136,7 @@ export function PlanClient({
   tz: string;
 }) {
   const t = useTranslations('plan');
+  const tMapNs = useTranslations('planMap');
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -142,6 +153,9 @@ export function PlanClient({
   const [detailFor, setDetailFor] = useState<PlaceDTO | null>(null);
   const [viewPlace, setViewPlace] = useState<PlaceDTO | null>(null);
   const [viewRestaurant, setViewRestaurant] = useState<RestaurantMarkerInput | null>(null);
+  // Tapped Google basemap landmark (POI toggle on): loading → details card →
+  // optional "Add to places" (saves into the Saved bucket).
+  const [poiPreview, setPoiPreview] = useState<PoiPreview | null>(null);
   // Day picker for moving / copying a day place to another date.
   const [dayPicker, setDayPicker] = useState<{ mode: 'move' | 'copy' | 'promote'; placeId: string } | null>(null);
   const [visibleDates, setVisibleDates] = useState<Set<string>>(new Set());
@@ -390,6 +404,52 @@ export function PlanClient({
     });
   }
 
+  /** Tapped a Google basemap landmark (POI toggle on): fetch its details. */
+  function handlePoiClick(googlePlaceId: string) {
+    setPoiPreview({ status: 'loading' });
+    void (async () => {
+      const details = await fetchPoiDetails(googlePlaceId);
+      if (!mountedRef.current) return;
+      setPoiPreview(details ? { status: 'loaded', details, added: false, saving: false } : { status: 'error' });
+    })();
+  }
+
+  /** Add the previewed POI to the trip's Saved bucket (same flow as Add place). */
+  function handlePoiAdd() {
+    if (!poiPreview || poiPreview.status !== 'loaded' || poiPreview.saving || poiPreview.added) return;
+    const d = poiPreview.details;
+    const name = (d.name ?? d.address ?? '').trim();
+    if (!name) return;
+    setPoiPreview({ ...poiPreview, saving: true });
+    void (async () => {
+      try {
+        const created = await addPlaceAction({
+          tripId,
+          dayDate: null, // Saved bucket; promote to a day from there.
+          name,
+          address: d.address,
+          lat: d.lat,
+          lng: d.lng,
+          category: POI_CATEGORIES.includes(d.categoryGuess as PlaceDTO['category'])
+            ? (d.categoryGuess as PlaceDTO['category'])
+            : 'other',
+          googlePlaceId: d.googlePlaceId,
+        });
+        // Fire-and-forget AI summary, like AddPlaceSheet. Never blocks the add.
+        void generatePlaceSummaryAction(created.id).catch(() => {});
+        if (mountedRef.current) {
+          setPoiPreview((p) => (p && p.status === 'loaded' ? { ...p, added: true, saving: false } : p));
+        }
+        await load({ full: true });
+      } catch {
+        if (mountedRef.current) {
+          setPoiPreview((p) => (p && p.status === 'loaded' ? { ...p, saving: false } : p));
+          setMutationError(t('saveFailed'));
+        }
+      }
+    })();
+  }
+
   /** Reassign a place to `targetDate`; recompute legs for both the source day
    *  (it lost a stop) and the target day (it gained one). */
   function moveToDay(placeId: string, targetDate: string) {
@@ -584,6 +644,7 @@ export function PlanClient({
           clusterPins={clusterPins}
           savedPlaces={saved}
           restaurants={restaurants}
+          onPoiClick={handlePoiClick}
         />
       ) : params.bucket === 'days' ? (
         <>
@@ -690,6 +751,25 @@ export function PlanClient({
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
             <RestaurantInfoCard restaurant={viewRestaurant} onClose={() => setViewRestaurant(null)} />
+          </div>
+        </div>
+      ) : null}
+
+      {poiPreview ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={tMapNs('poiCardLabel')}
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--scrim)] backdrop-blur-[3px] px-3 pb-24"
+          onClick={() => setPoiPreview(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
+            <PoiInfoCard
+              preview={poiPreview}
+              online={online}
+              onAdd={handlePoiAdd}
+              onClose={() => setPoiPreview(null)}
+            />
           </div>
         </div>
       ) : null}

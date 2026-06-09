@@ -144,7 +144,14 @@
     "layerRestaurants": "Restaurants",
     "readCardLabel": "Place details",
     "closeInfoCard": "Close",
-    "locate": "Show my location"
+    "locate": "Show my location",
+    "poiToggle": "Tap map landmarks",
+    "poiCardLabel": "Map landmark",
+    "poiLoading": "Loading place…",
+    "poiFailed": "Couldn't load this place. Try again.",
+    "poiAdd": "Add to places",
+    "poiSaving": "Adding…",
+    "poiAdded": "Added to Saved ✓"
   },
   "category": {
     "sightseeing": "Sightseeing",

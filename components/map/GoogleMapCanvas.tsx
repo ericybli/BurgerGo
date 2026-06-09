@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { LocateFixed } from 'lucide-react';
+import { Landmark, LocateFixed } from 'lucide-react';
 import { loadGoogleMaps } from '@/src/lib/googleLoader';
 import type { PlaceMarker } from '@/src/lib/map/markers';
 import type { DayPath } from '@/src/lib/map/types';
@@ -24,20 +24,25 @@ export function GoogleMapCanvas({
   paths,
   onMarkerClick,
   fitMarkers,
+  onPoiClick,
 }: {
   markers: PlaceMarker[];
   paths: DayPath[];
   onMarkerClick: (placeId: string) => void;
   fitMarkers?: PlaceMarker[];
+  /** Tapping a Google basemap landmark (POI) while the POI toggle is on. */
+  onPoiClick?: (googlePlaceId: string) => void;
 }) {
   // Viewport tracks the base markers; overlay toggles keep the same fitSet so the
   // view doesn't move when layers turn on/off.
   const fitSet = fitMarkers ?? markers;
   const t = useTranslations('planMap');
   const containerRef = useRef<HTMLDivElement | null>(null);
-  // Keep the latest callback without forcing a full map rebuild.
+  // Keep the latest callbacks without forcing a full map rebuild.
   const clickRef = useRef(onMarkerClick);
   clickRef.current = onMarkerClick;
+  const poiClickRef = useRef(onPoiClick);
+  poiClickRef.current = onPoiClick;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -55,6 +60,11 @@ export function GoogleMapCanvas({
   const [mapType, setMapType] = useState<'roadmap' | 'hybrid'>('roadmap');
   // True while a geolocation request is in flight (disables the locate button).
   const [locating, setLocating] = useState(false);
+  // Google-POI interaction toggle: ON → basemap landmarks are tappable (their
+  // taps go to onPoiClick); OFF (default) → only the app's own pins respond.
+  const [poiEnabled, setPoiEnabled] = useState(false);
+  const poiEnabledRef = useRef(poiEnabled);
+  poiEnabledRef.current = poiEnabled;
 
   // Effect 1: load the API and create the maps.Map instance once.
   useEffect(() => {
@@ -81,7 +91,16 @@ export function GoogleMapCanvas({
         // controls — Layers + fullscreen in PlanMap, satellite + locate here.
         // Touch gestures (drag / pinch-zoom / double-tap) are unaffected.
         disableDefaultUI: true,
+        // Toggled at runtime by the POI button (clickable landmarks).
         clickableIcons: false,
+      });
+      // Basemap-POI taps: with clickableIcons on, Google fires a map click
+      // whose event carries the landmark's placeId. Stop Google's own info
+      // window and hand the id to the app (which shows its own card).
+      mapRef.current.addListener?.('click', (e: { placeId?: string; stop?: () => void }) => {
+        if (!poiEnabledRef.current || !e?.placeId) return;
+        e.stop?.();
+        poiClickRef.current?.(e.placeId);
       });
       // Signal that overlays can now be drawn.
       setMapReady((n) => n + 1);
@@ -105,28 +124,14 @@ export function GoogleMapCanvas({
     }
     overlaysRef.current = [];
 
-    // Polylines under the markers — Atlas route style: 3px dotted day-color
-    // line (round dot symbols repeated along an invisible stroke).
+    // Polylines under the markers — solid 3px day-color route lines.
     for (const dp of paths) {
       if (dp.path.length < 2) continue;
       const line = new maps.Polyline({
         path: dp.path,
         strokeColor: dp.color,
-        strokeOpacity: 0,
+        strokeOpacity: 0.9,
         strokeWeight: 3,
-        icons: [
-          {
-            icon: {
-              path: maps.SymbolPath?.CIRCLE ?? 0,
-              fillColor: dp.color,
-              fillOpacity: 0.9,
-              strokeOpacity: 0,
-              scale: 1.5,
-            },
-            offset: '0',
-            repeat: '9px',
-          },
-        ],
         map,
       });
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });
@@ -183,9 +188,12 @@ export function GoogleMapCanvas({
   }, [mapReady, fitSet]);
 
   // Effect 3: keep the map sized to its container. Flex-fill height varies per
-  // device/orientation and the fullscreen toggle changes the container size after
-  // creation; Google caches size at init, so we must trigger 'resize' + re-fit or
-  // tiles render grey / mis-centered.
+  // device/orientation and the fullscreen toggle changes the container size
+  // after creation; Google caches size at init, so trigger 'resize' when the
+  // container ACTUALLY changes size — preserving the user's center/zoom (no
+  // fitBounds: re-fitting here reset the view whenever a card opened or the
+  // mobile URL bar collapsed). Observes once per map lifetime; ResizeObserver's
+  // initial on-observe callback is skipped via the size guard.
   useEffect(() => {
     const el = containerRef.current;
     const maps = mapsRef.current;
@@ -193,19 +201,19 @@ export function GoogleMapCanvas({
     if (!el || !maps || !map || typeof ResizeObserver === 'undefined') return;
 
     let raf = 0;
+    let lastW = el.clientWidth;
+    let lastH = el.clientHeight;
     const ro = new ResizeObserver(() => {
+      const w = el.clientWidth;
+      const h = el.clientHeight;
+      if (w === lastW && h === lastH) return; // initial observe fire / no-op
+      lastW = w;
+      lastH = h;
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        const center = typeof map.getCenter === 'function' ? map.getCenter() : null;
         maps.event?.trigger?.(map, 'resize');
-        const bounds = computeBounds(fitSet.map((m) => m.position));
-        if (bounds) {
-          map.fitBounds(
-            new maps.LatLngBounds(
-              new maps.LatLng(bounds.south, bounds.west),
-              new maps.LatLng(bounds.north, bounds.east),
-            ),
-          );
-        }
+        if (center) map.setCenter?.(center);
       });
     });
     ro.observe(el);
@@ -213,7 +221,7 @@ export function GoogleMapCanvas({
       cancelAnimationFrame(raf);
       ro.disconnect();
     };
-  }, [mapReady, fitSet]);
+  }, [mapReady]);
 
   /** Roadmap ↔ hybrid (satellite imagery + labels), like Mapbox's style toggle. */
   function toggleMapType() {
@@ -222,6 +230,13 @@ export function GoogleMapCanvas({
     const next = mapType === 'roadmap' ? 'hybrid' : 'roadmap';
     setMapType(next);
     map.setMapTypeId?.(next);
+  }
+
+  /** Toggle whether Google basemap landmarks (POIs) respond to taps. */
+  function togglePoi() {
+    const next = !poiEnabled;
+    setPoiEnabled(next);
+    mapRef.current?.setOptions?.({ clickableIcons: next });
   }
 
   /** Center on the user's position and drop/update the blue location dot. */
@@ -296,6 +311,21 @@ export function GoogleMapCanvas({
       >
         <LocateFixed size={18} strokeWidth={2} aria-hidden="true" />
       </button>
+      {/* Google-POI interaction toggle (above locate): ON → basemap landmarks
+          are tappable and open the app's add-to-places card. */}
+      {onPoiClick ? (
+        <button
+          type="button"
+          onClick={togglePoi}
+          aria-pressed={poiEnabled}
+          aria-label={t('poiToggle')}
+          className={`absolute bottom-[5.5rem] right-3 z-[2] flex h-10 w-10 items-center justify-center rounded-chip shadow-lift backdrop-blur active:scale-95 ${
+            poiEnabled ? 'bg-accent text-white' : 'bg-bg/95 text-ink'
+          }`}
+        >
+          <Landmark size={18} strokeWidth={2} aria-hidden="true" />
+        </button>
+      ) : null}
     </div>
   );
 }

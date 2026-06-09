@@ -10,15 +10,22 @@ type FakeCapture = {
   markers: any[];
   polylines: any[];
   fitBoundsCalls: any[];
+  mapInstances: any[];
 };
 let captured: FakeCapture;
 
 function makeFakeGoogle() {
-  captured = { markers: [], polylines: [], fitBoundsCalls: [] };
+  captured = { markers: [], polylines: [], fitBoundsCalls: [], mapInstances: [] };
   return {
     Map: vi.fn(function (this: any, _el: HTMLElement) {
       this.setCenter = (_c: unknown) => {};
       this.fitBounds = (b: unknown) => captured.fitBoundsCalls.push(b);
+      this.listeners = {} as Record<string, (e?: unknown) => void>;
+      this.addListener = (ev: string, cb: (e?: unknown) => void) => {
+        this.listeners[ev] = cb;
+      };
+      this.setOptions = vi.fn();
+      captured.mapInstances.push(this);
     }),
     Marker: vi.fn(function (this: any, opts: any) {
       this.opts = opts;
@@ -134,5 +141,30 @@ describe('GoogleMapCanvas', () => {
     // Container still visible; markers were never created.
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
     expect(captured.markers).toHaveLength(0);
+  });
+
+  it('routes basemap POI taps to onPoiClick only while the POI toggle is on', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const onPoiClick = vi.fn();
+    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn(), onPoiClick });
+    await waitFor(() => expect(captured.mapInstances).toHaveLength(1));
+    const map = captured.mapInstances[0];
+    await waitFor(() => expect(map.listeners['click']).toBeTruthy());
+
+    // Toggle off (default): POI clicks are ignored.
+    const stop = vi.fn();
+    map.listeners['click']({ placeId: 'poi-1', stop });
+    expect(onPoiClick).not.toHaveBeenCalled();
+
+    // Toggle on: clickableIcons enabled, POI click forwarded + default UI stopped.
+    await userEvent.click(screen.getByRole('button', { name: en.planMap.poiToggle }));
+    expect(map.setOptions).toHaveBeenCalledWith({ clickableIcons: true });
+    map.listeners['click']({ placeId: 'poi-1', stop });
+    expect(onPoiClick).toHaveBeenCalledWith('poi-1');
+    expect(stop).toHaveBeenCalled();
+
+    // Map clicks without a placeId (plain ground taps) are never forwarded.
+    map.listeners['click']({});
+    expect(onPoiClick).toHaveBeenCalledTimes(1);
   });
 });
