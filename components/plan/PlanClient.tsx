@@ -613,17 +613,27 @@ export function PlanClient({
 
   return (
     <main
-      className={`mx-auto w-full max-w-md px-4 pt-2 ${
+      className={`mx-auto w-full max-w-md px-4 ${
         params.view === 'map' ? 'flex min-h-0 flex-1 flex-col pb-2' : 'pb-24'
       }`}
     >
       {/* FIX I2: transient mutation error banner */}
       {mutationError ? (
-        <p role="alert" className="mb-2 rounded-card border border-line bg-bg px-3 py-2 text-caption text-danger">
+        <p role="alert" className="mb-2 mt-2 rounded-card border border-line bg-bg px-3 py-2 text-caption text-danger">
           {mutationError}
         </p>
       ) : null}
 
+      {/* In list view the chrome (Overview + view toggles + day strip) PINS to
+          the top of the scroll region — only the itinerary scrolls beneath it.
+          -mx-4/px-4 bleeds the white backdrop over main's side padding. */}
+      <div
+        className={
+          params.view === 'list'
+            ? 'sticky top-0 z-20 -mx-4 mb-3 border-b border-line bg-bg px-4 pt-2'
+            : 'pt-2'
+        }
+      >
       {/* F1: collapsible trip-at-a-glance panel (days bucket only). Default
           collapsed; shows the relevant day's date, weather, next stop, plan + hotel. */}
       {params.bucket === 'days' ? (
@@ -686,6 +696,7 @@ export function PlanClient({
           <DayStrip days={days} selectedDate={params.date} onSelect={selectDay} />
         </div>
       ) : null}
+      </div>
 
       {params.view === 'map' ? (
         <PlanMap
