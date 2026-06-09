@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
-import { createTrip, renameTrip, getTrip, updateTripDates, type Trip } from '@/src/db/repos/trips';
+import { createTrip, renameTrip, getTrip, updateTripDates, setCover, deleteTrip, type Trip } from '@/src/db/repos/trips';
 import { shiftDayDates, unscheduleDay } from '@/src/db/repos/places';
 import { addDays, diffDays } from '@/src/lib/days';
 
@@ -56,6 +56,32 @@ export async function renameTripAction(id: string, name: string): Promise<Trip> 
 function revalidateTrip(id: string): void {
   revalidatePath('/');
   revalidatePath(`/trip/${id}/plan`);
+}
+
+// --- setTripCoverAction ----------------------------------------------------
+
+/**
+ * Set or clear (pass null) a trip's cover photo path. Returns the updated row.
+ * The path is stored as-is (a `photos`-relative reference); pass `null` to clear.
+ */
+export async function setTripCoverAction(id: string, coverPhoto: string | null): Promise<Trip> {
+  const data = z
+    .object({ id: z.string().min(1), coverPhoto: z.string().min(1).nullable() })
+    .parse({ id, coverPhoto });
+  const updated = setCover(db, data.id, data.coverPhoto);
+  if (!updated) throw new Error('Trip not found');
+  revalidateTrip(data.id);
+  return updated;
+}
+
+// --- deleteTripAction ------------------------------------------------------
+
+/** Delete a trip (child rows cascade via FK). Throws if the trip is missing. */
+export async function deleteTripAction(id: string): Promise<void> {
+  const tripId = z.string().min(1).parse(id);
+  if (!getTrip(db, tripId)) throw new Error('Trip not found');
+  deleteTrip(db, tripId);
+  revalidateTrip(tripId);
 }
 
 // --- shiftTripDatesAction --------------------------------------------------

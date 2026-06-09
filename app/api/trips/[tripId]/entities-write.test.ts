@@ -32,7 +32,7 @@ function req(body?: unknown, key?: string) {
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 }
-const P = (o: object) => ({ params: Promise.resolve(o) });
+const P = <T extends object>(o: T) => ({ params: Promise.resolve(o) });
 
 function seedTrip(db: Db) {
   db.insert(trips).values({
