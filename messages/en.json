@@ -160,7 +160,11 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
+    "languageEnglish": "English",
     "currency": "Currency",
+    "currencyHint": "Used for all amounts across the trip.",
+    "currencySaved": "Currency saved ✓",
+    "saveError": "Couldn't save — please try again.",
     "comingSoon": "Settings controls are on their way.",
     "aiTitle": "AI place summaries",
     "aiBody": "Customize how AI writes each place's intro. Leave blank to use the built-in defaults.",

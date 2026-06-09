@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl';
 import { withBase } from '@/src/lib/basePath';
 import { APP_VERSION } from '@/src/lib/appVersion';
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT, AI_MODELS } from '@/src/lib/openai/defaults';
-import { updateAiSettingsAction } from '@/app/_actions/settings';
+import { updateAiSettingsAction, updateCurrencyAction } from '@/app/_actions/settings';
+import { CURRENCIES } from '@/src/lib/currency';
 
 type SettingsRow = {
   language: string;
@@ -23,11 +24,12 @@ type SettingsRow = {
  */
 export function SettingsClient() {
   const t = useTranslations();
-  const [settings, setSettings] = useState<SettingsRow>(null);
   const [online, setOnline] = useState(true);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiModel, setAiModel] = useState(DEFAULT_AI_MODEL);
   const [aiStatus, setAiStatus] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [currency, setCurrency] = useState('USD');
+  const [curStatus, setCurStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -49,7 +51,7 @@ export function SettingsClient() {
         if (!res.ok) return;
         const row = (await res.json()) as SettingsRow;
         if (!cancelled) {
-          setSettings(row);
+          setCurrency(row?.currency ?? 'USD');
           setAiPrompt(row?.aiPrompt ?? '');
           // Coerce any stored value to one of the dropdown options (else default).
           setAiModel(row?.aiModel && AI_MODELS.includes(row.aiModel) ? row.aiModel : DEFAULT_AI_MODEL);
@@ -81,6 +83,19 @@ export function SettingsClient() {
     setAiStatus('idle');
   }
 
+  function saveCurrency(next: string) {
+    setCurrency(next);
+    setCurStatus('idle');
+    startTransition(async () => {
+      try {
+        await updateCurrencyAction({ currency: next });
+        setCurStatus('saved');
+      } catch {
+        setCurStatus('error');
+      }
+    });
+  }
+
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
       <header className="flex items-center gap-2 py-2">
@@ -99,17 +114,35 @@ export function SettingsClient() {
       <section className="mt-2 rounded-card bg-card p-4 shadow-card">
         <div className="flex items-center justify-between">
           <span className="text-body text-ink">{t('settings.language')}</span>
-          <span className="text-label font-medium text-ink-muted">
-            {settings?.language ?? 'en'}
-          </span>
+          <span className="text-label font-medium text-ink-muted">{t('settings.languageEnglish')}</span>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-line pt-3">
           <span className="text-body text-ink">{t('settings.currency')}</span>
-          <span className="text-label font-medium text-ink-muted [font-variant-numeric:tabular-nums]">
-            {settings?.currency ?? 'USD'}
-          </span>
+          <select
+            aria-label={t('settings.currency')}
+            value={currency}
+            disabled={!online || isPending}
+            onChange={(e) => saveCurrency(e.target.value)}
+            className="rounded-control border border-line bg-paper px-3 py-1.5 text-label font-medium text-ink disabled:opacity-60"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} · {c.label}
+              </option>
+            ))}
+            {/* Keep a stored value that isn't in the common list selectable. */}
+            {CURRENCIES.some((c) => c.code === currency) ? null : (
+              <option value={currency}>{currency}</option>
+            )}
+          </select>
         </div>
-        <p className="mt-3 text-caption text-ink-faint">{t('settings.comingSoon')}</p>
+        {curStatus === 'saved' ? (
+          <p className="mt-2 text-caption text-teal">{t('settings.currencySaved')}</p>
+        ) : curStatus === 'error' ? (
+          <p className="mt-2 text-caption text-red-600">{t('settings.saveError')}</p>
+        ) : (
+          <p className="mt-2 text-caption text-ink-faint">{t('settings.currencyHint')}</p>
+        )}
       </section>
 
       <section className="mt-4 rounded-card bg-card p-4 shadow-card">

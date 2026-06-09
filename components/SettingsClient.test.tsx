@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
 
@@ -9,6 +10,14 @@ vi.mock('next/link', () => ({
       {children}
     </a>
   ),
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateCurrencyAction = vi.fn(async (..._a: any[]) => ({}));
+vi.mock('@/app/_actions/settings', () => ({
+  updateAiSettingsAction: vi.fn(async () => ({})),
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateCurrencyAction: (...a: any[]) => updateCurrencyAction(...a),
 }));
 
 import { SettingsClient } from './SettingsClient';
@@ -43,11 +52,13 @@ describe('SettingsClient', () => {
     expect(screen.getByRole('link', { name: en.trip.back }).getAttribute('href')).toBe('/');
   });
 
-  it('fetches /api/settings and shows the language + currency', async () => {
+  it('shows English (fixed) + the stored currency in the editable select', async () => {
     mockFetchSettings({ language: 'zh', currency: 'JPY' });
     renderSettings();
-    expect(await screen.findByText('zh')).toBeInTheDocument();
-    expect(screen.getByText('JPY')).toBeInTheDocument();
+    // Language is English-only now (fixed display); currency is an editable select.
+    expect(await screen.findByText(en.settings.languageEnglish)).toBeInTheDocument();
+    const cur = (await screen.findByRole('combobox', { name: en.settings.currency })) as HTMLSelectElement;
+    await waitFor(() => expect(cur.value).toBe('JPY'));
   });
 
   it('fetches the base-path-prefixed /api/settings when NEXT_PUBLIC_BASE_PATH is set', async () => {
@@ -61,18 +72,20 @@ describe('SettingsClient', () => {
         <Prefixed />
       </NextIntlClientProvider>,
     );
-    await screen.findByText('zh');
+    const cur = (await screen.findByRole('combobox', { name: en.settings.currency })) as HTMLSelectElement;
+    await waitFor(() => expect(cur.value).toBe('JPY'));
     expect(fetchMock).toHaveBeenCalledWith('/burgergo/api/settings', { credentials: 'same-origin' });
   });
 
-  it('falls back to en/USD when settings are not yet seeded (null)', async () => {
+  it('falls back to USD when settings are not yet seeded (null)', async () => {
     mockFetchSettings(null);
     renderSettings();
-    expect(await screen.findByText('en')).toBeInTheDocument();
-    expect(screen.getByText('USD')).toBeInTheDocument();
+    expect(await screen.findByText(en.settings.languageEnglish)).toBeInTheDocument();
+    const cur = (await screen.findByRole('combobox', { name: en.settings.currency })) as HTMLSelectElement;
+    expect(cur.value).toBe('USD');
   });
 
-  it('shows en/USD fallback and does not crash when fetch throws (offline, no cache)', async () => {
+  it('shows the USD fallback and does not crash when fetch throws (offline, no cache)', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn(async () => { throw new Error('Failed to fetch'); }) as unknown as typeof fetch,
@@ -80,9 +93,18 @@ describe('SettingsClient', () => {
     renderSettings();
     // The static chrome renders immediately regardless.
     expect(screen.getByText(en.settings.title)).toBeInTheDocument();
-    // Fallback defaults are displayed — no crash.
-    expect(await screen.findByText('en')).toBeInTheDocument();
-    expect(screen.getByText('USD')).toBeInTheDocument();
+    // Fallback default is displayed — no crash.
+    const cur = (await screen.findByRole('combobox', { name: en.settings.currency })) as HTMLSelectElement;
+    expect(cur.value).toBe('USD');
+  });
+
+  it('saves the chosen currency via updateCurrencyAction', async () => {
+    mockFetchSettings({ language: 'en', currency: 'USD' });
+    renderSettings();
+    const cur = (await screen.findByRole('combobox', { name: en.settings.currency })) as HTMLSelectElement;
+    await userEvent.selectOptions(cur, 'EUR');
+    await waitFor(() => expect(updateCurrencyAction).toHaveBeenCalledWith({ currency: 'EUR' }));
+    expect(cur.value).toBe('EUR');
   });
 
   it('renders the AI model as a dropdown with the four options, defaulting to gpt-5.4-mini', async () => {
@@ -101,8 +123,7 @@ describe('SettingsClient', () => {
     })) as unknown as typeof fetch);
     renderSettings();
     const select = (await screen.findByRole('combobox', { name: en.settings.aiModelLabel })) as HTMLSelectElement;
-    await screen.findByText('en');
-    expect(select.value).toBe('gpt-5.5-pro');
+    await waitFor(() => expect(select.value).toBe('gpt-5.5-pro'));
   });
 
   it('renders the About block: wordmark, tagline, version, and both info rows', () => {

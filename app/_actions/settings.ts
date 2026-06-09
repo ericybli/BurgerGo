@@ -26,3 +26,27 @@ export async function updateAiSettingsAction(input: UpdateAiSettingsInput): Prom
   revalidatePath('/settings');
   return updated;
 }
+
+// --- updateCurrencyAction -------------------------------------------------
+
+const currencySchema = z.object({
+  currency: z
+    .string()
+    .trim()
+    .transform((s) => s.toUpperCase())
+    .pipe(z.string().regex(/^[A-Z]{3}$/, 'must be a 3-letter ISO-4217 code')),
+});
+
+export type UpdateCurrencyInput = z.input<typeof currencySchema>;
+
+/**
+ * Set the global display currency (drives all money formatting). The Budget tab
+ * reads it live from its own dynamic route, so changing it here reflects there on
+ * the next visit — no cross-path revalidation needed beyond /settings.
+ */
+export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<Settings> {
+  const { currency } = currencySchema.parse(input);
+  const updated = updateSettings(db, { currency });
+  revalidatePath('/settings');
+  return updated;
+}

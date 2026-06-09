@@ -18,6 +18,26 @@ const EXPONENTS: Record<string, number> = {
 
 const DEFAULT_EXPONENT = 2;
 
+/** Common ISO-4217 currencies offered in Settings (code + English name). */
+export const CURRENCIES: { code: string; label: string }[] = [
+  { code: 'USD', label: 'US Dollar' },
+  { code: 'EUR', label: 'Euro' },
+  { code: 'GBP', label: 'British Pound' },
+  { code: 'JPY', label: 'Japanese Yen' },
+  { code: 'CNY', label: 'Chinese Yuan' },
+  { code: 'HKD', label: 'Hong Kong Dollar' },
+  { code: 'TWD', label: 'Taiwan Dollar' },
+  { code: 'KRW', label: 'South Korean Won' },
+  { code: 'SGD', label: 'Singapore Dollar' },
+  { code: 'THB', label: 'Thai Baht' },
+  { code: 'AUD', label: 'Australian Dollar' },
+  { code: 'CAD', label: 'Canadian Dollar' },
+  { code: 'CHF', label: 'Swiss Franc' },
+  { code: 'NZD', label: 'New Zealand Dollar' },
+  { code: 'MXN', label: 'Mexican Peso' },
+  { code: 'INR', label: 'Indian Rupee' },
+];
+
 /** Minor-unit exponent for an ISO-4217 code (case-insensitive); default 2. */
 export function currencyExponent(currency: string): number {
   const code = currency.toUpperCase();

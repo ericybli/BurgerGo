@@ -37,7 +37,7 @@ function todayISO(): string {
 
 export function BudgetClient({
   tripId,
-  currency,
+  currency: currencyProp,
   locale = 'en',
 }: {
   tripId: string;
@@ -46,6 +46,9 @@ export function BudgetClient({
 }) {
   const t = useTranslations('budget');
   const [state, setState] = useState<LoadState>({ status: 'loading' });
+  // The page seeds the env default; the /budget response carries the user's
+  // current Settings currency (G18), which we adopt once loaded.
+  const [currency, setCurrency] = useState(currencyProp);
   const [online, setOnline] = useState(true);
   const [groupMode, setGroupMode] = useState<GroupMode>('day');
   const [expenseSheet, setExpenseSheet] = useState<{ open: boolean; expense?: ExpenseDTO }>({ open: false });
@@ -75,12 +78,14 @@ export function BudgetClient({
       // The budget route returns slim place options too, so one fetch covers it.
       const budgetRes = await fetch(withBase(`/api/trips/${tripId}/budget`), { credentials: 'same-origin' });
       if (!budgetRes.ok) throw new Error('load failed');
-      const { expenses, targets, places } = (await budgetRes.json()) as {
+      const { expenses, targets, places, currency: cur } = (await budgetRes.json()) as {
         expenses: ExpenseDTO[];
         targets: TargetDTO[];
         places: PlaceOption[];
+        currency?: string;
       };
       if (mountedRef.current) {
+        if (cur) setCurrency(cur);
         setState({ status: 'loaded', data: { expenses, targets, places } });
       }
     } catch {

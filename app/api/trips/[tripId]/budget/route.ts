@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
+import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
+import { getSettings } from '@/src/db/repos/settings';
 import { listByTrip as listExpensesForTrip } from '@/src/db/repos/expenses';
 import { listTargets as listTargetsForTrip } from '@/src/db/repos/budgetTargets';
 import { places, type Expense, type BudgetTarget } from '@/src/db/schema';
@@ -63,5 +65,8 @@ export async function GET(
     .where(eq(places.tripId, tripId))
     .all();
 
-  return NextResponse.json({ expenses, targets, places: placeOptions });
+  // Global display currency (user-settable in Settings); env default until changed.
+  const currency = getSettings(db)?.currency ?? env.DEFAULT_CURRENCY;
+
+  return NextResponse.json({ expenses, targets, places: placeOptions, currency });
 }
