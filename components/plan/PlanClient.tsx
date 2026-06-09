@@ -77,7 +77,9 @@ function nowHHMM(tz: string): string {
 }
 
 /** Stable identity for a leg (matches `buildDayPaths` / `indexLegs`). */
-const legKey = (l: LegDTO) => `${l.fromPlaceId}|${l.toPlaceId}|${l.mode}`;
+// Structural key so both full LegDTOs and the slim heavy-hydrate legs match.
+const legKey = (l: { fromPlaceId: string; toPlaceId: string; mode: TravelMode }) =>
+  `${l.fromPlaceId}|${l.toPlaceId}|${l.mode}`;
 
 /**
  * Merge the heavy fields from a `?detail=full` fetch into already-loaded state:
@@ -87,11 +89,11 @@ const legKey = (l: LegDTO) => `${l.fromPlaceId}|${l.toPlaceId}|${l.mode}`;
  */
 function mergeHeavyFields(
   state: Extract<LoadState, { status: 'loaded' }>,
-  fullPlaces: PlaceDTO[],
-  fullLegs: LegDTO[],
+  heavyPlaces: { id: string; aiSummary: string | null }[],
+  heavyLegs: { fromPlaceId: string; toPlaceId: string; mode: TravelMode; polyline: string | null }[],
 ): LoadState {
-  const summaryById = new Map(fullPlaces.map((p) => [p.id, p.aiSummary]));
-  const polylineByLeg = new Map(fullLegs.map((l) => [legKey(l), l.polyline]));
+  const summaryById = new Map(heavyPlaces.map((p) => [p.id, p.aiSummary]));
+  const polylineByLeg = new Map(heavyLegs.map((l) => [legKey(l), l.polyline]));
   return {
     ...state,
     data: {
@@ -157,13 +159,17 @@ export function PlanClient({
     };
   }, [tripId]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { full?: boolean }) => {
+    // After a mutation the list is already painted, so skip the light→heavy split
+    // and pull the full payload in one request (P3). Mount uses the split below.
+    const reload = opts?.full === true;
     try {
       const [tripData, placesRes, restaurantsRes] = await Promise.all([
         // Coalesced with the trip shell's identical fetch (one request).
         fetchTripData(tripId),
-        // Light list payload: omits aiSummary + route polylines (hydrated below).
-        fetch(withBase(`/api/trips/${tripId}/places`), { credentials: 'same-origin' }),
+        // Light list payload (mount) or full (reload). Light omits aiSummary +
+        // route polylines — hydrated by the slim heavy pass below.
+        fetch(withBase(`/api/trips/${tripId}/places${reload ? '?detail=full' : ''}`), { credentials: 'same-origin' }),
         // Restaurants power the optional map overlay only — non-critical, so a
         // failure here must not error the whole plan (`.catch` → null below).
         fetch(withBase(`/api/trips/${tripId}/restaurants`), { credentials: 'same-origin' }).catch(
@@ -213,20 +219,22 @@ export function PlanClient({
       if (mountedRef.current) setState({ status: 'error' });
       return;
     }
+    // Reload already pulled the full payload — nothing left to hydrate.
+    if (reload) return;
     // Background hydrate (perf): the list paints from the light payload above;
-    // now pull the heavy fields the list never needs — per-place aiSummary (for
-    // the read card) + route polylines (for the map) — and merge them in.
+    // now pull ONLY the heavy fields the list never needs — per-place aiSummary
+    // (read card) + route polylines (map) — via the slim heavy endpoint, and merge.
     try {
-      const res = await fetch(withBase(`/api/trips/${tripId}/places?detail=full`), {
+      const res = await fetch(withBase(`/api/trips/${tripId}/places?detail=heavy`), {
         credentials: 'same-origin',
       });
       if (!res.ok) return;
-      const { places: fullPlaces, legs: fullLegs } = (await res.json()) as {
-        places: PlaceDTO[];
-        legs: LegDTO[];
+      const { places: heavyPlaces, legs: heavyLegs } = (await res.json()) as {
+        places: { id: string; aiSummary: string | null }[];
+        legs: { fromPlaceId: string; toPlaceId: string; mode: TravelMode; polyline: string | null }[];
       };
       if (mountedRef.current) {
-        setState((s) => (s.status === 'loaded' ? mergeHeavyFields(s, fullPlaces, fullLegs) : s));
+        setState((s) => (s.status === 'loaded' ? mergeHeavyFields(s, heavyPlaces, heavyLegs) : s));
       }
     } catch {
       // Offline / failed → keep the light data; summaries + road polylines just
@@ -240,7 +248,7 @@ export function PlanClient({
 
   // Re-fetch when another part of the shell (e.g. AI import) adds places.
   useEffect(() => {
-    const onChanged = () => void load();
+    const onChanged = () => void load({ full: true });
     window.addEventListener(TRIP_DATA_CHANGED, onChanged);
     return () => window.removeEventListener(TRIP_DATA_CHANGED, onChanged);
   }, [load]);
@@ -343,7 +351,7 @@ export function PlanClient({
       } catch {
         if (mountedRef.current) setMutationError(t('mutationFailed'));
       } finally {
-        await load();
+        await load({ full: true });
       }
     });
   }
@@ -357,13 +365,16 @@ export function PlanClient({
       try {
         await promoteToDayAction(placeId, targetDate);
         if (online) {
-          await recomputeDayLegsAction(tripId, sourceDate, dayMode);
-          await recomputeDayLegsAction(tripId, targetDate, dayMode);
+          // Source + target days are independent → recompute both at once.
+          await Promise.all([
+            recomputeDayLegsAction(tripId, sourceDate, dayMode),
+            recomputeDayLegsAction(tripId, targetDate, dayMode),
+          ]);
         }
       } catch {
         if (mountedRef.current) setMutationError(t('mutationFailed'));
       } finally {
-        await load();
+        await load({ full: true });
       }
     });
   }
@@ -378,7 +389,7 @@ export function PlanClient({
       } catch {
         if (mountedRef.current) setMutationError(t('mutationFailed'));
       } finally {
-        await load();
+        await load({ full: true });
       }
     });
   }
@@ -403,7 +414,7 @@ export function PlanClient({
       } catch {
         if (mountedRef.current) setMutationError(t('mutationFailed'));
       } finally {
-        await load();
+        await load({ full: true });
       }
     });
   }
@@ -422,7 +433,7 @@ export function PlanClient({
   /** Create a list and re-fetch; returns it so the caller can move a place in. */
   async function createList(name: string): Promise<SavedListItem> {
     const row = await addSavedListAction(tripId, name);
-    await load();
+    await load({ full: true });
     return { id: row.id, name: row.name };
   }
 
@@ -588,7 +599,7 @@ export function PlanClient({
           onSaved={(placeId, patch) => {
             if (placeId && patch) applyPlacePatch(placeId, patch);
             setDetailFor(null);
-            void load();
+            void load({ full: true });
           }}
         />
       ) : null}

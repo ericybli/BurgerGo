@@ -34,14 +34,34 @@ export async function GET(
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
-  // Heavy fields — per-place `aiSummary` (≈1–2 KB each) + per-leg route
-  // `polyline` — are only needed by the read card + map, never the list. They
-  // ship only on `?detail=full`; the default light payload keeps the
-  // fast-painting list fetch small. (perf)
-  const full = new URL(req.url).searchParams.get('detail') === 'full';
+  // Detail levels (perf): the heavy fields — per-place `aiSummary` (≈1–2 KB each)
+  // + per-leg route `polyline` — are only needed by the read card + map, never
+  // the list. `?detail=full` ships everything; the default (light) payload omits
+  // those two; `?detail=heavy` returns ONLY those two (as a slim id-keyed payload)
+  // so the background hydrate after a light paint doesn't re-run the photo/link/
+  // list queries it doesn't need.
+  const detail = new URL(req.url).searchParams.get('detail');
+  const full = detail === 'full';
+  const heavy = detail === 'heavy';
   const trip = getTrip(db, tripId);
   if (!trip) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
+
+  // Heavy-only fast path: just the two heavy fields, no photo/cache/link/list work.
+  if (heavy) {
+    const heavyPlaces = listAllForTrip(db, tripId).map((p) => ({ id: p.id, aiSummary: p.aiSummary }));
+    const heavyLegs = db
+      .select({
+        fromPlaceId: travelLegs.fromPlaceId,
+        toPlaceId: travelLegs.toPlaceId,
+        mode: travelLegs.mode,
+        polyline: travelLegs.polyline,
+      })
+      .from(travelLegs)
+      .where(eq(travelLegs.tripId, tripId))
+      .all();
+    return NextResponse.json({ places: heavyPlaces, legs: heavyLegs });
   }
 
   const rawPlaces = listAllForTrip(db, tripId);

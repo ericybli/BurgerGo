@@ -132,12 +132,12 @@ describe('PlanClient', () => {
     expect(f).toHaveBeenCalledWith('/api/trips/t1/places', { credentials: 'same-origin' });
   });
 
-  it('background-hydrates the heavy fields (aiSummary + polylines) via ?detail=full', async () => {
+  it('background-hydrates the heavy fields (aiSummary + polylines) via the slim ?detail=heavy', async () => {
     const f = mockFetch();
     renderPlan();
     await screen.findByText('Stop A');
     await waitFor(() =>
-      expect(f).toHaveBeenCalledWith('/api/trips/t1/places?detail=full', {
+      expect(f).toHaveBeenCalledWith('/api/trips/t1/places?detail=heavy', {
         credentials: 'same-origin',
       }),
     );

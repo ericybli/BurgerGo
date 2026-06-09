@@ -104,6 +104,22 @@ describe('GET /api/trips/[tripId]/places', () => {
     expect(body.legs[0]?.polyline).toBe('POLY_AB');
   });
 
+  it('?detail=heavy returns only the slim heavy fields (id+aiSummary, leg key+polyline)', async () => {
+    const res = await GET(
+      new Request('http://x/api/trips/trip-1/places?detail=heavy'),
+      ctx('trip-1'),
+    );
+    const body = (await res.json()) as {
+      places: Array<Record<string, unknown>>;
+      legs: Array<Record<string, unknown>>;
+    };
+    // Slim place: id + aiSummary only — no photos/links/photoPath.
+    expect(Object.keys(body.places[0]!).sort()).toEqual(['aiSummary', 'id']);
+    // Slim leg: key fields + polyline (carries the heavy route geometry).
+    expect(Object.keys(body.legs[0]!).sort()).toEqual(['fromPlaceId', 'mode', 'polyline', 'toPlaceId']);
+    expect(body.legs[0]!.polyline).toBe('POLY_AB');
+  });
+
   it('returns 404 for an unknown trip', async () => {
     const res = await GET(new Request('http://x/api/trips/nope/places'), ctx('nope'));
     expect(res.status).toBe(404);
