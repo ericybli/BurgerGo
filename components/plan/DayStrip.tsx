@@ -30,8 +30,10 @@ export function DayStrip({ days, selectedDate, onSelect }: DayStripProps) {
             type="button"
             aria-current={active ? 'true' : undefined}
             onClick={() => onSelect(d.date)}
-            className={`relative flex shrink-0 items-center gap-1 rounded-chip px-3 py-1.5 text-caption font-medium ${
-              active ? 'bg-coral text-white' : 'bg-card text-ink-muted shadow-card'
+            className={`relative flex shrink-0 items-center gap-1 rounded-chip px-3 py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color] duration-200 ease-spring active:scale-95 ${
+              active
+                ? 'bg-coral text-white shadow-card'
+                : 'bg-card text-ink-muted shadow-hair hover:shadow-card'
             }`}
           >
             {d.isToday ? (

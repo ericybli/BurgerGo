@@ -10,11 +10,11 @@ export default async function HomeLayout({
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-4 py-3">
-        <span className="text-title font-bold text-coral">{t('home.title')}</span>
+        <span className="font-serif text-title font-bold text-coral">{t('home.title')}</span>
         <Link
           href="/settings"
           aria-label={t('home.settings')}
-          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink"
+          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink transition hover:bg-line active:scale-95"
         >
           {/* Settings gear (inline SVG, inherits currentColor, offline-safe) */}
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

@@ -5,9 +5,6 @@ import { useTranslations } from 'next-intl';
 import type { Trip } from '@/src/db/schema';
 import { tripStatus } from '@/src/lib/days';
 
-const COVER_GRADIENT =
-  'linear-gradient(135deg, #F2C879 0%, #EE5B3C 100%)';
-
 // Pill background/text per spec §3.1: Upcoming=Sun, Active=Coral, Past=Teal-muted.
 const PILL_CLASS: Record<'upcoming' | 'active' | 'past', string> = {
   upcoming: 'bg-sun-tint text-ink',
@@ -42,19 +39,33 @@ export function TripCard({ trip, tz, onManage }: { trip: Trip; tz: string; onMan
   return (
     <Link
       href={`/trip/${trip.id}`}
-      className="block overflow-hidden rounded-card shadow-card"
+      className="block overflow-hidden rounded-card shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
     >
       <div
-        className="relative flex h-40 flex-col justify-end p-4"
+        className="relative flex h-40 flex-col justify-end overflow-hidden bg-cover-gradient p-4"
         // future: a later plan serves cover photos via /api/photos
-        style={{ backgroundImage: COVER_GRADIENT }}
       >
+        {/* Grain + bottom scrim keep white text legible over the warm gradient. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.12] mix-blend-overlay"
+          style={{
+            backgroundSize: '160px 160px',
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3"
+          style={{ background: 'linear-gradient(to top, var(--scrim), transparent)' }}
+        />
         {onManage ? (
           <button
             type="button"
             aria-label={t('tripCard.edit')}
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onManage(); }}
-            className="absolute left-3 top-3 flex h-8 w-8 items-center justify-center rounded-chip bg-card/90 text-ink shadow-card backdrop-blur active:bg-line"
+            className="absolute left-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-chip bg-card/90 text-ink shadow-card backdrop-blur transition hover:bg-card active:scale-95 active:bg-line"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M12 20h9" />
@@ -63,14 +74,14 @@ export function TripCard({ trip, tz, onManage }: { trip: Trip; tz: string; onMan
           </button>
         ) : null}
         <span
-          className={`absolute right-3 top-3 rounded-chip px-3 py-1 text-caption font-medium ${PILL_CLASS[status]}`}
+          className={`absolute right-3 top-3 z-10 rounded-chip px-3 py-1 text-caption font-medium ${PILL_CLASS[status]}`}
         >
           {t(`status.${status}`)}
         </span>
-        <span className="text-display font-bold text-white drop-shadow">
+        <span className="relative z-10 font-serif text-display font-bold text-white drop-shadow">
           {trip.name}
         </span>
-        <span className="mt-1 text-caption font-medium text-white/90 [font-variant-numeric:tabular-nums]">
+        <span className="relative z-10 mt-1 text-caption font-medium text-white/90 [font-variant-numeric:tabular-nums]">
           {t('tripCard.dateRange', { start, end, days })}
         </span>
       </div>

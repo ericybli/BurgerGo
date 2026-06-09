@@ -110,7 +110,7 @@ export function TripShellClient({
     <div className="flex h-[100dvh] flex-col overflow-hidden">
       {state.status === 'loading' ? (
         <header className="flex items-center gap-2 px-2 py-3" aria-busy="true">
-          <div className="h-11 w-11 rounded-chip" />
+          <div className="h-11 w-11 animate-pulse rounded-chip bg-line" />
           <div className="min-w-0 flex-1">
             <div className="h-5 w-1/2 animate-pulse rounded-control bg-line" />
             <p className="mt-1 text-caption text-ink-muted">{t('trip.loading')}</p>

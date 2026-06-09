@@ -65,7 +65,7 @@ export function PlaceCard({
             aria-label={t('moveUp')}
             disabled={disabled || isFirst}
             onClick={() => onMoveUp(place.id)}
-            className="text-ink-faint disabled:opacity-30"
+            className="flex items-center justify-center rounded-chip text-ink-faint transition hover:bg-line active:scale-95 disabled:opacity-30"
           >
             ▲
           </button>
@@ -74,7 +74,7 @@ export function PlaceCard({
             aria-label={t('moveDown')}
             disabled={disabled || isLast}
             onClick={() => onMoveDown(place.id)}
-            className="text-ink-faint disabled:opacity-30"
+            className="flex items-center justify-center rounded-chip text-ink-faint transition hover:bg-line active:scale-95 disabled:opacity-30"
           >
             ▼
           </button>
@@ -82,7 +82,7 @@ export function PlaceCard({
         <span className="mt-1 w-px flex-1 bg-line" aria-hidden="true" />
       </div>
 
-      <div className="mb-3 min-w-0 flex-1 rounded-card bg-card p-3 shadow-card">
+      <div className="mb-3 min-w-0 flex-1 rounded-card bg-card p-3 shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]">
         <button
           type="button"
           onClick={() => onTap(place.id)}
@@ -121,7 +121,7 @@ export function PlaceCard({
           <button
             type="button"
             onClick={() => onView(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal active:bg-teal-tint"
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-95"
           >
             {t('view')}
           </button>
@@ -130,7 +130,7 @@ export function PlaceCard({
             type="button"
             aria-expanded={managing}
             onClick={() => setManaging((v) => !v)}
-            className="rounded-control border border-line px-2.5 py-1 text-caption font-medium text-ink-muted active:bg-line"
+            className="rounded-control border border-line px-2.5 py-1 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-95"
           >
             {t('manage')}
           </button>
@@ -142,7 +142,7 @@ export function PlaceCard({
               type="button"
               disabled={disabled}
               onClick={() => onMoveToSaved(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
             >
               {t('moveToSaved')}
             </button>
@@ -150,7 +150,7 @@ export function PlaceCard({
               type="button"
               disabled={disabled}
               onClick={() => onMoveToDay(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
             >
               {t('move')}
             </button>
@@ -158,7 +158,7 @@ export function PlaceCard({
               type="button"
               disabled={disabled}
               onClick={() => onCopyToDay(place.id)}
-              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+              className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
             >
               {t('copy')}
             </button>
@@ -166,7 +166,7 @@ export function PlaceCard({
               type="button"
               disabled={disabled}
               onClick={() => onDelete(place.id)}
-              className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger disabled:opacity-40"
+              className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95 disabled:opacity-40"
             >
               {t('delete')}
             </button>

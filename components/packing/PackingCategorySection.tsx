@@ -53,9 +53,9 @@ export function PackingCategorySection({
   }
 
   return (
-    <section className="rounded-card bg-card p-3 shadow-card">
+    <section className="rounded-card bg-card p-3 shadow-card shadow-hair">
       <div className="mb-1 flex items-center gap-2">
-        <h2 className="min-w-0 flex-1 truncate text-label font-semibold text-ink">{category.name}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-micro font-semibold uppercase tracking-wide text-ink-muted">{category.name}</h2>
         <span className="shrink-0 text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
           {packedCount}/{category.items.length}
         </span>
@@ -64,7 +64,7 @@ export function PackingCategorySection({
           disabled={disabled || busy}
           onClick={handleDeleteCategory}
           aria-label={t('deleteCategory', { name: category.name })}
-          className="shrink-0 rounded-chip p-1 text-ink-faint active:bg-line disabled:opacity-40"
+          className="flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:scale-95 active:bg-line disabled:opacity-40"
         >
           🗑
         </button>
@@ -88,7 +88,7 @@ export function PackingCategorySection({
           onKeyDown={(e) => {
             if (e.key === 'Enter') void handleAddItem();
           }}
-          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-2 py-1.5 text-body text-ink disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-2 py-1.5 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
         <input
           type="number"
@@ -98,13 +98,13 @@ export function PackingCategorySection({
           disabled={disabled || busy}
           aria-label={t('quantityLabel')}
           onChange={(e) => setNewQty(e.target.value)}
-          className="w-14 shrink-0 rounded-control border border-line bg-paper px-2 py-1.5 text-center text-body text-ink [font-variant-numeric:tabular-nums] disabled:opacity-60"
+          className="w-14 shrink-0 rounded-control border border-line bg-paper px-2 py-1.5 text-center text-body text-ink [font-variant-numeric:tabular-nums] transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
         <button
           type="button"
           disabled={disabled || busy || newItem.trim() === ''}
           onClick={() => void handleAddItem()}
-          className="shrink-0 rounded-control border border-teal px-3 py-1.5 text-caption font-medium text-teal disabled:opacity-40"
+          className="inline-flex shrink-0 items-center justify-center rounded-control border border-teal px-3 py-1.5 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-[0.98] active:bg-teal-tint disabled:opacity-40"
         >
           {t('addItem')}
         </button>

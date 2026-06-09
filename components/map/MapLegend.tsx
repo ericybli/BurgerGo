@@ -40,10 +40,10 @@ export function MapLegend({
         type="button"
         aria-pressed={allVisible}
         onClick={onToggleAll}
-        className={`shrink-0 rounded-chip border px-3 py-1.5 text-caption font-medium transition-colors ${
+        className={`shrink-0 rounded-chip border px-3 py-1.5 text-caption font-medium shadow-hair backdrop-blur-sm transition-[transform,background-color,box-shadow,color] duration-200 ease-spring active:scale-95 ${
           allVisible
             ? 'border-coral bg-coral-tint text-coral'
-            : 'border-line bg-card text-ink-muted'
+            : 'border-line bg-card/90 text-ink-muted hover:bg-line'
         }`}
       >
         {t('allDays')}
@@ -55,8 +55,8 @@ export function MapLegend({
           type="button"
           aria-pressed={e.visible}
           onClick={() => onSelectDay(e.date)}
-          className={`flex shrink-0 items-center gap-1.5 rounded-chip border px-3 py-1.5 text-caption font-medium transition-colors ${
-            e.visible ? 'border-line bg-card text-ink' : 'border-line bg-card text-ink-faint'
+          className={`flex shrink-0 items-center gap-1.5 rounded-chip border px-3 py-1.5 text-caption font-medium shadow-hair backdrop-blur-sm transition-[transform,background-color,box-shadow,color] duration-200 ease-spring hover:bg-line active:scale-95 ${
+            e.visible ? 'border-line bg-card/90 text-ink' : 'border-line bg-card/90 text-ink-faint'
           }`}
         >
           <span

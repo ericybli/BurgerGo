@@ -67,7 +67,7 @@ export function SwipeRow({
   return (
     <div className="relative overflow-hidden rounded-card">
       {actions.length > 0 ? (
-        <div className="absolute inset-y-0 right-0 flex" aria-hidden={offset === 0}>
+        <div className="absolute inset-y-0 right-0 flex shadow-inset" aria-hidden={offset === 0}>
           {actions.map((a, i) => (
             <button
               key={i}
@@ -79,8 +79,8 @@ export function SwipeRow({
                 setOffset(0);
               }}
               style={{ width: ACTION_WIDTH }}
-              className={`flex items-center justify-center text-caption font-medium text-white disabled:opacity-60 ${
-                a.danger ? 'bg-red-600' : 'bg-teal'
+              className={`flex items-center justify-center text-caption font-medium text-white transition-[filter,transform] duration-150 ease-spring hover:brightness-110 active:scale-95 disabled:opacity-60 ${
+                a.danger ? 'bg-danger' : 'bg-teal'
               }`}
             >
               {a.label}

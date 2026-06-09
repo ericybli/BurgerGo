@@ -42,7 +42,7 @@ export function OnboardingNote() {
       <button
         type="button"
         onClick={dismiss}
-        className="mt-3 rounded-control bg-coral px-4 py-2 text-caption font-medium text-white active:bg-coral-press"
+        className="mt-3 inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-caption font-medium text-white transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
       >
         {t('onboardDismiss')}
       </button>

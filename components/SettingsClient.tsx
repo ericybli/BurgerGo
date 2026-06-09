@@ -121,13 +121,13 @@ export function SettingsClient() {
         <Link
           href="/"
           aria-label={t('trip.back')}
-          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink"
+          className="flex h-11 w-11 items-center justify-center rounded-chip text-ink transition hover:bg-line active:scale-95"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M15 18l-6-6 6-6" />
           </svg>
         </Link>
-        <h1 className="text-title font-bold text-ink">{t('settings.title')}</h1>
+        <h1 className="font-serif text-title font-bold text-ink">{t('settings.title')}</h1>
       </header>
 
       <section className="mt-2 rounded-card bg-card p-4 shadow-card">
@@ -142,7 +142,7 @@ export function SettingsClient() {
             value={currency}
             disabled={!online || isPending}
             onChange={(e) => saveCurrency(e.target.value)}
-            className="rounded-control border border-line bg-paper px-3 py-1.5 text-label font-medium text-ink disabled:opacity-60"
+            className="rounded-control border border-line bg-paper px-3 py-1.5 text-label font-medium text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
           >
             {CURRENCIES.map((c) => (
               <option key={c.code} value={c.code}>
@@ -165,8 +165,8 @@ export function SettingsClient() {
       </section>
 
       <section className="mt-4 rounded-card bg-card p-4 shadow-card">
-        <p className="text-label font-medium text-ink">{t('settings.mapTitle')}</p>
-        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3">
+        <p className="font-serif text-title text-ink">{t('settings.mapTitle')}</p>
+        <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-control -mx-2 px-2 py-1 transition-colors hover:bg-coral-tint/40">
           <span className="min-w-0">
             <span className="block text-body text-ink">{t('settings.clusterLabel')}</span>
             <span className="mt-0.5 block text-caption text-ink-muted">{t('settings.clusterHint')}</span>
@@ -177,7 +177,7 @@ export function SettingsClient() {
             checked={clusterPins}
             disabled={!online || isPending}
             onChange={(e) => saveCluster(e.target.checked)}
-            className="h-5 w-5 shrink-0 accent-coral disabled:opacity-60"
+            className="h-5 w-5 shrink-0 cursor-pointer accent-coral transition disabled:opacity-60"
           />
         </label>
         {mapStatus === 'saved' ? (
@@ -188,7 +188,7 @@ export function SettingsClient() {
       </section>
 
       <section className="mt-4 rounded-card bg-card p-4 shadow-card">
-        <p className="text-label font-medium text-ink">{t('settings.aiTitle')}</p>
+        <p className="font-serif text-title text-ink">{t('settings.aiTitle')}</p>
         <p className="mt-1 text-caption text-ink-muted">{t('settings.aiBody')}</p>
 
         <label className="mt-3 block text-caption font-medium text-ink" htmlFor="ai-model">
@@ -199,7 +199,7 @@ export function SettingsClient() {
           value={aiModel}
           disabled={!online || isPending}
           onChange={(e) => { setAiModel(e.target.value); setAiStatus('idle'); }}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         >
           {AI_MODELS.map((m) => (
             <option key={m} value={m}>{m}</option>
@@ -216,7 +216,7 @@ export function SettingsClient() {
           disabled={!online || isPending}
           placeholder={DEFAULT_AI_PROMPT}
           onChange={(e) => { setAiPrompt(e.target.value); setAiStatus('idle'); }}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-caption text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-caption text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
         <p className="mt-1 text-caption text-ink-faint">{t('settings.aiPromptHint')}</p>
 
@@ -225,7 +225,7 @@ export function SettingsClient() {
             type="button"
             disabled={!online || isPending}
             onClick={saveAi}
-            className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
           >
             {t('settings.aiSave')}
           </button>
@@ -233,7 +233,7 @@ export function SettingsClient() {
             type="button"
             disabled={!online || isPending}
             onClick={resetAi}
-            className="text-caption font-medium text-teal disabled:opacity-40"
+            className="rounded-control px-2 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-[0.98] disabled:opacity-40"
           >
             {t('settings.aiReset')}
           </button>
@@ -255,7 +255,7 @@ export function SettingsClient() {
           height={88}
           className="mx-auto h-[88px] w-[88px] opacity-90"
         />
-        <p className="mt-3 text-heading font-semibold text-ink">{t('app.name')}</p>
+        <p className="mt-3 font-serif text-title font-semibold text-ink">{t('app.name')}</p>
         <p className="mt-1 text-caption text-ink-muted">{t('settings.aboutTagline')}</p>
         <p className="mt-2 text-caption text-ink-faint [font-variant-numeric:tabular-nums]">
           {t('settings.aboutVersion', { version: APP_VERSION })}

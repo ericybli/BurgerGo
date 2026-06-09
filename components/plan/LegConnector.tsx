@@ -35,8 +35,12 @@ export function LegConnector({
 }) {
   const t = useTranslations('plan');
   return (
-    <div className="-mt-2 mb-1 flex flex-col gap-1 pl-[1.625rem]">
-      <div role="group" className="flex w-fit rounded-control bg-card p-0.5 shadow-inset">
+    <div className="relative -mt-2 mb-1 flex flex-col gap-1 pl-[1.625rem]">
+      <span
+        aria-hidden="true"
+        className="absolute left-[0.84375rem] top-0 h-full w-px bg-line"
+      />
+      <div role="group" className="flex w-fit rounded-control bg-paper p-0.5 shadow-inset">
         {MODES.map((m) => {
           const active = m === mode;
           return (
@@ -46,8 +50,8 @@ export function LegConnector({
               aria-pressed={active}
               disabled={disabled}
               onClick={() => onModeChange(m)}
-              className={`rounded-control px-2 py-0.5 text-caption font-medium disabled:opacity-40 ${
-                active ? 'bg-coral text-white' : 'text-ink-muted'
+              className={`rounded-control px-2 py-0.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 disabled:opacity-40 ${
+                active ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'
               }`}
             >
               {t(LABEL_KEY[m])}

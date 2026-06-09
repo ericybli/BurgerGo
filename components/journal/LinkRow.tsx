@@ -21,13 +21,13 @@ export function LinkRow({ link, onEdit, onDelete }: Props) {
     : withBase('/burgergo-logo.png');
 
   return (
-    <div className="flex items-stretch gap-3 rounded-card bg-card p-3 shadow-card">
+    <div className="flex items-stretch gap-3 rounded-card bg-card p-3 shadow-card transition-shadow duration-200 ease-spring hover:shadow-lift">
       <a
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={heading}
-        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        className="flex min-w-0 flex-1 items-center gap-3 text-left transition active:scale-[0.99]"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -50,14 +50,14 @@ export function LinkRow({ link, onEdit, onDelete }: Props) {
         <button
           type="button"
           onClick={() => onEdit(link.id)}
-          className="rounded-control px-2 py-1 text-caption font-medium text-ink shadow-inset"
+          className="rounded-control px-2 py-1 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
         >
           {t('edit')}
         </button>
         <button
           type="button"
           onClick={() => onDelete(link.id)}
-          className="rounded-control px-2 py-1 text-caption font-medium text-red-600 shadow-inset"
+          className="rounded-control px-2 py-1 text-caption font-medium text-red-600 shadow-inset transition hover:bg-line active:scale-95"
         >
           {t('delete')}
         </button>

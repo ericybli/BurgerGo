@@ -52,7 +52,7 @@ export function PlaceReadCard({
           <h3 className="truncate text-label font-semibold text-ink">{place.name}</h3>
           <p className="truncate text-caption text-ink-muted">{tCat(place.category)}{place.address ? ` · ${place.address}` : ''}</p>
         </div>
-        <button type="button" aria-label={t('cancel')} onClick={onClose} className="-mr-1 -mt-1 shrink-0 rounded-chip p-1 text-ink-faint active:bg-line">✕</button>
+        <button type="button" aria-label={t('cancel')} onClick={onClose} className="-mr-1 -mt-1 flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:bg-line active:scale-95">✕</button>
       </div>
 
       {thumb.kind === 'photo' ? (
@@ -80,7 +80,7 @@ export function PlaceReadCard({
           <ul className="mt-1 space-y-2">
             {place.links.map((l) => (
               <li key={l.id}>
-                <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-control border border-line bg-paper px-2 py-1.5">
+                <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 rounded-control bg-paper px-2 py-1.5 shadow-hair transition hover:shadow-card active:scale-[0.99]">
                   {l.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={withBase(`/api/links/thumb/${l.id}`)} alt="" width={32} height={32} className="h-8 w-8 shrink-0 rounded object-cover" />
@@ -95,15 +95,15 @@ export function PlaceReadCard({
       ) : null}
 
       <div className="mt-4 flex gap-2">
-        <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-control bg-teal px-3 py-2 text-center text-caption font-medium text-white">{tMap('openInMaps')}</a>
-        <button type="button" onClick={onEdit} className="rounded-control border border-coral px-3 py-2 text-caption font-medium text-coral active:bg-coral-tint">{t('edit')}</button>
+        <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="flex-1 rounded-control bg-teal px-3 py-2 text-center text-caption font-medium text-white shadow-card transition hover:shadow-lift active:scale-[0.98]">{tMap('openInMaps')}</a>
+        <button type="button" onClick={onEdit} className="rounded-control border border-coral px-3 py-2 text-caption font-medium text-coral transition hover:bg-coral-tint active:bg-coral-tint active:scale-95">{t('edit')}</button>
       </div>
 
       {onAddToDay ? (
         <button
           type="button"
           onClick={onAddToDay}
-          className="mt-2 w-full rounded-control bg-coral px-3 py-2 text-center text-caption font-medium text-white shadow-card active:bg-coral-press"
+          className="mt-2 w-full rounded-control bg-coral px-3 py-2 text-center text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
         >
           {t('addToDay')}
         </button>

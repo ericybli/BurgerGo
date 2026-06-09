@@ -36,7 +36,7 @@ export function PhotoGallery({ photos, placeName, disabled, onDelete }: PhotoGal
               type="button"
               onClick={() => setViewerIndex(i)}
               aria-label={t('photoOf', { name: placeName })}
-              className="block h-20 w-20 overflow-hidden rounded-control bg-paper shadow-inset"
+              className="block h-20 w-20 overflow-hidden rounded-card bg-paper shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-95"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -52,7 +52,7 @@ export function PhotoGallery({ photos, placeName, disabled, onDelete }: PhotoGal
               disabled={disabled}
               onClick={() => onDelete(p.id)}
               aria-label={t('deletePhoto')}
-              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-chip bg-card text-caption font-bold text-danger shadow-card disabled:opacity-40"
+              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-chip bg-card text-caption font-bold text-danger shadow-card transition hover:shadow-lift active:scale-95 disabled:opacity-40"
             >
               ✕
             </button>
@@ -65,7 +65,7 @@ export function PhotoGallery({ photos, placeName, disabled, onDelete }: PhotoGal
           role="dialog"
           aria-modal="true"
           aria-label={t('photoOf', { name: placeName })}
-          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[rgb(0_0_0_/_0.85)] p-4"
+          className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-[rgb(0_0_0_/_0.85)] p-4 backdrop-blur-sm"
           onClick={close}
           onKeyDown={(e) => { if (e.key === 'Escape') close(); }}
         >
@@ -73,21 +73,21 @@ export function PhotoGallery({ photos, placeName, disabled, onDelete }: PhotoGal
           <img
             src={personalPhotoUrl(open.id, 'full')}
             alt={t('photoOf', { name: placeName })}
-            className="max-h-[80vh] max-w-full rounded-card object-contain"
+            className="max-h-[80vh] max-w-full rounded-card object-contain shadow-lift"
             onClick={(e) => e.stopPropagation()}
           />
           <div className="mt-4 flex gap-3" onClick={(e) => e.stopPropagation()}>
             {photos.length > 1 ? (
               <>
-                <button type="button" onClick={prev} className="rounded-control bg-card px-4 py-2 text-label font-medium text-ink shadow-card">‹</button>
-                <button type="button" onClick={next} className="rounded-control bg-card px-4 py-2 text-label font-medium text-ink shadow-card">›</button>
+                <button type="button" onClick={prev} className="rounded-control bg-card px-4 py-2 text-label font-medium text-ink shadow-card transition hover:shadow-lift active:scale-95">‹</button>
+                <button type="button" onClick={next} className="rounded-control bg-card px-4 py-2 text-label font-medium text-ink shadow-card transition hover:shadow-lift active:scale-95">›</button>
               </>
             ) : null}
             <button
               type="button"
               onClick={close}
               aria-label={t('closePhoto')}
-              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card"
+              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
             >
               {t('closePhoto')}
             </button>

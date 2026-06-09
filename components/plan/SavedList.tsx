@@ -50,7 +50,7 @@ function SavedPlaceCard({
   const thumb = thumbForPlace(place);
 
   return (
-    <div className="rounded-card bg-card p-3 shadow-card">
+    <div className="rounded-card bg-card p-3 shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]">
       <button type="button" onClick={() => onTap(place.id)} className="block w-full text-left">
         {thumb.kind === 'photo' ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -77,7 +77,7 @@ function SavedPlaceCard({
           type="button"
           disabled={disabled}
           onClick={() => onAddToDay(place.id)}
-          className="rounded-control bg-coral px-3 py-1.5 text-caption font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="rounded-control bg-coral px-3 py-1.5 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-95 active:bg-coral-press disabled:opacity-40"
         >
           {t('addToDay')}
         </button>
@@ -85,7 +85,7 @@ function SavedPlaceCard({
           type="button"
           aria-expanded={managing}
           onClick={() => setManaging((v) => !v)}
-          className="rounded-control border border-line px-2.5 py-1.5 text-caption font-medium text-ink-muted active:bg-line"
+          className="rounded-control border border-line px-2.5 py-1.5 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-95"
         >
           {t('manage')}
         </button>
@@ -97,7 +97,7 @@ function SavedPlaceCard({
             type="button"
             disabled={disabled}
             onClick={() => onMoveToList(place.id)}
-            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal disabled:opacity-40"
+            className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
           >
             {tL('moveToList')}
           </button>
@@ -105,7 +105,7 @@ function SavedPlaceCard({
             type="button"
             disabled={disabled}
             onClick={() => onDelete(place.id)}
-            className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger disabled:opacity-40"
+            className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95 disabled:opacity-40"
           >
             {t('delete')}
           </button>
@@ -187,7 +187,7 @@ export function SavedList({
         type="button"
         disabled={disabled}
         onClick={() => setNameSheet({ mode: 'createTop' })}
-        className="mb-3 w-full rounded-control border border-dashed border-line bg-paper px-4 py-2.5 text-label font-medium text-teal disabled:opacity-40"
+        className="mb-3 w-full rounded-control border border-dashed border-line bg-paper px-4 py-2.5 text-label font-medium text-teal transition hover:border-teal hover:bg-teal-tint active:scale-[0.99] disabled:opacity-40"
       >
         {tL('newListOption')}
       </button>
@@ -210,7 +210,7 @@ export function SavedList({
                     return next;
                   })
                 }
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-control bg-card px-3 py-2 text-left shadow-card"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-control bg-card px-3 py-2 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
               >
                 <span aria-hidden="true" className="text-ink-muted">{isOpen ? '▾' : '▸'}</span>
                 <span className="truncate text-label font-semibold text-ink">{list.name}</span>
@@ -223,7 +223,7 @@ export function SavedList({
                 aria-label={tL('listActions')}
                 disabled={disabled}
                 onClick={() => { setListMenuFor((cur) => (cur === list.id ? null : list.id)); setConfirmDeleteList(null); }}
-                className="shrink-0 rounded-chip px-2 py-2 text-ink-muted active:bg-line disabled:opacity-40"
+                className="flex shrink-0 items-center justify-center rounded-chip px-2 py-2 text-ink-muted transition hover:bg-line active:bg-line active:scale-95 disabled:opacity-40"
               >
                 ⋯
               </button>
@@ -234,7 +234,7 @@ export function SavedList({
                 <button
                   type="button"
                   onClick={() => { setNameSheet({ mode: 'rename', listId: list.id, initialName: list.name }); setListMenuFor(null); }}
-                  className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal"
+                  className="rounded-control border border-teal px-2.5 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95"
                 >
                   {tL('rename')}
                 </button>
@@ -244,7 +244,7 @@ export function SavedList({
                     if (confirmDeleteList === list.id) { onDeleteList(list.id); setListMenuFor(null); setConfirmDeleteList(null); }
                     else setConfirmDeleteList(list.id);
                   }}
-                  className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger"
+                  className="rounded-control border border-danger px-2.5 py-1 text-caption font-medium text-danger transition hover:bg-danger/10 active:scale-95"
                 >
                   {confirmDeleteList === list.id ? tL('deleteListConfirm') : tL('deleteList')}
                 </button>
@@ -283,7 +283,7 @@ export function SavedList({
         type="button"
         disabled={disabled}
         onClick={onAddPlace}
-        className="mt-4 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset disabled:opacity-40"
+        className="mt-4 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.99] active:bg-line disabled:opacity-40"
       >
         {t('addPlace')}
       </button>

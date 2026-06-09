@@ -51,24 +51,25 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
     });
   }
 
-  const inputCls = 'rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60';
-  const tealBtn = 'shrink-0 rounded-control border border-teal px-3 py-2 text-caption font-medium text-teal active:bg-teal-tint disabled:opacity-40';
+  const inputCls = 'rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60';
+  const tealBtn = 'shrink-0 rounded-control border border-teal px-3 py-2 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-[0.98] disabled:opacity-40';
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={t('title')}
-      className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
       onClick={onClose}
       onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
       tabIndex={-1}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift animate-fade-up"
       >
-        <h2 className="text-title font-bold text-ink">{t('title')}</h2>
+        <div className="mx-auto -mt-2 mb-3 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="font-serif text-title text-ink">{t('title')}</h2>
 
         {error ? (
           <p role="alert" className="mt-3 text-caption font-medium text-danger">{error}</p>
@@ -131,7 +132,7 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
             type="button"
             disabled={isPending}
             onClick={() => run(() => addTripDayAction(current.id))}
-            className="shrink-0 rounded-control bg-coral px-3 py-2 text-caption font-medium text-white active:bg-coral-press disabled:opacity-40"
+            className="shrink-0 rounded-control bg-coral px-3 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-40"
           >
             {t('addDay')}
           </button>
@@ -141,7 +142,7 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+          className="mt-6 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
         >
           {t('close')}
         </button>

@@ -56,11 +56,11 @@ function Bar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={width}
-      className="mt-1 h-2 w-full overflow-hidden rounded-chip bg-paper shadow-inset"
+      className="mt-1 h-2 w-full overflow-hidden rounded-chip bg-line"
     >
       <div
         data-testid={testId}
-        className={`h-full rounded-chip ${row.over ? 'bg-red-500' : 'bg-coral'}`}
+        className={`h-full rounded-chip transition-[width] duration-500 ease-spring ${row.over ? 'bg-danger' : 'bg-coral'}`}
         style={{ width: `${width}%` }}
       />
     </div>
@@ -71,19 +71,19 @@ export function BudgetSummary({ overall, categories, currency, locale, onSetBudg
   const t = useTranslations('budget');
 
   return (
-    <section className="rounded-card bg-card p-4 shadow-card">
+    <section className="rounded-card bg-card p-4 shadow-card shadow-hair">
       <div className="flex items-center justify-between">
-        <h2 className="text-heading font-semibold text-ink">{t('overall')}</h2>
+        <h2 className="text-micro font-semibold uppercase tracking-wide text-ink-muted">{t('overall')}</h2>
         <button
           type="button"
           onClick={onSetBudget}
-          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset"
+          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
         >
           {overall.planned === null ? t('setBudget') : t('editBudget')}
         </button>
       </div>
 
-      <p className="mt-2 text-body text-ink [font-variant-numeric:tabular-nums]">
+      <p className="mt-2 font-serif text-title text-ink [font-variant-numeric:tabular-nums]">
         {overall.planned === null
           ? formatMoney(overall.spent, currency, locale)
           : t('spentOfPlanned', {

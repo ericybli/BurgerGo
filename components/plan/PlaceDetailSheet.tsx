@@ -195,7 +195,7 @@ export function PlaceDetailSheet({
       role="dialog"
       aria-modal="true"
       aria-label={place.name}
-      className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
       onClick={onClose}
       onKeyDown={handleKeyDown}
     >
@@ -203,6 +203,9 @@ export function PlaceDetailSheet({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
       >
+        <div className="mx-auto mt-2 mb-1 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="mb-4 font-serif text-title text-ink">{place.name}</h2>
+
         {/* FIX I1: inline save error */}
         {saveError ? (
           <p role="alert" className="mb-3 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
@@ -214,7 +217,7 @@ export function PlaceDetailSheet({
         <input
           id="pd-name" type="text" value={name} disabled={disabled}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-address">{t('addressLabel')}</label>
@@ -223,18 +226,18 @@ export function PlaceDetailSheet({
           autoComplete="off"
           placeholder={t('addressSearchPlaceholder')}
           onChange={(e) => handleAddressChange(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
         <p className="mt-1 text-caption text-ink-muted">{t('addressRepinHint')}</p>
         {predictions.length > 0 ? (
-          <ul className="mt-2 flex flex-col rounded-control border border-line bg-paper">
+          <ul className="mt-2 flex flex-col overflow-hidden rounded-control border border-line bg-paper">
             {predictions.map((p) => (
               <li key={p.placeId}>
                 <button
                   type="button"
                   disabled={disabled || isPending}
                   onClick={() => void handlePick(p.placeId)}
-                  className="w-full px-3 py-2 text-left text-body text-ink hover:bg-card disabled:opacity-40"
+                  className="w-full px-3 py-2 text-left text-body text-ink transition hover:bg-coral-tint active:bg-coral-tint disabled:opacity-40"
                 >
                   {p.description}
                 </button>
@@ -247,7 +250,7 @@ export function PlaceDetailSheet({
         <select
           id="pd-category" value={category} disabled={disabled}
           onChange={(e) => setCategory(e.target.value as PlaceDTO['category'])}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         >
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>{tCat(c)}</option>
@@ -259,14 +262,14 @@ export function PlaceDetailSheet({
           <input
             id="pd-time" type="time" value={time} disabled={disabled}
             onChange={(e) => setTime(e.target.value)}
-            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
           />
           {time ? (
             <button
               type="button"
               disabled={disabled}
               onClick={() => setTime('')}
-              className="shrink-0 rounded-control border border-line px-3 py-2 text-caption font-medium text-ink-muted active:bg-line disabled:opacity-40"
+              className="shrink-0 rounded-control border border-line px-3 py-2 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-[0.98] disabled:opacity-40"
             >
               {t('clear')}
             </button>
@@ -280,14 +283,14 @@ export function PlaceDetailSheet({
             id="pd-cost" type="text" inputMode="decimal" value={cost} disabled={disabled}
             placeholder="0"
             onChange={(e) => { setCost(e.target.value); setExpenseStatus('idle'); }}
-            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink [font-variant-numeric:tabular-nums] disabled:opacity-60"
+            className="flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink [font-variant-numeric:tabular-nums] transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
           />
         </div>
         <button
           type="button"
           disabled={disabled || isPending || inputToMinor(cost, currency) == null || expenseStatus === 'added'}
           onClick={handleAddExpense}
-          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-teal disabled:opacity-40"
+          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-[0.98] disabled:opacity-40"
         >
           {expenseStatus === 'added' ? t('addedToBudget') : t('addAsExpense')}
         </button>
@@ -308,7 +311,7 @@ export function PlaceDetailSheet({
               } catch { /* leave field as-is */ }
               finally { setRegenerating(false); }
             }}
-            className="text-caption font-medium text-teal disabled:opacity-40"
+            className="rounded-chip px-2 py-1 text-caption font-medium text-teal transition hover:bg-teal-tint active:scale-95 disabled:opacity-40"
           >
             {regenerating ? t('regenerating') : t('regenerateSummary')}
           </button>
@@ -316,14 +319,14 @@ export function PlaceDetailSheet({
         <textarea
           id="pd-ai" value={aiSummary} disabled={disabled}
           onChange={(e) => setAiSummary(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="pd-notes">{t('notesLabel')}</label>
         <textarea
           id="pd-notes" value={notes} disabled={disabled}
           onChange={(e) => setNotes(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         {photoError ? (
@@ -369,7 +372,7 @@ export function PlaceDetailSheet({
           href={mapsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-4 block w-full rounded-control bg-teal px-4 py-3 text-center text-label font-medium text-white shadow-card"
+          className="mt-4 block w-full rounded-control bg-teal px-4 py-3 text-center text-label font-medium text-white shadow-card transition hover:shadow-lift active:scale-[0.98]"
         >
           {t('openInGoogleMaps')}
         </a>
@@ -378,7 +381,7 @@ export function PlaceDetailSheet({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
           >
             {t('cancel')}
           </button>
@@ -386,7 +389,7 @@ export function PlaceDetailSheet({
             type="button"
             disabled={disabled || isPending}
             onClick={handleSave}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
           >
             {t('save')}
           </button>

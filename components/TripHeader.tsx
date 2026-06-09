@@ -22,7 +22,7 @@ export function TripHeader({ tripId, name, dateSubtitle }: TripHeaderProps) {
       <Link
         href="/"
         aria-label={t('trip.back')}
-        className="flex h-11 w-11 items-center justify-center rounded-chip text-ink"
+        className="flex h-11 w-11 items-center justify-center rounded-chip text-ink transition hover:bg-line active:scale-95"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 18l-6-6 6-6" />
@@ -32,7 +32,7 @@ export function TripHeader({ tripId, name, dateSubtitle }: TripHeaderProps) {
         <button
           type="button"
           onClick={() => setRenameOpen(true)}
-          className="block max-w-full truncate text-left text-title font-bold text-ink"
+          className="block max-w-full truncate rounded-control text-left font-serif text-title font-bold text-ink transition active:scale-[0.99]"
         >
           {name}
         </button>
@@ -45,7 +45,7 @@ export function TripHeader({ tripId, name, dateSubtitle }: TripHeaderProps) {
         type="button"
         aria-label={t('aiImport.openAria')}
         onClick={() => setAiOpen(true)}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-chip text-coral active:bg-line"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-chip text-coral transition hover:bg-coral-tint active:scale-95 active:bg-line"
       >
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" />

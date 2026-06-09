@@ -65,13 +65,13 @@ export function PlaceLinks({
       {links.length > 0 ? (
         <ul className="mt-1 space-y-2">
           {links.map((l) => (
-            <li key={l.id} className="flex items-center gap-2 rounded-control border border-line bg-paper px-2 py-1.5">
+            <li key={l.id} className="flex items-center gap-2 rounded-control bg-card px-2 py-1.5 shadow-hair transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift">
               {l.thumbnail ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={withBase(`/api/links/thumb/${l.id}`)} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded object-cover" />
+                <img src={withBase(`/api/links/thumb/${l.id}`)} alt="" width={28} height={28} className="h-7 w-7 shrink-0 rounded-control object-cover" />
               ) : null}
               <span className="min-w-0 flex-1 truncate text-caption text-ink">{l.title ?? l.url}</span>
-              <button type="button" disabled={disabled || isPending} onClick={() => handleRemove(l.id)} className="shrink-0 text-caption font-medium text-danger disabled:opacity-40">{t('delete')}</button>
+              <button type="button" disabled={disabled || isPending} onClick={() => handleRemove(l.id)} className="shrink-0 rounded-chip px-2 py-1 text-caption font-medium text-danger transition hover:bg-line active:scale-95 disabled:opacity-40">{t('delete')}</button>
             </li>
           ))}
         </ul>
@@ -81,9 +81,9 @@ export function PlaceLinks({
           id="pl-url" type="url" inputMode="url" value={url} disabled={disabled}
           aria-label={t('addGuideLink')} placeholder={t('guideUrlPlaceholder')}
           onChange={(e) => setUrl(e.target.value)}
-          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
-        <button type="button" disabled={disabled || isPending} onClick={handleAdd} className="shrink-0 rounded-control border border-teal px-3 py-2 text-caption font-medium text-teal disabled:opacity-40">{t('addGuideLink')}</button>
+        <button type="button" disabled={disabled || isPending} onClick={handleAdd} className="shrink-0 rounded-control border border-teal px-3 py-2 text-caption font-medium text-teal transition hover:bg-teal-tint active:bg-teal-tint active:scale-[0.98] disabled:opacity-40">{t('addGuideLink')}</button>
       </div>
     </div>
   );

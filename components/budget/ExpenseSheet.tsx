@@ -114,7 +114,7 @@ export function ExpenseSheet({
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? t('editExpense') : t('addExpense')}
-      className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
       onClick={onClose}
       onKeyDown={handleKeyDown}
     >
@@ -122,7 +122,8 @@ export function ExpenseSheet({
         onClick={(e) => e.stopPropagation()}
         className="max-h-[85vh] w-full overflow-y-auto rounded-t-sheet bg-card p-6 shadow-lift"
       >
-        <h2 className="mb-3 text-heading font-semibold text-ink">
+        <div className="mx-auto mb-3 mt-[-8px] h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="mb-3 font-serif text-title text-ink">
           {isEdit ? t('editExpense') : t('addExpense')}
         </h2>
 
@@ -146,7 +147,7 @@ export function ExpenseSheet({
           value={amount}
           disabled={disabled}
           onChange={(e) => setAmount(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink [font-variant-numeric:tabular-nums] disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition [font-variant-numeric:tabular-nums] focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="exp-category">
@@ -157,7 +158,7 @@ export function ExpenseSheet({
           value={category}
           disabled={disabled}
           onChange={(e) => setCategory(e.target.value as BudgetCategory)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         >
           {BUDGET_CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -175,7 +176,7 @@ export function ExpenseSheet({
           value={spentOn}
           disabled={disabled}
           onChange={(e) => setSpentOn(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="exp-note">
@@ -187,7 +188,7 @@ export function ExpenseSheet({
           value={note}
           disabled={disabled}
           onChange={(e) => setNote(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label font-medium text-ink" htmlFor="exp-place">
@@ -198,7 +199,7 @@ export function ExpenseSheet({
           value={linkedPlaceId}
           disabled={disabled}
           onChange={(e) => setLinkedPlaceId(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         >
           <option value="">{t('noLinkedPlace')}</option>
           {places.map((p) => (
@@ -212,7 +213,7 @@ export function ExpenseSheet({
           type="button"
           onClick={handleSave}
           disabled={disabled || isPending}
-          className="mt-5 w-full rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="mt-5 inline-flex w-full items-center justify-center rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
         >
           {t('save')}
         </button>
@@ -222,7 +223,7 @@ export function ExpenseSheet({
             type="button"
             onClick={handleDelete}
             disabled={disabled || isPending}
-            className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-red-600 shadow-inset disabled:opacity-40"
+            className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-danger shadow-inset transition hover:bg-line active:scale-[0.98] active:bg-line disabled:opacity-40"
           >
             {t('delete')}
           </button>
@@ -231,7 +232,7 @@ export function ExpenseSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+          className="mt-2 w-full rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] active:bg-line"
         >
           {t('cancel')}
         </button>

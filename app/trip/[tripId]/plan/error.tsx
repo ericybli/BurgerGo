@@ -16,12 +16,12 @@ export default function PlanError({
   const tCommon = useTranslations('common');
 
   return (
-    <div className="flex flex-col items-center gap-4 px-4 py-12 text-center">
-      <p className="text-body text-ink">{t('routeError')}</p>
+    <div className="flex flex-col items-center gap-5 px-4 py-16 text-center">
+      <p className="font-serif text-title text-ink">{t('routeError')}</p>
       <button
         type="button"
         onClick={reset}
-        className="rounded-control bg-coral px-6 py-3 text-label font-medium text-white shadow-card active:bg-coral-press"
+        className="inline-flex items-center justify-center rounded-control bg-coral px-6 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
       >
         {tCommon('retry')}
       </button>

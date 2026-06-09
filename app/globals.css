@@ -24,12 +24,25 @@
   --scrim: rgb(110 85 68 / 0.45);
   --map-dim: rgb(245 238 225 / 0.70);
 
-  /* Canonical cover gradient — spec §3.1 / §9.5 */
-  --cover-gradient: linear-gradient(135deg, #F2C879 0%, #EE5B3C 100%);
+  /* Canonical cover gradient — warm editorial: layered radial highlights over
+     the brand diagonal for depth instead of a flat 45° fade (§3.1 / §9.5). */
+  --cover-gradient:
+    radial-gradient(125% 125% at 0% 0%, #F7D292 0%, rgb(247 210 146 / 0) 55%),
+    radial-gradient(125% 125% at 100% 100%, #E54A2B 0%, rgb(229 74 43 / 0) 60%),
+    linear-gradient(135deg, #F2C879 0%, #EE5B3C 100%);
 
-  /* Font stack — `--font-inter`/`--font-noto-sc` are wired by next/font in the
-     root layout (a later group). Tailwind `fontFamily.sans` resolves this var. */
-  --font-sans: var(--font-inter), var(--font-noto-sc), system-ui, sans-serif;
+  /* One spring-ish easing used across the app for cohesive micro-motion. */
+  --ease-spring: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Font stacks — `--font-hanken`/`--font-fraunces`/`--font-noto-sc` are wired
+     by next/font in the root layout. Tailwind `fontFamily.sans`/`.serif` resolve
+     these vars. Hanken Grotesk is the UI face; Fraunces the display serif. */
+  --font-sans: var(--font-hanken), var(--font-noto-sc), system-ui, sans-serif;
+  --font-serif: var(--font-fraunces), Georgia, 'Times New Roman', serif;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 html,
@@ -40,6 +53,72 @@ body {
   color: var(--ink);
   font-family: var(--font-sans, system-ui, sans-serif);
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Display headlines opt into Fraunces via `font-serif`; soften the terminals
+   (SOFT) and keep glyphs calm (WONK 0). Optical sizing auto-picks the display
+   cut at large sizes. */
+.font-serif {
+  font-optical-sizing: auto;
+  font-variation-settings: 'SOFT' 40, 'WONK' 0;
+}
+
+/* Warm text selection. */
+::selection {
+  background: var(--coral-tint);
+  color: var(--ink);
+}
+
+/* Fixed film-grain overlay (rendered once in the root layout). Fine fractal
+   noise multiplied over the warm surfaces for tactile, premium texture. */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.04;
+  mix-blend-mode: multiply;
+  background-size: 180px 180px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Accessible keyboard focus everywhere. Zero-specificity `:where()` so any
+   component can still override, but interactive elements get a ring by default. */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--coral);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Cohesive micro-motion: animate the common interactive properties so hover /
+   press / focus transitions feel intentional rather than instant. */
+@layer base {
+  a,
+  button,
+  [role='button'] {
+    transition:
+      color 0.18s var(--ease-spring),
+      background-color 0.18s var(--ease-spring),
+      border-color 0.18s var(--ease-spring),
+      box-shadow 0.2s var(--ease-spring),
+      transform 0.18s var(--ease-spring),
+      opacity 0.18s var(--ease-spring);
+  }
+}
+
+/* Respect users who prefer reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Budget totals + travel times align with tabular figures — spec §9.3 */

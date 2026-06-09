@@ -51,7 +51,7 @@ export function RestaurantInfoCard({
           type="button"
           aria-label={t('closeInfoCard')}
           onClick={onClose}
-          className="-mr-1 -mt-1 shrink-0 rounded-chip p-1 text-ink-faint active:bg-line"
+          className="-mr-1 -mt-1 flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:bg-line active:scale-95"
         >
           ✕
         </button>
@@ -73,7 +73,7 @@ export function RestaurantInfoCard({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-3 block w-full rounded-control bg-coral px-3 py-2 text-center text-caption font-medium text-white active:bg-coral-press"
+        className="mt-3 block w-full rounded-control bg-coral px-3 py-2 text-center text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press"
       >
         {t('openInMaps')}
       </a>

@@ -43,7 +43,7 @@ function rehypeHardenLinks() {
 /** Render sanitized markdown source. Runs client-side so it works offline. */
 export function Markdown({ source }: { source: string }) {
   return (
-    <div className="prose-journal text-body text-ink [&_a]:text-teal [&_a]:underline [&_h1]:mt-3 [&_h1]:text-heading [&_h1]:font-semibold [&_h2]:mt-3 [&_h2]:text-label [&_h2]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mt-2 [&_strong]:font-semibold">
+    <div className="prose-journal text-body leading-relaxed text-ink [&_a]:text-coral [&_a]:underline [&_a]:underline-offset-2 [&_a]:transition-colors [&_a:hover]:text-coral-press [&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-coral [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-ink-muted [&_h1]:mt-5 [&_h1]:font-serif [&_h1]:text-heading [&_h1]:font-semibold [&_h2]:mt-5 [&_h2]:font-serif [&_h2]:text-heading [&_h2]:font-semibold [&_li]:ml-4 [&_li]:mt-1 [&_li]:list-disc [&_p]:mt-3 [&_strong]:font-semibold">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, schema], rehypeHardenLinks]}

@@ -95,13 +95,13 @@ export function PackingClient({ tripId }: { tripId: string }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter') void handleAddCategory();
           }}
-          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink disabled:opacity-60"
+          className="min-w-0 flex-1 rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
         />
         <button
           type="button"
           disabled={!online || busy || newCat.trim() === ''}
           onClick={() => void handleAddCategory()}
-          className="shrink-0 rounded-control bg-coral px-3 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="inline-flex shrink-0 items-center justify-center rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
         >
           {t('addCategory')}
         </button>

@@ -39,7 +39,7 @@ export function EntryReader({ entry, online, onEdit, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset"
+          className="rounded-control bg-paper px-3 py-1.5 text-caption font-medium text-ink shadow-inset transition hover:bg-line active:scale-95"
         >
           {t('back')}
         </button>
@@ -47,21 +47,21 @@ export function EntryReader({ entry, online, onEdit, onClose }: Props) {
           type="button"
           disabled={!online}
           onClick={onEdit}
-          className="rounded-control bg-coral px-4 py-1.5 text-caption font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="rounded-control bg-coral px-4 py-1.5 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
         >
           {t('edit')}
         </button>
       </div>
 
-      <h1 className="mt-4 text-heading font-semibold text-ink">{entry.title}</h1>
+      <h1 className="mt-5 font-serif text-title font-semibold leading-tight text-ink">{entry.title}</h1>
       {entry.entryDate ? (
-        <p className="mt-1 text-caption text-ink-muted">
+        <p className="mt-1.5 text-caption tabular-nums text-ink-muted">
           {entry.entryDate}{wd ? ` · ${wd}` : ''}
         </p>
       ) : null}
 
       {entry.body.trim() !== '' ? (
-        <div className="mt-4">
+        <div className="mt-5 max-w-[65ch] leading-relaxed">
           <Markdown source={entry.body} />
         </div>
       ) : null}

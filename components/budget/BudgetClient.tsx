@@ -133,7 +133,7 @@ export function BudgetClient({
           type="button"
           disabled={!online}
           onClick={() => setExpenseSheet({ open: true, expense: e })}
-          className="flex w-full items-center justify-between rounded-card bg-card px-4 py-3 text-left shadow-card disabled:opacity-60"
+          className="flex w-full items-center justify-between rounded-card bg-card px-4 py-3 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99] disabled:opacity-60"
         >
           <span className="min-w-0">
             <span className="block truncate text-body text-ink">
@@ -175,7 +175,7 @@ export function BudgetClient({
             type="button"
             aria-pressed={groupMode === 'category'}
             onClick={() => setGroupMode('category')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium ${groupMode === 'category' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${groupMode === 'category' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
           >
             {t('byCategory')}
           </button>
@@ -183,7 +183,7 @@ export function BudgetClient({
             type="button"
             aria-pressed={groupMode === 'day'}
             onClick={() => setGroupMode('day')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium ${groupMode === 'day' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${groupMode === 'day' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
           >
             {t('byDay')}
           </button>
@@ -192,7 +192,7 @@ export function BudgetClient({
           type="button"
           disabled={!online}
           onClick={() => setExpenseSheet({ open: true })}
-          className="rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="inline-flex items-center justify-center rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
         >
           {t('addExpense')}
         </button>
@@ -204,8 +204,12 @@ export function BudgetClient({
         </div>
       ) : groupMode === 'day' ? (
         <div className="mt-4 flex flex-col gap-4">
-          {byDayGroups.map((g) => (
-            <section key={g.date}>
+          {byDayGroups.map((g, i) => (
+            <section
+              key={g.date}
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
               <div className="mb-2 flex items-center justify-between">
                 <h3 className="text-label font-semibold text-ink">{g.date}</h3>
                 <span className="text-caption text-ink-muted [font-variant-numeric:tabular-nums]">
@@ -224,8 +228,12 @@ export function BudgetClient({
         </div>
       ) : (
         <div className="mt-4 flex flex-col gap-4">
-          {byCategoryGroups.map((g) => (
-            <section key={g.category}>
+          {byCategoryGroups.map((g, i) => (
+            <section
+              key={g.category}
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
               <h3 className="mb-2 text-label font-semibold text-ink">{t(`categories.${g.category}`)}</h3>
               <ul className="flex flex-col gap-2">
                 {g.items.map((e) => (

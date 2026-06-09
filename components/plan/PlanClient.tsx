@@ -500,7 +500,7 @@ export function PlanClient({
     >
       {/* FIX I2: transient mutation error banner */}
       {mutationError ? (
-        <p role="alert" className="mb-2 rounded-control bg-red-50 px-3 py-2 text-caption text-red-700">
+        <p role="alert" className="mb-2 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
           {mutationError}
         </p>
       ) : null}
@@ -521,12 +521,12 @@ export function PlanClient({
 
       {/* List/Map + Days/Saved toggles */}
       <div className="mb-3 flex gap-2">
-        <div role="group" className="flex flex-1 rounded-control bg-card p-0.5 shadow-inset">
+        <div role="group" className="flex flex-1 rounded-control bg-paper p-0.5 shadow-inset">
           <button
             type="button"
             aria-pressed={params.view === 'list'}
             onClick={() => setParams({ view: 'list' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium ${params.view === 'list' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.view === 'list' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
           >
             {t('listTab')}
           </button>
@@ -534,17 +534,17 @@ export function PlanClient({
             type="button"
             aria-pressed={params.view === 'map'}
             onClick={() => setParams({ view: 'map' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium ${params.view === 'map' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.view === 'map' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
           >
             {t('mapTab')}
           </button>
         </div>
-        <div role="group" className="flex flex-1 rounded-control bg-card p-0.5 shadow-inset">
+        <div role="group" className="flex flex-1 rounded-control bg-paper p-0.5 shadow-inset">
           <button
             type="button"
             aria-pressed={params.bucket === 'days'}
             onClick={() => setParams({ bucket: 'days' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium ${params.bucket === 'days' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.bucket === 'days' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
           >
             {t('daysTab')}
           </button>
@@ -552,7 +552,7 @@ export function PlanClient({
             type="button"
             aria-pressed={params.bucket === 'saved'}
             onClick={() => setParams({ bucket: 'saved' })}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium ${params.bucket === 'saved' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition-[transform,box-shadow,background-color,color] duration-200 ease-spring active:scale-95 ${params.bucket === 'saved' ? 'bg-card text-coral shadow-card' : 'text-ink-muted hover:text-ink'}`}
           >
             {t('savedTab')}
           </button>
@@ -659,7 +659,7 @@ export function PlanClient({
           role="dialog"
           aria-modal="true"
           aria-label={viewPlace.name}
-          className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+          className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
           onClick={() => setViewPlace(null)}
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full p-3">
@@ -682,7 +682,7 @@ export function PlanClient({
           role="dialog"
           aria-modal="true"
           aria-label={viewRestaurant.name}
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[rgb(110_85_68_/_0.35)] px-3 pb-24"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-[var(--scrim)] backdrop-blur-sm px-3 pb-24"
           onClick={() => setViewRestaurant(null)}
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">

@@ -24,7 +24,7 @@ export function ToDoClient({ tripId }: { tripId: string }) {
           type="button"
           aria-pressed={tab === 'packing'}
           onClick={() => setTab('packing')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium ${tab === 'packing' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-[0.98] ${tab === 'packing' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:text-ink'}`}
         >
           {t('packingTab')}
         </button>
@@ -32,7 +32,7 @@ export function ToDoClient({ tripId }: { tripId: string }) {
           type="button"
           aria-pressed={tab === 'tasks'}
           onClick={() => setTab('tasks')}
-          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium ${tab === 'tasks' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+          className={`flex-1 rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-[0.98] ${tab === 'tasks' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:text-ink'}`}
         >
           {t('tasksTab')}
         </button>

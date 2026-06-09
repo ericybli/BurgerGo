@@ -33,12 +33,15 @@ export function BottomTabBar({ tripId }: { tripId: string }) {
             // prefetch buys little; disable it. (perf)
             prefetch={false}
             aria-current={active ? 'page' : undefined}
-            className={`relative flex min-h-[44px] flex-1 flex-col items-center justify-center py-2 text-label font-medium ${
-              active ? 'text-coral' : 'text-ink-muted'
+            className={`relative flex min-h-[44px] flex-1 flex-col items-center justify-center py-2 text-label font-medium transition-colors duration-200 active:scale-95 ${
+              active ? 'text-coral' : 'text-ink-muted hover:text-ink'
             }`}
           >
             {active ? (
-              <span className="absolute inset-x-0 top-0 mx-auto h-[3px] w-8 rounded-chip bg-coral" />
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 mx-auto h-[3px] w-8 rounded-chip bg-coral shadow-[0_1px_4px_var(--coral-tint)]"
+              />
             ) : null}
             {t(tab)}
           </Link>

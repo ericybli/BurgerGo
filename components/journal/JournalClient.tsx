@@ -127,7 +127,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
             type="button"
             aria-pressed={tab === 'entries'}
             onClick={() => setTab('entries')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium ${tab === 'entries' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === 'entries' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
           >
             {t('entries')}
           </button>
@@ -135,7 +135,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
             type="button"
             aria-pressed={tab === 'links'}
             onClick={() => setTab('links')}
-            className={`rounded-control px-3 py-1.5 text-caption font-medium ${tab === 'links' ? 'bg-coral text-white' : 'text-ink-muted'}`}
+            className={`rounded-control px-3 py-1.5 text-caption font-medium transition active:scale-95 ${tab === 'links' ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'}`}
           >
             {t('readingList')}
           </button>
@@ -145,7 +145,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
             type="button"
             disabled={!online}
             onClick={() => setEntrySheet({ open: true })}
-            className="rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+            className="rounded-control bg-coral px-4 py-2 text-caption font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
           >
             {t('newEntry')}
           </button>
@@ -159,7 +159,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
               type="button"
               onClick={openAddLink}
               disabled={!online}
-              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+              className="rounded-control bg-coral px-4 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
             >
               {t('addLink')}
             </button>
@@ -203,16 +203,20 @@ export function JournalClient({ tripId }: { tripId: string }) {
         </div>
       ) : (
         <ul className="mt-4 flex flex-col gap-3">
-          {entries.map((e) => (
-            <li key={e.id}>
+          {entries.map((e, i) => (
+            <li
+              key={e.id}
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
               <button
                 type="button"
                 onClick={() => setReading(e)}
-                className="block w-full rounded-card bg-card p-4 text-left shadow-card"
+                className="block w-full rounded-card bg-card p-4 text-left shadow-card transition-[transform,box-shadow] duration-200 ease-spring hover:shadow-lift active:scale-[0.99]"
               >
-                <span className="block text-label font-semibold text-ink">{e.title}</span>
+                <span className="block font-serif text-heading font-semibold text-ink">{e.title}</span>
                 {e.entryDate ? (
-                  <span className="mt-0.5 block text-caption text-ink-muted">{e.entryDate}</span>
+                  <span className="mt-0.5 block text-caption tabular-nums text-ink-muted">{e.entryDate}</span>
                 ) : null}
                 {e.body.trim() !== '' ? (
                   <span className="mt-1 block line-clamp-2 text-body text-ink-muted">

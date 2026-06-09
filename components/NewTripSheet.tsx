@@ -48,16 +48,17 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
       role="dialog"
       aria-modal="true"
       aria-label={t('title')}
-      className="fixed inset-0 z-50 flex items-end bg-[rgb(110_85_68_/_0.45)]"
+      className="fixed inset-0 z-50 flex items-end bg-[var(--scrim)] backdrop-blur-sm"
       onClick={onClose}
     >
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         noValidate
-        className="w-full rounded-t-sheet bg-card p-6 shadow-lift"
+        className="w-full rounded-t-sheet bg-card p-6 shadow-lift animate-fade-up"
       >
-        <h2 className="text-title font-bold text-ink">{t('title')}</h2>
+        <div className="mx-auto -mt-2 mb-3 h-1 w-9 rounded-chip bg-line" aria-hidden="true" />
+        <h2 className="font-serif text-title text-ink">{t('title')}</h2>
 
         <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-name">
           {t('nameLabel')}
@@ -68,7 +69,7 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           value={name}
           placeholder={t('namePlaceholder')}
           onChange={(e) => setName(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
         />
 
         <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-start">
@@ -79,7 +80,7 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
         />
 
         <label className="mt-4 block text-label font-medium text-ink" htmlFor="trip-end">
@@ -91,7 +92,7 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           value={endDate}
           min={startDate || undefined}
           onChange={(e) => setEndDate(e.target.value)}
-          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink"
+          className="mt-1 w-full rounded-control border border-line bg-paper px-3 py-2 text-body text-ink transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)]"
         />
 
         {error ? (
@@ -104,14 +105,14 @@ export function NewTripSheet({ open, onClose, onCreated }: NewTripSheetProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset"
+            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:bg-line active:scale-[0.98]"
           >
             {t('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-50"
+            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:bg-coral-press active:scale-[0.98] disabled:opacity-50"
           >
             {t('create')}
           </button>

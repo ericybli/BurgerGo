@@ -79,8 +79,12 @@ export function HomeClient({ tz }: { tz: string }) {
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {state.trips.map((trip) => (
-            <li key={trip.id}>
+          {state.trips.map((trip, i) => (
+            <li
+              key={trip.id}
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
               <TripCard trip={trip} tz={tz} onManage={() => setManageTrip(trip)} />
             </li>
           ))}
@@ -91,7 +95,7 @@ export function HomeClient({ tz }: { tz: string }) {
         type="button"
         aria-label={t('home.newTrip')}
         onClick={() => setSheetOpen(true)}
-        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-chip bg-coral text-2xl font-bold text-white shadow-lift active:bg-coral-press"
+        className="fixed bottom-6 right-6 z-30 flex h-14 w-14 items-center justify-center rounded-chip bg-coral text-2xl font-bold text-white shadow-lift transition hover:bg-coral-press hover:shadow-lift active:scale-95 active:bg-coral-press"
       >
         +
       </button>

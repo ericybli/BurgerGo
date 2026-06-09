@@ -108,12 +108,12 @@ export function EatsClient({
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
       <div className="mb-3 flex items-center justify-between gap-2">
-        <h1 className="text-title font-bold text-ink">{t('title')}</h1>
+        <h1 className="font-serif text-title font-bold text-ink">{t('title')}</h1>
         <button
           type="button"
           disabled={!online}
           onClick={() => setAddOpen(true)}
-          className="rounded-control bg-coral px-3 py-2 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+          className="inline-flex items-center justify-center rounded-control bg-coral px-3 py-2 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
         >
           {t('addRestaurant')}
         </button>
@@ -126,8 +126,8 @@ export function EatsClient({
             type="button"
             aria-pressed={filter === f.value}
             onClick={() => setFilter(f.value)}
-            className={`flex-1 rounded-control py-1.5 text-caption font-medium ${
-              filter === f.value ? 'bg-coral text-white' : 'text-ink-muted'
+            className={`flex-1 rounded-control py-1.5 text-caption font-medium transition active:scale-[0.98] ${
+              filter === f.value ? 'bg-coral text-white shadow-card' : 'text-ink-muted hover:bg-line'
             }`}
           >
             {t(f.key)}
@@ -145,8 +145,12 @@ export function EatsClient({
         />
       ) : (
         <ul className="flex flex-col gap-3">
-          {visible.map((r) => (
-            <li key={r.id}>
+          {visible.map((r, i) => (
+            <li
+              key={r.id}
+              className="animate-fade-up"
+              style={{ animationDelay: `${Math.min(i, 6) * 40}ms` }}
+            >
               <RestaurantCard restaurant={r} onTap={(id) => setDetailId(id)} />
             </li>
           ))}

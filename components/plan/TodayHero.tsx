@@ -54,23 +54,27 @@ export function TodayHero({ stops, legs, mode, nowHHMM }: TodayHeroProps) {
   return (
     <section
       aria-label={t('upNext')}
-      className="mb-4 rounded-card bg-coral p-4 text-white shadow-lift"
+      className="relative mb-4 overflow-hidden rounded-card bg-coral p-4 text-white shadow-lift"
     >
-      <p className="text-caption font-semibold uppercase tracking-wide opacity-90">{t('upNext')}</p>
-      <div className="mt-1 flex items-center gap-2">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-white/10 blur-2xl"
+      />
+      <p className="relative text-micro font-semibold uppercase tracking-[0.14em] opacity-90">{t('upNext')}</p>
+      <div className="relative mt-1.5 flex items-center gap-2">
         <span aria-hidden="true" className="text-xl">{categoryGlyph(stop.category)}</span>
-        <h2 className="min-w-0 flex-1 truncate text-heading font-bold">{stop.name}</h2>
+        <h2 className="min-w-0 flex-1 truncate font-serif text-title font-bold">{stop.name}</h2>
       </div>
-      <div className="mt-1 flex flex-wrap gap-3 text-caption opacity-90 [font-variant-numeric:tabular-nums]">
+      <div className="relative mt-1.5 flex flex-wrap gap-3 text-caption opacity-90 [font-variant-numeric:tabular-nums]">
         <span>{stop.scheduledTime ?? t('noTimeSet')}</span>
         {prev ? <span>{formatLeg(leg)}</span> : null}
       </div>
-      <div className="mt-3 flex gap-3">
+      <div className="relative mt-3 flex gap-3">
         <a
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 rounded-control bg-white px-4 py-3 text-center text-label font-bold text-coral shadow-card"
+          className="flex-1 rounded-control bg-white px-4 py-3 text-center text-label font-bold text-coral shadow-card transition hover:shadow-lift active:scale-[0.98]"
         >
           {t('openInGoogleMaps')}
         </a>
@@ -78,7 +82,7 @@ export function TodayHero({ stops, legs, mode, nowHHMM }: TodayHeroProps) {
           <button
             type="button"
             onClick={() => setIndex((i) => Math.min(i + 1, stops.length - 1))}
-            className="rounded-control bg-coral-press px-4 py-3 text-label font-medium text-white"
+            className="rounded-control bg-coral-press px-4 py-3 text-label font-medium text-white transition hover:bg-coral-press/90 active:scale-[0.98]"
           >
             {t('skip')}
           </button>

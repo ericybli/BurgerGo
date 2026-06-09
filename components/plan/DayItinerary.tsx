@@ -141,7 +141,7 @@ export function DayItinerary({
             type="button"
             disabled={disabled}
             onClick={onAddPlace}
-            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card active:bg-coral-press disabled:opacity-40"
+            className="flex-1 rounded-control bg-coral px-4 py-3 text-label font-medium text-white shadow-card transition hover:bg-coral-press hover:shadow-lift active:scale-[0.98] active:bg-coral-press disabled:opacity-40"
           >
             {t('addPlace')}
           </button>
@@ -149,14 +149,14 @@ export function DayItinerary({
             type="button"
             disabled={disabled}
             onClick={onAddFromSaved}
-            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset disabled:opacity-40"
+            className="flex-1 rounded-control bg-paper px-4 py-3 text-label font-medium text-ink shadow-inset transition hover:bg-line active:scale-[0.98] active:bg-line disabled:opacity-40"
           >
             {t('addFromSaved')}
           </button>
         </div>
       ) : disabled ? null : (
         <div className="mt-2 text-center">
-          <button type="button" onClick={onAddFromSaved} className="text-label font-medium text-teal">
+          <button type="button" onClick={onAddFromSaved} className="rounded-control px-2 py-1 text-label font-medium text-teal transition hover:bg-teal-tint active:scale-95">
             {t('addFromSaved')}
           </button>
         </div>
@@ -166,7 +166,7 @@ export function DayItinerary({
         <button
           type="button"
           onClick={() => setExportOpen(true)}
-          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-ink-muted active:bg-line"
+          className="mt-2 w-full rounded-control border border-line px-4 py-2 text-caption font-medium text-ink-muted transition hover:bg-line active:bg-line active:scale-[0.99]"
         >
           {t('exportDay')}
         </button>

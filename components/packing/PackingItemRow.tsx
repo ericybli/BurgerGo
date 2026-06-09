@@ -72,7 +72,7 @@ export function PackingItemRow({
         disabled={disabled || busy}
         aria-label={t('packedLabel', { name: item.name })}
         onChange={(e) => void save({ packed: e.target.checked })}
-        className="h-5 w-5 shrink-0 accent-teal"
+        className="h-5 w-5 shrink-0 cursor-pointer accent-coral transition"
       />
       <input
         type="text"
@@ -83,7 +83,7 @@ export function PackingItemRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-ink focus:border-line focus:bg-paper disabled:opacity-60 ${
+        className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-ink transition-colors focus:border-line focus:bg-paper focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60 ${
           item.packed ? 'text-ink-faint line-through' : ''
         }`}
       />
@@ -99,14 +99,14 @@ export function PackingItemRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="w-14 shrink-0 rounded-control border border-line bg-paper px-2 py-1 text-center text-body text-ink [font-variant-numeric:tabular-nums] disabled:opacity-60"
+        className="w-14 shrink-0 rounded-control border border-line bg-paper px-2 py-1 text-center text-body text-ink [font-variant-numeric:tabular-nums] transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
       />
       <button
         type="button"
         disabled={disabled || busy}
         onClick={handleDelete}
         aria-label={t('deleteItem')}
-        className="shrink-0 rounded-chip p-1 text-ink-faint active:bg-line disabled:opacity-40"
+        className="flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:scale-95 active:bg-line disabled:opacity-40"
       >
         ✕
       </button>

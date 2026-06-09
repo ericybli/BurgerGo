@@ -64,7 +64,7 @@ export function TaskRow({
   }
 
   return (
-    <div className="rounded-card bg-card p-3 shadow-card">
+    <div className="rounded-card bg-card p-3 shadow-card shadow-hair transition-shadow duration-200 ease-spring hover:shadow-lift">
       <div className="flex items-center gap-2">
         <input
           type="checkbox"
@@ -72,7 +72,7 @@ export function TaskRow({
           disabled={disabled || busy}
           aria-label={t('doneLabel', { title: task.title })}
           onChange={(e) => void save({ done: e.target.checked })}
-          className="h-5 w-5 shrink-0 accent-teal"
+          className="h-5 w-5 shrink-0 cursor-pointer accent-coral transition"
         />
         <input
           type="text"
@@ -81,7 +81,7 @@ export function TaskRow({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={commitTitle}
           onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
-          className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-ink focus:border-line focus:bg-paper disabled:opacity-60 ${
+          className={`min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-body text-ink transition-colors focus:border-line focus:bg-paper focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60 ${
             task.done ? 'text-ink-faint line-through' : ''
           }`}
         />
@@ -90,7 +90,7 @@ export function TaskRow({
           disabled={disabled || busy}
           onClick={handleDelete}
           aria-label={t('deleteTask')}
-          className="shrink-0 rounded-chip p-1 text-ink-faint active:bg-line disabled:opacity-40"
+          className="flex shrink-0 items-center justify-center rounded-chip p-1 text-ink-faint transition hover:bg-line active:scale-95 active:bg-line disabled:opacity-40"
         >
           ✕
         </button>
@@ -102,7 +102,7 @@ export function TaskRow({
         onChange={(e) => setNote(e.target.value)}
         onBlur={commitNote}
         rows={note ? 2 : 1}
-        className="mt-1 w-full resize-none rounded-control border border-line bg-paper px-2 py-1 text-caption text-ink-muted disabled:opacity-60"
+        className="mt-1 w-full resize-none rounded-control border border-line bg-paper px-2 py-1 text-caption text-ink-muted transition focus:border-coral focus:outline-none focus:shadow-[0_0_0_3px_var(--coral-tint)] disabled:opacity-60"
       />
     </div>
   );
