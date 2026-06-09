@@ -255,7 +255,7 @@ export function AddPlaceSheet({
           type="button"
           disabled={disabled || isPending}
           onClick={handleSave}
-          className="mt-5 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-40"
+          className="mt-5 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:bg-surface disabled:text-faint"
         >
           {t('save')}
         </button>

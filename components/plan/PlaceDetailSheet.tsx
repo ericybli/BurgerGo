@@ -311,7 +311,7 @@ export function PlaceDetailSheet({
           type="button"
           disabled={disabled || isPending || inputToMinor(cost, currency) == null || expenseStatus === 'added'}
           onClick={handleAddExpense}
-          className="mt-2 w-full rounded-control border border-line bg-bg px-4 py-2 text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:opacity-40"
+          className="mt-2 w-full rounded-control border border-line bg-bg px-4 py-2 text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:bg-surface disabled:text-faint"
         >
           {expenseStatus === 'added' ? t('addedToBudget') : t('addAsExpense')}
         </button>
@@ -332,20 +332,20 @@ export function PlaceDetailSheet({
               } catch { /* leave field as-is */ }
               finally { setRegenerating(false); }
             }}
-            className="rounded-chip px-2 py-1 text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:opacity-40"
+            className="rounded-chip px-2 py-1 text-label text-accent transition hover:bg-accent-tint active:opacity-70 disabled:text-faint"
           >
             {regenerating ? t('regenerating') : t('regenerateSummary')}
           </button>
         </div>
         <textarea
-          id="pd-ai" value={aiSummary} disabled={disabled}
+          id="pd-ai" value={aiSummary} disabled={disabled} rows={3}
           onChange={(e) => setAiSummary(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
 
         <label className="mt-3 block text-label text-ink" htmlFor="pd-notes">{t('notesLabel')}</label>
         <textarea
-          id="pd-notes" value={notes} disabled={disabled}
+          id="pd-notes" value={notes} disabled={disabled} rows={3}
           onChange={(e) => setNotes(e.target.value)}
           className="mt-1 w-full rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
@@ -410,7 +410,7 @@ export function PlaceDetailSheet({
             type="button"
             disabled={disabled || isPending}
             onClick={handleSave}
-            className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-40"
+            className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:bg-surface disabled:text-faint"
           >
             {t('save')}
           </button>

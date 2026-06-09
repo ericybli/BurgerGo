@@ -83,7 +83,7 @@ export function PlaceLinks({
           onChange={(e) => setUrl(e.target.value)}
           className="min-w-0 flex-1 rounded-control border border-line bg-bg px-3 py-2.5 text-[14px] text-ink placeholder:text-faint transition focus:border-accent focus:outline-none focus:shadow-[0_0_0_3px_var(--accent-tint)] disabled:opacity-60"
         />
-        <button type="button" disabled={disabled || isPending} onClick={handleAdd} className="shrink-0 rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40">{t('addGuideLink')}</button>
+        <button type="button" disabled={disabled || isPending} onClick={handleAdd} className="shrink-0 rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint">{t('addGuideLink')}</button>
       </div>
     </div>
   );

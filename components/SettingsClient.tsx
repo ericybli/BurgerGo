@@ -224,7 +224,7 @@ export function SettingsClient() {
             type="button"
             disabled={!online || isPending}
             onClick={saveAi}
-            className="inline-flex items-center justify-center rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:scale-[0.98] active:bg-orange-press disabled:opacity-40"
+            className="inline-flex items-center justify-center rounded-control bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:scale-[0.98] active:bg-orange-press disabled:bg-surface disabled:text-faint"
           >
             {t('settings.aiSave')}
           </button>

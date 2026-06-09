@@ -233,7 +233,7 @@ export function RestaurantFormSheet({
           </button>
           <button
             type="button" disabled={disabled || isPending} onClick={handleSave}
-            className="flex-1 inline-flex items-center justify-center rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+            className="flex-1 inline-flex items-center justify-center rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
           >
             {t('save')}
           </button>

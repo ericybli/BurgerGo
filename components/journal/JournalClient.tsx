@@ -145,7 +145,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
               type="button"
               onClick={openAddLink}
               disabled={!online}
-              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
             >
               {t('addLink')}
             </button>
@@ -194,7 +194,7 @@ export function JournalClient({ tripId }: { tripId: string }) {
               type="button"
               disabled={!online}
               onClick={() => setEntrySheet({ open: true })}
-              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+              className="rounded-[10px] bg-orange px-3.5 py-2 text-label text-white hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
             >
               {t('newEntry')}
             </button>

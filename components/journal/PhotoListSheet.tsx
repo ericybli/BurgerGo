@@ -90,7 +90,7 @@ export function PhotoListSheet({ open, tripId, list, disabled, onClose, onSaved 
             type="button"
             disabled={disabled || isPending}
             onClick={handleSave}
-            className="flex-1 rounded-[12px] bg-orange py-3 text-[14px] font-semibold text-white hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+            className="flex-1 rounded-[12px] bg-orange py-3 text-[14px] font-semibold text-white hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
           >
             {list ? t('save') : t('createList')}
           </button>

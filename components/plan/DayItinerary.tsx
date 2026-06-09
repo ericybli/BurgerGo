@@ -190,7 +190,7 @@ export function DayItinerary({
             type="button"
             disabled={disabled}
             onClick={onAddPlace}
-            className="flex-1 rounded-[12px] bg-orange px-4 py-[11px] text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+            className="flex-1 rounded-[12px] bg-orange px-4 py-[11px] text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
           >
             {t('addPlace')}
           </button>

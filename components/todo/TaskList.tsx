@@ -100,7 +100,7 @@ export function TaskList({ tripId }: { tripId: string }) {
           type="button"
           disabled={!online || busy || newTitle.trim() === ''}
           onClick={() => void handleAdd()}
-          className="inline-flex shrink-0 items-center justify-center rounded-control bg-orange px-[18px] py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+          className="inline-flex shrink-0 items-center justify-center rounded-control bg-orange px-[18px] py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
         >
           {t('addTask')}
         </button>

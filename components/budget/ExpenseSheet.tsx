@@ -213,7 +213,7 @@ export function ExpenseSheet({
           type="button"
           onClick={handleSave}
           disabled={disabled || isPending}
-          className="mt-5 inline-flex w-full items-center justify-center rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+          className="mt-5 inline-flex w-full items-center justify-center rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
         >
           {t('save')}
         </button>

@@ -248,7 +248,7 @@ export function AiImportSheet({
                   type="button"
                   onClick={create}
                   disabled={isPending || rows.length === 0 || !online}
-                  className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
+                  className="flex-1 rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:bg-surface disabled:text-faint"
                 >
                   {phase === 'creating' ? t('creating') : t('create', { count: rows.length })}
                 </button>
@@ -305,7 +305,7 @@ export function AiImportSheet({
                 type="button"
                 onClick={extract}
                 disabled={!canExtract}
-                className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-50"
+                className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:bg-surface disabled:text-faint"
               >
                 {phase === 'extracting' ? t('extracting') : t('extract')}
               </button>

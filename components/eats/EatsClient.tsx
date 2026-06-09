@@ -113,7 +113,7 @@ export function EatsClient({
           type="button"
           disabled={!online}
           onClick={() => setAddOpen(true)}
-          className="inline-flex items-center justify-center rounded-[10px] bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+          className="inline-flex items-center justify-center rounded-[10px] bg-orange px-3.5 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
         >
           {t('addRestaurant')}
         </button>

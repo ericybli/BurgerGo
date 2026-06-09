@@ -78,7 +78,7 @@ function SavedPlaceCard({
           type="button"
           disabled={disabled}
           onClick={() => onAddToDay(place.id)}
-          className="rounded-[10px] bg-orange px-4 py-[7px] text-[12.5px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+          className="rounded-[10px] bg-orange px-4 py-[7px] text-[12.5px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
         >
           {t('addToDay')}
         </button>
@@ -284,7 +284,7 @@ export function SavedList({
         type="button"
         disabled={disabled}
         onClick={onAddPlace}
-        className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:opacity-40"
+        className="mt-4 w-full rounded-[12px] bg-orange px-4 py-3 text-[14px] font-semibold text-white transition hover:bg-orange-press active:bg-orange-press disabled:bg-surface disabled:text-faint"
       >
         {t('addPlace')}
       </button>

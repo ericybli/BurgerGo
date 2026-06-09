@@ -132,7 +132,7 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
             type="button"
             disabled={isPending}
             onClick={() => run(() => addTripDayAction(current.id))}
-            className="shrink-0 rounded-control bg-orange px-3 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:opacity-40"
+            className="shrink-0 rounded-control bg-orange px-3 py-2 text-label text-white transition hover:bg-orange-press active:bg-orange-press active:scale-[0.98] disabled:bg-surface disabled:text-faint"
           >
             {t('addDay')}
           </button>
