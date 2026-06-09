@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { deriveDays, type DerivedDay } from '@/src/lib/days';
 import { dayRouteUrl, DEFAULT_DAY_MODE, type TravelMode } from '@/src/lib/googleMapsUrl';
@@ -51,7 +52,14 @@ import { PlaceDetailSheet } from '@/components/plan/PlaceDetailSheet';
 import { PlaceReadCard } from '@/components/plan/PlaceReadCard';
 import { RestaurantInfoCard } from '@/components/plan/RestaurantInfoCard';
 import { DayPickerSheet } from '@/components/plan/DayPickerSheet';
-import { PlanMap } from '@/components/plan/PlanMap';
+
+// P1: code-split the whole map subtree (MapCanvas + both providers + mapbox-gl.css
+// + legend) out of the Plan tab's initial bundle. It loads only when the user
+// opens map view (`params.view === 'map'`), keeping the default list-view payload
+// small. ssr:false — the map is client-only (no server render of map internals).
+const PlanMap = dynamic(() => import('@/components/plan/PlanMap').then((m) => ({ default: m.PlanMap })), {
+  ssr: false,
+});
 
 type TripLite = { id: string; name: string; startDate: string; endDate: string; coverPhoto: string | null };
 type PlanData = {
