@@ -174,6 +174,16 @@ const createPlaceSchema = z.object({
   category: CATEGORY.optional(),
   /** Saved-list name to group this place under; find-or-created (case-insensitive). */
   list: z.string().trim().min(1).max(100).optional(),
+  // Native-client extras — the MCP caller omits these, so its saved-place behavior
+  // is unchanged. When coords are supplied they're used as-is (no geocode); a
+  // dayDate adds the place to that day instead of the Saved bucket.
+  dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullish(),
+  lat: z.number().min(-90).max(90).nullish(),
+  lng: z.number().min(-180).max(180).nullish(),
+  googlePlaceId: z.string().trim().min(1).max(300).nullish(),
+  scheduledTime: z.string().regex(/^\d{2}:\d{2}$/).nullish(),
+  durationMin: z.number().int().nonnegative().nullish(),
+  cost: z.number().int().nullish(),
 });
 
 /**
@@ -203,7 +213,7 @@ export async function POST(
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_input', issues: parsed.error.issues }, { status: 400 });
   }
-  const { name, address, about, notes, category, list } = parsed.data;
+  const { name, address, about, notes, category, list, dayDate, scheduledTime, durationMin, cost } = parsed.data;
 
   // Group under a named saved list when requested: reuse a same-named list
   // (case-insensitive), else create it. NULL = loose.
@@ -213,11 +223,12 @@ export async function POST(
     listId = existing ? existing.id : addList(db, tripId, list).id;
   }
 
-  // Best-effort geocode so the place maps + gets a Google place id.
-  let lat: number | null = null;
-  let lng: number | null = null;
-  let googlePlaceId: string | null = null;
-  if (address && env.GOOGLE_MAPS_SERVER_KEY) {
+  // Use coords if the caller supplied them; otherwise best-effort geocode the
+  // address so the place still maps + gets a Google place id.
+  let lat: number | null = parsed.data.lat ?? null;
+  let lng: number | null = parsed.data.lng ?? null;
+  let googlePlaceId: string | null = parsed.data.googlePlaceId ?? null;
+  if (lat == null && lng == null && address && env.GOOGLE_MAPS_SERVER_KEY) {
     try {
       const geo = await fetchForwardGeocode({ address, apiKey: env.GOOGLE_MAPS_SERVER_KEY });
       if (geo) {
@@ -232,13 +243,16 @@ export async function POST(
 
   const place = addPlace(db, {
     tripId,
-    dayDate: null, // Saved bucket
+    dayDate: dayDate ?? null, // null = Saved bucket
     name,
     address: address ?? null,
     lat,
     lng,
     googlePlaceId,
     category: category ?? 'other',
+    scheduledTime: scheduledTime ?? null,
+    durationMin: durationMin ?? null,
+    cost: cost ?? null,
     notes: notes ?? null,
     listId,
   });
