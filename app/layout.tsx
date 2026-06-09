@@ -40,6 +40,10 @@ export const viewport: Viewport = {
   themeColor: '#FFFFFF',
   width: 'device-width',
   initialScale: 1,
+  // iOS Safari auto-zooms when a focused input's font-size is < 16px (Atlas
+  // inputs are 14px). maximum-scale=1 suppresses that focus-zoom; since iOS 10
+  // Safari ignores it for user pinch gestures, so accessibility is preserved.
+  maximumScale: 1,
   viewportFit: 'cover',
 };
 

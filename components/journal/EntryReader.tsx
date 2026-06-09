@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import dynamic from 'next/dynamic';
 import { PhotoGallery } from '@/components/plan/PhotoGallery';
@@ -19,6 +20,8 @@ type Props = {
   online: boolean;
   onEdit: () => void;
   onClose: () => void;
+  /** Deletes this entry (owner closes the reader + reloads on success). */
+  onDelete: () => Promise<void>;
 };
 
 /** Human weekday for an ISO date, e.g. "Friday". Empty string if unparseable. */
@@ -29,9 +32,29 @@ function weekday(iso: string): string {
 }
 
 /** Full-bleed entry reader: title, date, sanitized markdown body, photo gallery. */
-export function EntryReader({ entry, online, onEdit, onClose }: Props) {
+export function EntryReader({ entry, online, onEdit, onClose, onDelete }: Props) {
   const t = useTranslations('journal');
   const wd = entry.entryDate ? weekday(entry.entryDate) : '';
+  // Two-tap delete (mirrors EntrySheet): first tap arms, second tap deletes.
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function handleDelete() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    setDeleteError(false);
+    startTransition(async () => {
+      try {
+        await onDelete();
+      } catch {
+        setDeleteError(true);
+        setConfirmingDelete(false);
+      }
+    });
+  }
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-2">
@@ -72,6 +95,22 @@ export function EntryReader({ entry, online, onEdit, onClose }: Props) {
         disabled
         onDelete={() => {}}
       />
+
+      {deleteError ? (
+        <p role="alert" className="mt-6 rounded-control bg-danger/10 px-3 py-2 text-caption text-danger">
+          {t('mutationFailed')}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        disabled={!online || isPending}
+        onClick={handleDelete}
+        className={`mt-6 w-full rounded-control px-4 py-2.5 text-label transition active:opacity-80 disabled:bg-surface disabled:text-faint ${
+          confirmingDelete ? 'bg-danger text-white' : 'text-danger'
+        }`}
+      >
+        {confirmingDelete ? t('confirmDelete') : t('delete')}
+      </button>
     </main>
   );
 }

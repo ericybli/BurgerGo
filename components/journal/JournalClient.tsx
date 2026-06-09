@@ -6,6 +6,7 @@ import { withBase } from '@/src/lib/basePath';
 import { personalPhotoUrl } from '@/src/lib/planUrl';
 import { entrySnippet } from '@/src/lib/journalView';
 import { deleteLinkAction } from '@/app/_actions/savedLinks';
+import { deleteEntryAction } from '@/app/_actions/journal';
 import { EmptyState } from '@/components/EmptyState';
 import { EntrySheet } from '@/components/journal/EntrySheet';
 import { EntryReader } from '@/components/journal/EntryReader';
@@ -115,6 +116,11 @@ export function JournalClient({ tripId }: { tripId: string }) {
         onEdit={() => {
           setReading(null);
           setEntrySheet({ open: true, entry: fresh });
+        }}
+        onDelete={async () => {
+          await deleteEntryAction(fresh.id);
+          setReading(null);
+          void load();
         }}
       />
     );

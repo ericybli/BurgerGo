@@ -31,7 +31,7 @@ const baseEntry = {
 
 describe('EntryReader', () => {
   it('renders the title, the markdown body, and the photo gallery', async () => {
-    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} online />);
+    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()} online />);
     expect(screen.getByText('Day One')).toBeInTheDocument();
     // Markdown is now lazy-loaded via next/dynamic, so it resolves async.
     expect(await screen.findByTestId('md')).toHaveTextContent('# hi');
@@ -39,12 +39,29 @@ describe('EntryReader', () => {
   });
 
   it('shows the entry date when present', () => {
-    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} online />);
+    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()} online />);
     expect(screen.getByText(/2026-06-05/)).toBeInTheDocument();
   });
 
   it('disables the Edit control when offline', () => {
-    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} online={false} />);
+    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()} online={false} />);
     expect(screen.getByRole('button', { name: en.journal.edit })).toBeDisabled();
+  });
+
+  it('deletes only after a confirming second tap', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
+    const onDelete = vi.fn().mockResolvedValue(undefined);
+    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} onDelete={onDelete} online />);
+    // First tap arms the confirm state, no delete yet.
+    await userEvent.click(screen.getByRole('button', { name: en.journal.delete }));
+    expect(onDelete).not.toHaveBeenCalled();
+    // Second tap (now labeled confirmDelete) performs the delete.
+    await userEvent.click(screen.getByRole('button', { name: en.journal.confirmDelete }));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('disables the Delete control when offline', () => {
+    renderWith(<EntryReader entry={baseEntry} onEdit={vi.fn()} onClose={vi.fn()} onDelete={vi.fn()} online={false} />);
+    expect(screen.getByRole('button', { name: en.journal.delete })).toBeDisabled();
   });
 });
