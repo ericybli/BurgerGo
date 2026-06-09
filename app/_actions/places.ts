@@ -242,7 +242,14 @@ export async function recomputeDayLegsAction(
   if (ordered.length < 2) return [];
   if (!env.GOOGLE_MAPS_SERVER_KEY) return [];
 
-  const legs: TravelLeg[] = [];
+  const key = env.GOOGLE_MAPS_SERVER_KEY;
+  // Build the routable consecutive pairs (skip any missing coords), then fetch
+  // them concurrently: the per-pair Google Directions round-trips are independent,
+  // so awaiting them in parallel collapses N-1 sequential calls into one wave.
+  // better-sqlite3 is synchronous, so each leg's cache read/upsert still runs
+  // serialized on the JS thread — only the network waits overlap. Promise.all
+  // preserves order; a failed pair resolves to null and is dropped.
+  const pairs = [];
   for (let i = 0; i < ordered.length - 1; i++) {
     const from = ordered[i]!;
     const to = ordered[i + 1]!;
@@ -251,22 +258,26 @@ export async function recomputeDayLegsAction(
     }
     // Each leg uses its own mode (stored on the destination place); legs that
     // were never customized follow the day default.
-    const legMode = to.legMode ?? defaultMode;
-    try {
-      const leg = await getOrFetchLeg(
-        db,
-        { id: from.id, tripId: from.tripId, lat: from.lat, lng: from.lng },
-        { id: to.id, tripId: to.tripId, lat: to.lat, lng: to.lng },
-        legMode,
-        env.GOOGLE_MAPS_SERVER_KEY,
-      );
-      legs.push(leg);
-    } catch (err) {
-      // Log and continue — a single failed pair should not block the rest.
-      console.error('[recomputeDayLegsAction] leg fetch failed', err);
-    }
+    pairs.push({ from, to, legMode: to.legMode ?? defaultMode });
   }
-  return legs;
+  const results = await Promise.all(
+    pairs.map(async ({ from, to, legMode }) => {
+      try {
+        return await getOrFetchLeg(
+          db,
+          { id: from.id, tripId: from.tripId, lat: from.lat!, lng: from.lng! },
+          { id: to.id, tripId: to.tripId, lat: to.lat!, lng: to.lng! },
+          legMode,
+          key,
+        );
+      } catch (err) {
+        // Log and continue — a single failed pair should not block the rest.
+        console.error('[recomputeDayLegsAction] leg fetch failed', err);
+        return null;
+      }
+    }),
+  );
+  return results.filter((leg): leg is TravelLeg => leg !== null);
 }
 
 // --- setLegModeAction -----------------------------------------------------

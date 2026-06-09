@@ -1,21 +1,12 @@
-import { readFileSync } from 'node:fs';
-import { join, resolve, sep, extname } from 'node:path';
 import { NextResponse } from 'next/server';
 import { db } from '@/src/db/client';
-import { env } from '@/src/env';
 import { getRestaurant } from '@/src/db/repos/restaurants';
 import { getCachedDetails } from '@/src/db/repos/placeCache';
+import { serveCachedGooglePhoto } from '@/src/lib/photos/serveGooglePhoto';
 
 export const dynamic = 'force-dynamic';
 
-const MIME: Record<string, string> = {
-  '.webp': 'image/webp',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-};
-
-/** All valid variants currently resolve to the one cached Google photo file. */
+/** `thumb` serves the small derivative (fallback to card); `card`/`full` the card file. */
 const ALLOWED_VARIANTS = new Set(['thumb', 'card', 'full']);
 
 /**
@@ -44,26 +35,5 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  // Constrain the resolved path to UPLOADS_DIR to prevent path traversal.
-  const filePath = join(env.UPLOADS_DIR, cacheRow.photoLocalPath);
-  const resolved = resolve(filePath);
-  const root = resolve(env.UPLOADS_DIR);
-  if (resolved !== root && !resolved.startsWith(root + sep)) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  try {
-    const bytes = readFileSync(filePath);
-    const ext = extname(filePath).toLowerCase();
-    const contentType = MIME[ext] ?? 'application/octet-stream';
-    return new Response(bytes, {
-      status: 200,
-      headers: {
-        'content-type': contentType,
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
-    });
-  } catch {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  return serveCachedGooglePhoto(cacheRow.photoLocalPath, variant);
 }

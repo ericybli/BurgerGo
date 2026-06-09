@@ -1,6 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import sharp from 'sharp';
+import { googleThumbRelPath } from '@/src/lib/photoPaths';
 
 /**
  * Download a Google Place photo (server key), re-encode it to a single card-size
@@ -11,6 +12,7 @@ import sharp from 'sharp';
  */
 const PHOTO_URL = 'https://maps.googleapis.com/maps/api/place/photo';
 const MAXWIDTH = 800;
+const THUMBWIDTH = 320;
 
 export interface StoreGooglePhotoInput {
   photoRef: string;
@@ -35,11 +37,19 @@ export async function fetchAndStoreGooglePhoto(input: StoreGooglePhotoInput): Pr
     const safeId = input.googlePlaceId.replace(/[^a-zA-Z0-9_-]/g, '_');
     const rel = `gphotos/${safeId}.webp`;
     await mkdir(join(input.uploadsDir, 'gphotos'), { recursive: true });
-    await sharp(buf, { limitInputPixels: 268_402_689 })
-      .rotate()
+    // Decode once, then emit a card-size file (the stored photoLocalPath) plus a
+    // small thumb sibling so list/map/gallery thumbnails don't ship the 800px image.
+    const pipeline = sharp(buf, { limitInputPixels: 268_402_689 }).rotate();
+    await pipeline
+      .clone()
       .resize(MAXWIDTH, MAXWIDTH, { fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 82 })
       .toFile(join(input.uploadsDir, rel));
+    await pipeline
+      .clone()
+      .resize(THUMBWIDTH, THUMBWIDTH, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(join(input.uploadsDir, googleThumbRelPath(rel)));
     return rel;
   } catch {
     return null;

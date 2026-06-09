@@ -31,6 +31,8 @@ it('downloads, re-encodes to webp, and returns the uploads-relative path', async
     const rel = await fetchAndStoreGooglePhoto({ photoRef: 'ref', googlePlaceId: 'ChIJ_abc-123', apiKey: 'k', uploadsDir: dir });
     expect(rel).toBe('gphotos/ChIJ_abc-123.webp');
     expect(existsSync(join(dir, rel!))).toBe(true);
+    // A small thumb sibling is written alongside the card-size file.
+    expect(existsSync(join(dir, 'gphotos/ChIJ_abc-123-thumb.webp'))).toBe(true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -8,25 +8,20 @@ vi.mock('@/src/db/client', () => ({
   sqlite: {},
 }));
 
-// Mock the Node fs module: readFileSync succeeds when the path is our known fixture.
-const PHOTO_BYTES = Buffer.from('FAKE_JPEG_DATA');
-vi.mock('node:fs', () => {
-  return {
-    default: {
-      readFileSync: vi.fn((path: string) => {
-        if (path.includes('gpid-1')) return PHOTO_BYTES;
-        const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-        throw err;
-      }),
-      existsSync: vi.fn((path: string) => path.includes('gpid-1')),
-    },
-    readFileSync: vi.fn((path: string) => {
-      if (path.includes('gpid-1')) return PHOTO_BYTES;
-      const err = Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      throw err;
-    }),
-    existsSync: vi.fn((path: string) => path.includes('gpid-1')),
+// Mock async fs: only these exact files "exist" (card + its -thumb sibling for
+// gpid-1; card-only for gpid-nothumb to exercise the thumb→card fallback).
+const PHOTO_BYTES = Buffer.from('FAKE_CARD_DATA');
+const THUMB_BYTES = Buffer.from('FAKE_THUMB_DATA');
+vi.mock('node:fs/promises', () => {
+  // Deref the byte consts at CALL time (not factory-construction time) so this
+  // factory — hoisted above the const declarations — doesn't touch them early.
+  const read = async (path: string) => {
+    if (path === '/uploads/place-photos/gpid-1/card-thumb.webp') return THUMB_BYTES;
+    if (path === '/uploads/place-photos/gpid-1/card.webp') return PHOTO_BYTES;
+    if (path === '/uploads/place-photos/gpid-nothumb/card.webp') return PHOTO_BYTES;
+    throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
   };
+  return { default: { readFile: vi.fn(read) }, readFile: vi.fn(read) };
 });
 vi.mock('@/src/env', () => ({ env: { UPLOADS_DIR: '/uploads' } }));
 
@@ -160,8 +155,36 @@ describe('GET /api/photos/[placeId]/[variant]', () => {
         new Request(`http://x/api/photos/place-1/${variant}`),
         ctx('place-1', variant),
       );
-      // All valid variants resolve to the same single image in 1B.
       expect(res.status).toBe(200);
     }
+  });
+
+  it('serves the smaller -thumb derivative for the thumb variant', async () => {
+    const res = await GET(
+      new Request('http://x/api/photos/place-1/thumb'),
+      ctx('place-1', 'thumb'),
+    );
+    expect(res.status).toBe(200);
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(THUMB_BYTES);
+  });
+
+  it('falls back to the card file for thumb when no -thumb derivative exists', async () => {
+    testHandle.db.insert(places).values({
+      id: 'nt', tripId: 'trip-1', dayDate: null, googlePlaceId: 'gpid-nothumb',
+      name: 'NT', address: null, lat: null, lng: null, category: 'other',
+      scheduledTime: null, durationMin: null, cost: null, notes: null,
+      orderIndex: 5, createdAt: TS, updatedAt: TS,
+    }).run();
+    testHandle.db.insert(placeDetailsCache).values({
+      googlePlaceId: 'gpid-nothumb', name: 'NT', address: null, lat: null, lng: null,
+      categoryGuess: 'other', photoRef: 'R', photoLocalPath: 'place-photos/gpid-nothumb/card.webp',
+      rawJson: '{}', fetchedAt: TS,
+    }).run();
+    const res = await GET(
+      new Request('http://x/api/photos/nt/thumb'),
+      ctx('nt', 'thumb'),
+    );
+    expect(res.status).toBe(200);
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(PHOTO_BYTES);
   });
 });

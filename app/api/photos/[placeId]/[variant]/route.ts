@@ -1,25 +1,16 @@
-import { readFileSync } from 'node:fs';
-import { join, resolve, sep, extname } from 'node:path';
 import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { db } from '@/src/db/client';
-import { env } from '@/src/env';
 import { places } from '@/src/db/schema';
 import { getCachedDetails } from '@/src/db/repos/placeCache';
+import { serveCachedGooglePhoto } from '@/src/lib/photos/serveGooglePhoto';
 
 export const dynamic = 'force-dynamic';
 
-const MIME: Record<string, string> = {
-  '.webp': 'image/webp',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.png': 'image/png',
-};
-
 /**
- * Allowed photo size variants. 1B stores a single image file and all valid
- * variants currently resolve to that one photoLocalPath; true per-size files
- * are a later plan (B3+).
+ * Allowed photo size variants. Google photos store a card-size file plus a thumb
+ * sibling; `thumb` serves the smaller derivative (falling back to the card file
+ * for photos fetched before thumbs existed), `card`/`full` serve the card file.
  */
 const ALLOWED_VARIANTS = new Set(['thumb', 'card', 'full']);
 
@@ -53,27 +44,5 @@ export async function GET(
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  // Constrain the resolved path to UPLOADS_DIR to prevent path traversal.
-  const filePath = join(env.UPLOADS_DIR, cacheRow.photoLocalPath);
-  const resolved = resolve(filePath);
-  const root = resolve(env.UPLOADS_DIR);
-  if (resolved !== root && !resolved.startsWith(root + sep)) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-
-  // Stream the file from the uploads directory.
-  try {
-    const bytes = readFileSync(filePath);
-    const ext = extname(filePath).toLowerCase();
-    const contentType = MIME[ext] ?? 'application/octet-stream';
-    return new Response(bytes, {
-      status: 200,
-      headers: {
-        'content-type': contentType,
-        'cache-control': 'public, max-age=31536000, immutable',
-      },
-    });
-  } catch {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  return serveCachedGooglePhoto(cacheRow.photoLocalPath, variant);
 }

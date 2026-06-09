@@ -85,6 +85,13 @@
       "when": 1780878418631,
       "tag": "0011_tidy_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1780969701930,
+      "tag": "0012_majestic_jackpot",
+      "breakpoints": true
     }
   ]
 }

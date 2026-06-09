@@ -32,3 +32,13 @@ export function photoBasePath(tripId: string, photoId: string): string {
 export function photoDerivativeRelPath(basePath: string, size: PhotoSize): string {
   return `${basePath}/${size}.webp`;
 }
+
+/**
+ * Cached-Google-photo thumb derivative path. Google photos are stored as a single
+ * card-size file `gphotos/<id>.webp` (`photoLocalPath`); the small thumb sibling is
+ * `gphotos/<id>-thumb.webp`. Pure string transform — the serving route checks
+ * existence and falls back to the card file when the thumb isn't present.
+ */
+export function googleThumbRelPath(photoLocalPath: string): string {
+  return photoLocalPath.replace(/\.webp$/i, '-thumb.webp');
+}

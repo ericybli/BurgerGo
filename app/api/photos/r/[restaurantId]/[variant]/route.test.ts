@@ -8,15 +8,16 @@ vi.mock('@/src/db/client', () => ({
   sqlite: {},
 }));
 
-// Mock node:fs: readFileSync succeeds only for our known fixture path.
+// Mock node:fs/promises: readFile succeeds only for our known fixture path
+// (its -thumb sibling also contains 'grest-1', so the thumb variant resolves too).
 const PHOTO_BYTES = Buffer.from('FAKE_WEBP_DATA');
-function fakeRead(path: string) {
+async function fakeRead(path: string) {
   if (path.includes('grest-1')) return PHOTO_BYTES;
   throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
 }
-vi.mock('node:fs', () => ({
-  default: { readFileSync: vi.fn(fakeRead) },
-  readFileSync: vi.fn(fakeRead),
+vi.mock('node:fs/promises', () => ({
+  default: { readFile: vi.fn(fakeRead) },
+  readFile: vi.fn(fakeRead),
 }));
 vi.mock('@/src/env', () => ({ env: { UPLOADS_DIR: '/uploads' } }));
 
@@ -106,5 +107,10 @@ describe('GET /api/photos/r/[restaurantId]/[variant]', () => {
   it('returns 404 for an invalid variant', async () => {
     const res = await GET(new Request('http://x/api/photos/r/rest-1/original'), ctx('rest-1', 'original'));
     expect(res.status).toBe(404);
+  });
+
+  it('serves 200 for the thumb variant (prefers -thumb, falls back to card)', async () => {
+    const res = await GET(new Request('http://x/api/photos/r/rest-1/thumb'), ctx('rest-1', 'thumb'));
+    expect(res.status).toBe(200);
   });
 });

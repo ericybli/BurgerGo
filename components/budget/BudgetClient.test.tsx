@@ -38,6 +38,8 @@ const budgetBody = {
     { id: 't0', tripId: 'trip-1', category: null, plannedAmount: 10000, createdAt: 0, updatedAt: 0 },
     { id: 't1', tripId: 'trip-1', category: 'food', plannedAmount: 30000, createdAt: 0, updatedAt: 0 },
   ],
+  // Slim place options now ride along on the budget response (no separate /places fetch).
+  places: [{ id: 'p1', name: 'Ichiran' }],
 };
 
 function mockFetchOk() {
@@ -69,12 +71,13 @@ describe('BudgetClient', () => {
     expect(screen.getByText('Ichiran')).toBeInTheDocument(); // linked place chip
   });
 
-  it('fetches the budget read handler with the base-prefixed URL', async () => {
+  it('fetches only the budget read handler (place options ride along, no /places fetch)', async () => {
     renderWith(<BudgetClient tripId="trip-1" currency="USD" locale="en" />);
     await waitFor(() => expect(screen.getByText(en.budget.overall)).toBeInTheDocument());
     const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]));
     expect(calls.some((u) => u.endsWith('/api/trips/trip-1/budget'))).toBe(true);
-    expect(calls.some((u) => u.endsWith('/api/trips/trip-1/places'))).toBe(true);
+    // P4: the heavy /places payload is no longer fetched just for {id,name}.
+    expect(calls.some((u) => u.endsWith('/api/trips/trip-1/places'))).toBe(false);
   });
 
   it('groups by day by default and switches to by-category', async () => {
@@ -126,7 +129,7 @@ describe('BudgetClient', () => {
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
         const body = url.endsWith('/budget')
-          ? { expenses: [], targets: [] }
+          ? { expenses: [], targets: [], places: [] }
           : url.includes('/places')
             ? placesBody
             : tripBody;

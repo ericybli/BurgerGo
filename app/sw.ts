@@ -22,7 +22,12 @@ export interface CacheEntry {
   name: string;
   handler: string;
   matcher: (opts: TestableMatcherOptions) => boolean;
-  options: { cacheName?: string; expiration?: { maxEntries?: number; maxAgeSeconds?: number } };
+  options: {
+    cacheName?: string;
+    /** NetworkFirst only: fall back to cache after N seconds of no network response (lie-fi). */
+    networkTimeoutSeconds?: number;
+    expiration?: { maxEntries?: number; maxAgeSeconds?: number };
+  };
 }
 
 /**
@@ -94,6 +99,9 @@ export function buildRuntimeCaching(base: string = swBasePath()): CacheEntry[] {
       },
       options: {
         cacheName: 'burgergo-data',
+        // Lie-fi guard: if the network doesn't answer within 3s, serve the cached
+        // JSON instead of hanging the UI until the request fully fails.
+        networkTimeoutSeconds: 3,
         expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
       },
     },
@@ -139,7 +147,11 @@ if (typeof _g.skipWaiting === 'function') {
         handler = new StaleWhileRevalidate({ cacheName: entry.options.cacheName, plugins });
         break;
       case 'NetworkFirst':
-        handler = new NetworkFirst({ cacheName: entry.options.cacheName, plugins });
+        handler = new NetworkFirst({
+          cacheName: entry.options.cacheName,
+          networkTimeoutSeconds: entry.options.networkTimeoutSeconds,
+          plugins,
+        });
         break;
       case 'NetworkOnly':
       default:

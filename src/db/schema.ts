@@ -248,6 +248,9 @@ export const savedLinks = sqliteTable(
   },
   (t) => ({
     byTripCreated: index('idx_links_trip').on(t.tripId, t.createdAt),
+    // Plan load resolves each place's attached guide links via inArray(placeId);
+    // index it so that lookup isn't a full saved_links scan.
+    byPlace: index('idx_links_place').on(t.placeId),
   }),
 );
 

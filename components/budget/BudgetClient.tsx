@@ -70,21 +70,16 @@ export function BudgetClient({
 
   const load = useCallback(async () => {
     try {
-      const [placesRes, budgetRes] = await Promise.all([
-        fetch(withBase(`/api/trips/${tripId}/places`), { credentials: 'same-origin' }),
-        fetch(withBase(`/api/trips/${tripId}/budget`), { credentials: 'same-origin' }),
-      ]);
-      if (!placesRes.ok || !budgetRes.ok) throw new Error('load failed');
-      const { places } = (await placesRes.json()) as { places: { id: string; name: string }[] };
-      const { expenses, targets } = (await budgetRes.json()) as {
+      // The budget route returns slim place options too, so one fetch covers it.
+      const budgetRes = await fetch(withBase(`/api/trips/${tripId}/budget`), { credentials: 'same-origin' });
+      if (!budgetRes.ok) throw new Error('load failed');
+      const { expenses, targets, places } = (await budgetRes.json()) as {
         expenses: ExpenseDTO[];
         targets: TargetDTO[];
+        places: PlaceOption[];
       };
       if (mountedRef.current) {
-        setState({
-          status: 'loaded',
-          data: { expenses, targets, places: places.map((p) => ({ id: p.id, name: p.name })) },
-        });
+        setState({ status: 'loaded', data: { expenses, targets, places } });
       }
     } catch {
       if (mountedRef.current) setState({ status: 'error' });

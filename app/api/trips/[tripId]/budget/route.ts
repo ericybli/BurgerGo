@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { inArray } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
 import { getTrip } from '@/src/db/repos/trips';
 import { listByTrip as listExpensesForTrip } from '@/src/db/repos/expenses';
@@ -14,6 +14,12 @@ export interface ExpenseDTO extends Expense {
 }
 
 export type TargetDTO = BudgetTarget;
+
+/** Slim place option for the expense place-picker — just enough to label + link. */
+export interface PlaceOptionDTO {
+  id: string;
+  name: string;
+}
 
 export async function GET(
   _req: Request,
@@ -49,5 +55,13 @@ export async function GET(
 
   const targets: TargetDTO[] = listTargetsForTrip(db, tripId);
 
-  return NextResponse.json({ expenses, targets });
+  // Slim place options for the expense picker — returned here so the Budget tab
+  // doesn't have to fetch the full (heavy) /places payload just for {id,name}.
+  const placeOptions: PlaceOptionDTO[] = db
+    .select({ id: places.id, name: places.name })
+    .from(places)
+    .where(eq(places.tripId, tripId))
+    .all();
+
+  return NextResponse.json({ expenses, targets, places: placeOptions });
 }

@@ -1,0 +1,1 @@
+CREATE INDEX `idx_links_place` ON `saved_links` (`place_id`);
