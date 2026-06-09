@@ -18,6 +18,7 @@ function makeFakeGoogle() {
   captured = { markers: [], polylines: [], fitBoundsCalls: [], mapInstances: [] };
   return {
     Map: vi.fn(function (this: any, _el: HTMLElement) {
+      this.__el = _el;
       this.setCenter = (_c: unknown) => {};
       this.fitBounds = (b: unknown) => captured.fitBoundsCalls.push(b);
       this.listeners = {} as Record<string, (e?: unknown) => void>;
@@ -26,6 +27,22 @@ function makeFakeGoogle() {
       };
       this.setOptions = vi.fn();
       captured.mapInstances.push(this);
+    }),
+    // Custom-DOM pin host: setMap(map) attaches (onAdd + draw), setMap(null)
+    // detaches (onRemove). Panes live INSIDE the map's container so pins are
+    // removed with the component on unmount (no cross-test DOM leaks).
+    OverlayView: vi.fn(function (this: any) {
+      this.getPanes = () => ({ overlayMouseTarget: this.__map?.__el ?? document.body });
+      this.getProjection = () => ({ fromLatLngToDivPixel: () => ({ x: 0, y: 0 }) });
+      this.setMap = (m: any) => {
+        if (m) {
+          this.__map = m;
+          this.onAdd?.();
+          this.draw?.();
+        } else {
+          this.onRemove?.();
+        }
+      };
     }),
     Marker: vi.fn(function (this: any, opts: any) {
       this.opts = opts;
@@ -93,12 +110,22 @@ describe('GoogleMapCanvas', () => {
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
   });
 
-  it('creates one marker per entry with correct position and category-glyph label', async () => {
-    renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
-    await waitFor(() => expect(captured.markers).toHaveLength(2));
-    expect(captured.markers[0].opts.position).toEqual({ lat: 35.0, lng: 139.0 });
-    expect(captured.markers[0].opts.label.text).toBe('🏛️');
-    expect(captured.markers[1].opts.label.text).toBe('🎟️');
+  it('renders one DOM pin per entry with glyph, stop-number badge, and time chip', async () => {
+    const timed: PlaceMarker[] = [
+      { ...MARKERS[0]!, scheduledTime: '12:00' },
+      MARKERS[1]!,
+    ];
+    renderCanvas({ markers: timed, paths: PATHS, onMarkerClick: vi.fn() });
+    const pinA = await screen.findByRole('button', { name: 'Senso-ji' });
+    const pinB = await screen.findByRole('button', { name: 'Skytree' });
+    // Category glyph + the 1-based stop number badge render inside the pin.
+    expect(pinA.textContent).toContain('🏛️');
+    expect(pinA.textContent).toContain('1');
+    expect(pinB.textContent).toContain('🎟️');
+    expect(pinB.textContent).toContain('2');
+    // Scheduled stop carries its HH:MM time chip; unscheduled does not.
+    expect(pinA.textContent).toContain('12:00');
+    expect(pinB.textContent).not.toContain(':');
   });
 
   it('creates a colored polyline per day path', async () => {
@@ -111,14 +138,14 @@ describe('GoogleMapCanvas', () => {
     ]);
   });
 
-  it('labels Saved pins (label null) with the category glyph too', async () => {
+  it('labels Saved pins (label null) with the category glyph and no badge/time', async () => {
     const savedMarkers: PlaceMarker[] = [
       { id: 's', name: 'Wish', category: 'other', googlePlaceId: null,
         photoPath: null, position: { lat: 35.5, lng: 139.5 }, label: null, color: null, glyph: '📍', scheduledTime: null },
     ];
     renderCanvas({ markers: savedMarkers, paths: [], onMarkerClick: vi.fn() });
-    await waitFor(() => expect(captured.markers).toHaveLength(1));
-    expect(captured.markers[0].opts.label.text).toBe('📍');
+    const pin = await screen.findByRole('button', { name: 'Wish' });
+    expect(pin.textContent).toBe('📍');
   });
 
   it('calls fitBounds with the marker extent', async () => {
@@ -127,10 +154,11 @@ describe('GoogleMapCanvas', () => {
   });
 
   it('forwards a marker tap with the place id to onMarkerClick', async () => {
+    const { default: userEvent } = await import('@testing-library/user-event');
     const onMarkerClick = vi.fn();
     renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick });
-    await waitFor(() => expect(captured.markers).toHaveLength(2));
-    captured.markers[0].listeners['click']!();
+    const pin = await screen.findByRole('button', { name: 'Senso-ji' });
+    await userEvent.click(pin);
     expect(onMarkerClick).toHaveBeenCalledWith('a');
   });
 
@@ -138,9 +166,9 @@ describe('GoogleMapCanvas', () => {
     mockLoadGoogleMaps.mockRejectedValue(new Error('no key'));
     renderCanvas({ markers: MARKERS, paths: PATHS, onMarkerClick: vi.fn() });
     await waitFor(() => expect(mockLoadGoogleMaps).toHaveBeenCalled());
-    // Container still visible; markers were never created.
+    // Container still visible; pins were never created.
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
-    expect(captured.markers).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: 'Senso-ji' })).not.toBeInTheDocument();
   });
 
   it('routes basemap POI taps to onPoiClick only while the POI toggle is on', async () => {

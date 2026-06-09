@@ -7,6 +7,7 @@ import { loadGoogleMaps } from '@/src/lib/googleLoader';
 import type { PlaceMarker } from '@/src/lib/map/markers';
 import type { DayPath } from '@/src/lib/map/types';
 import { computeBounds } from '@/src/lib/map/bounds';
+import { createMarkerEl } from '@/src/lib/map/markerEl';
 
 /**
  * Thin imperative Google Maps JS renderer (spec §3.4). Given the prepared
@@ -137,27 +138,30 @@ export function GoogleMapCanvas({
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });
     }
 
-    // Atlas pins: white discs ringed in the day color (or accent teal for
-    // saved/layer pins), labeled with the category glyph so categories are
-    // distinguishable.
+    // Atlas pins: the SAME DOM as the Mapbox provider (white disc + day-color
+    // ring + category glyph + stop-number badge + scheduled-time chip), hosted
+    // in a custom OverlayView — maps.Marker can't render compound DOM.
     for (const m of markers) {
-      const marker = new maps.Marker({
-        position: m.position,
-        map,
-        title: m.name,
-        label: { text: m.glyph, fontSize: '16px' },
-        icon: {
-          path: maps.SymbolPath?.CIRCLE ?? 0,
-          scale: m.label ? 14 : 12,
-          fillColor: '#FFFFFF',
-          fillOpacity: 1,
-          strokeColor: m.color ?? '#33677A',
-          strokeWeight: 2,
-        },
-      });
-      const id = m.id;
-      marker.addListener('click', () => clickRef.current(id));
-      overlaysRef.current.push(marker as unknown as { setMap: (m: unknown) => void });
+      const el = createMarkerEl(m, (id) => clickRef.current(id));
+      el.style.position = 'absolute'; // anchored by the overlay projection below
+      const overlay = new maps.OverlayView();
+      overlay.onAdd = function () {
+        // overlayMouseTarget receives DOM events → the button stays tappable.
+        this.getPanes?.()?.overlayMouseTarget?.appendChild(el);
+      };
+      overlay.draw = function () {
+        const proj = this.getProjection?.();
+        const pt = proj?.fromLatLngToDivPixel?.(new maps.LatLng(m.position.lat, m.position.lng));
+        if (pt) {
+          el.style.left = `${pt.x}px`;
+          el.style.top = `${pt.y}px`;
+        }
+      };
+      overlay.onRemove = function () {
+        el.remove();
+      };
+      overlay.setMap(map);
+      overlaysRef.current.push(overlay as unknown as { setMap: (m: unknown) => void });
     }
   }, [mapReady, markers, paths]);
 

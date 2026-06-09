@@ -112,7 +112,89 @@ function guessCategory(types: string[] | undefined): CategoryGuess {
   return 'other';
 }
 
+/** One POI review (top Google reviews, trimmed for the map card). */
+export interface PoiReview {
+  author: string;
+  rating: number | null;
+  time: string | null;
+  text: string;
+}
+
+/** Rich Place Details for the map's POI card (basic + contact + atmosphere). */
+export interface NormalizedPoiDetails {
+  googlePlaceId: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  categoryGuess: CategoryGuess;
+  rating: number | null;
+  ratingCount: number | null;
+  openNow: boolean | null;
+  /** Localized weekday lines, e.g. "Monday: 9:00 AM – 5:00 PM". */
+  hours: string[];
+  /** Google's editorial overview, when available. */
+  summary: string | null;
+  /** Photo references (up to 6) — served via the /api/google/poi-photo proxy. */
+  photoRefs: string[];
+  reviews: PoiReview[];
+}
+
 // --- Pure normalizers (unit-tested directly) ----------------------------------
+
+export function normalizePoiDetails(raw: unknown): NormalizedPoiDetails {
+  const r = raw as {
+    status?: string;
+    result?: {
+      place_id?: string;
+      name?: string;
+      formatted_address?: string;
+      geometry?: { location?: { lat?: number; lng?: number } };
+      types?: string[];
+      photos?: Array<{ photo_reference?: string }>;
+      rating?: number;
+      user_ratings_total?: number;
+      opening_hours?: { open_now?: boolean; weekday_text?: string[] };
+      editorial_summary?: { overview?: string };
+      reviews?: Array<{
+        author_name?: string;
+        rating?: number;
+        relative_time_description?: string;
+        text?: string;
+      }>;
+    };
+  };
+  if (r.status !== 'OK' || !r.result) {
+    throw new GoogleApiError(r.status ?? 'UNKNOWN', 'Place Details lookup failed');
+  }
+  const res = r.result;
+  return {
+    googlePlaceId: res.place_id ?? '',
+    name: res.name ?? '',
+    address: res.formatted_address ?? '',
+    lat: res.geometry?.location?.lat ?? 0,
+    lng: res.geometry?.location?.lng ?? 0,
+    categoryGuess: guessCategory(res.types),
+    rating: typeof res.rating === 'number' ? res.rating : null,
+    ratingCount: typeof res.user_ratings_total === 'number' ? res.user_ratings_total : null,
+    openNow: typeof res.opening_hours?.open_now === 'boolean' ? res.opening_hours.open_now : null,
+    hours: res.opening_hours?.weekday_text ?? [],
+    summary: res.editorial_summary?.overview ?? null,
+    photoRefs: (res.photos ?? [])
+      .map((p) => p.photo_reference)
+      .filter((ref): ref is string => typeof ref === 'string' && ref.length > 0)
+      .slice(0, 6),
+    reviews: (res.reviews ?? [])
+      .filter((rv) => typeof rv.text === 'string' && rv.text.trim() !== '')
+      .slice(0, 3)
+      .map((rv) => ({
+        author: rv.author_name ?? '',
+        rating: typeof rv.rating === 'number' ? rv.rating : null,
+        time: rv.relative_time_description ?? null,
+        text: (rv.text ?? '').trim(),
+      })),
+  };
+}
 
 export function normalizeDetails(raw: unknown): NormalizedDetails {
   const r = raw as {
@@ -236,6 +318,24 @@ export async function fetchPlaceDetails(input: FetchDetailsInput): Promise<Norma
   });
   if (input.sessionToken) params.set('sessiontoken', input.sessionToken);
   return normalizeDetails(await getJson(`${DETAILS_URL}?${params.toString()}`));
+}
+
+/** Rich Place Details field mask — basic + contact (hours) + atmosphere
+ *  (rating/reviews/summary). Costlier SKU, but only ever called from a
+ *  user-initiated POI tap on the map. */
+const POI_FIELDS =
+  'place_id,name,formatted_address,geometry/location,types,photos,rating,user_ratings_total,opening_hours,editorial_summary,reviews';
+
+export async function fetchPoiDetailsRich(input: {
+  placeId: string;
+  apiKey: string;
+}): Promise<NormalizedPoiDetails> {
+  const params = new URLSearchParams({
+    place_id: input.placeId,
+    fields: POI_FIELDS,
+    key: input.apiKey,
+  });
+  return normalizePoiDetails(await getJson(`${DETAILS_URL}?${params.toString()}`));
 }
 
 export interface FetchAutocompleteInput {

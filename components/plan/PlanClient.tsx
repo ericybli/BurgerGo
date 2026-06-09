@@ -765,6 +765,8 @@ export function PlanClient({
         >
           <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
             <PoiInfoCard
+              // Re-key per landmark so the photo pager/hours state resets.
+              key={poiPreview.status === 'loaded' ? poiPreview.details.googlePlaceId : poiPreview.status}
               preview={poiPreview}
               online={online}
               onAdd={handlePoiAdd}

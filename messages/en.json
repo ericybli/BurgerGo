@@ -151,7 +151,14 @@
     "poiFailed": "Couldn't load this place. Try again.",
     "poiAdd": "Add to places",
     "poiSaving": "Adding…",
-    "poiAdded": "Added to Saved ✓"
+    "poiAdded": "Added to Saved ✓",
+    "poiPhotoPrev": "Previous photo",
+    "poiPhotoNext": "Next photo",
+    "poiReviewCount": "{count, plural, one {# review} other {# reviews}}",
+    "poiOpenNow": "Open now",
+    "poiClosed": "Closed",
+    "poiHours": "Hours",
+    "poiReviews": "Reviews"
   },
   "category": {
     "sightseeing": "Sightseeing",
