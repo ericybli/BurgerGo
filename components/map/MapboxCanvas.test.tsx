@@ -10,6 +10,9 @@ const fakeMap = {
   on: vi.fn((evt: string, cb: Handler) => {
     fakeMap.handlers[evt] = cb;
   }),
+  off: vi.fn((evt: string) => {
+    delete fakeMap.handlers[evt];
+  }),
   once: vi.fn((evt: string, cb: Handler) => {
     fakeMap.handlers[`once:${evt}`] = cb;
   }),
@@ -21,6 +24,11 @@ const fakeMap = {
   removeLayer: vi.fn(),
   removeSource: vi.fn(),
   fitBounds: vi.fn(),
+  // Clustering reads the viewport: a world bbox + a mid zoom so the two
+  // far-apart test pins stay unclustered (one Marker each).
+  getBounds: vi.fn(() => ({ getWest: () => -180, getSouth: () => -85, getEast: () => 180, getNorth: () => 85 })),
+  getZoom: vi.fn(() => 10),
+  easeTo: vi.fn(),
   setStyle: vi.fn(),
   resize: vi.fn(),
   remove: vi.fn(),
@@ -112,15 +120,35 @@ describe('MapboxCanvas', () => {
     expect(fakeMap.fitBounds).toHaveBeenCalledTimes(2);
   });
 
-  it('invokes onMarkerClick when a marker element is clicked', async () => {
+  it('invokes onMarkerClick when a leaf marker element is clicked', async () => {
     const onClick = vi.fn();
     renderCanvas(onClick);
     await fireMapLoad();
-    await waitFor(() => expect(fakeMapbox.Marker).toHaveBeenCalled());
-    // The marker element is the first arg to the Marker ctor ({ element }).
-    const firstCall = fakeMapbox.Marker.mock.calls[0]![0];
-    firstCall.element.click();
+    await waitFor(() => expect(fakeMapbox.Marker).toHaveBeenCalledTimes(2));
+    // Cluster query order isn't guaranteed, so click every rendered leaf.
+    for (const call of fakeMapbox.Marker.mock.calls) {
+      (call[0].element as HTMLElement).click();
+    }
     expect(onClick).toHaveBeenCalledWith('a');
+  });
+
+  it('collapses near-coincident pins into one cluster bubble (tap → zoom in)', async () => {
+    const close: PlaceMarker[] = [
+      { ...markers[0]!, id: 'a', position: { lat: 1, lng: 2 } },
+      { ...markers[1]!, id: 'b', position: { lat: 1.001, lng: 2.001 } },
+    ];
+    render(
+      <NextIntlClientProvider locale="en" messages={en}>
+        <MapboxCanvas markers={close} paths={[]} onMarkerClick={vi.fn()} />
+      </NextIntlClientProvider>,
+    );
+    await fireMapLoad();
+    // Two overlapping pins → a single count bubble, not two markers.
+    await waitFor(() => expect(fakeMapbox.Marker).toHaveBeenCalledTimes(1));
+    const el = fakeMapbox.Marker.mock.calls[0]![0].element as HTMLElement;
+    expect(el.textContent).toBe('2');
+    el.click();
+    expect(fakeMap.easeTo).toHaveBeenCalled();
   });
 
   it('toggles the base style via the compact Map/Satellite button', async () => {

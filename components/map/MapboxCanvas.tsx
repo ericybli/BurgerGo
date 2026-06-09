@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Map as MapboxMap, Marker as MapboxMarker } from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import Supercluster from 'supercluster';
 import { loadMapbox } from '@/src/lib/mapbox/loader';
 import { MAPBOX_TOKEN } from '@/src/lib/map/provider';
 import type { PlaceMarker } from '@/src/lib/map/markers';
@@ -129,6 +130,39 @@ function createMarkerEl(m: PlaceMarker, onClick: (id: string) => void): HTMLButt
   return el;
 }
 
+/**
+ * Build the DOM element for a cluster bubble — a coral disc showing how many pins
+ * it groups. Same 0×0-anchor trick as `createMarkerEl` so the disc centres on the
+ * cluster coordinate. Tapping it asks the caller to zoom in (expansion zoom).
+ */
+function createClusterEl(count: number, onClick: () => void): HTMLButtonElement {
+  const size = count < 10 ? 34 : count < 100 ? 40 : 46;
+  const el = document.createElement('button');
+  el.type = 'button';
+  el.setAttribute('aria-label', `${count} places — zoom in`);
+  el.style.cssText = 'position:relative;width:0;height:0;padding:0;border:0;background:none;cursor:pointer';
+
+  const disc = document.createElement('span');
+  disc.style.cssText = [
+    'position:absolute', 'left:0', 'top:0', 'transform:translate(-50%,-50%)',
+    'box-sizing:border-box', 'display:flex', 'align-items:center', 'justify-content:center',
+    'border:2px solid #fff', 'border-radius:9999px', 'box-shadow:0 1px 4px rgba(0,0,0,0.35)',
+    `width:${size}px`, `height:${size}px`, 'background-color:#EE5B3C', 'color:#fff',
+    'font-size:13px', 'font-weight:700', 'line-height:1',
+  ].join(';');
+  disc.textContent = String(count);
+  el.appendChild(disc);
+
+  el.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onClick();
+  });
+  return el;
+}
+
+/** Leaf-point properties carried through supercluster (the original marker). */
+type LeafProps = { marker: PlaceMarker };
+
 export function MapboxCanvas({
   markers,
   paths,
@@ -151,6 +185,7 @@ export function MapboxCanvas({
   const mapRef = useRef<MapboxMap | null>(null);
   const markerObjsRef = useRef<MapboxMarker[]>([]);
   const layerIdsRef = useRef<string[]>([]);
+  const clusterRef = useRef<Supercluster<LeafProps> | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapboxRef = useRef<any>(null);
 
@@ -242,15 +277,75 @@ export function MapboxCanvas({
       layerIdsRef.current.push(id);
     });
 
-    // Numbered/colored DOM markers.
-    for (const m of markers) {
-      const el = createMarkerEl(m, (id) => clickRef.current(id));
+    // Cluster the pins so dense areas (a packed city day, or the "All days" view)
+    // collapse into count bubbles instead of a pin-pile; they break apart as you
+    // zoom in. Build the index from the current marker set, then render the
+    // clusters for the current viewport — and re-render on every pan/zoom.
+    const index = new Supercluster<LeafProps>({ radius: 56, maxZoom: 16 });
+    index.load(
+      markers.map((m) => ({
+        type: 'Feature' as const,
+        properties: { marker: m },
+        geometry: { type: 'Point' as const, coordinates: [m.position.lng, m.position.lat] },
+      })),
+    );
+    clusterRef.current = index;
+    renderMarkers();
+    map.on('moveend', renderMarkers);
+    return () => {
+      map.off('moveend', renderMarkers);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [styleReady, markers, paths]);
+
+  /**
+   * Draw the clusters/leaves for the current viewport. Clears the previous DOM
+   * markers, queries supercluster for the map's bounds + rounded zoom, and renders
+   * a count bubble per cluster (tap → zoom to its expansion zoom) or the normal
+   * numbered/colored marker per unclustered leaf. Falls back to flat markers if
+   * the map can't report bounds/zoom yet.
+   */
+  function renderMarkers() {
+    const map = mapRef.current;
+    const index = clusterRef.current;
+    if (!map || !index) return;
+
+    markerObjsRef.current.forEach((mk) => mk.remove());
+    markerObjsRef.current = [];
+
+    const addMarker = (lng: number, lat: number, el: HTMLElement) => {
       const marker = new mapboxRef.current.Marker({ element: el, anchor: 'center' })
-        .setLngLat([m.position.lng, m.position.lat])
+        .setLngLat([lng, lat])
         .addTo(map);
       markerObjsRef.current.push(marker);
+    };
+
+    const bounds = typeof map.getBounds === 'function' ? map.getBounds() : null;
+    const zoom = typeof map.getZoom === 'function' ? map.getZoom() : null;
+    if (!bounds || zoom == null) {
+      // No viewport info (e.g. before first render) → draw every pin flat.
+      for (const m of markers) addMarker(m.position.lng, m.position.lat, createMarkerEl(m, (id) => clickRef.current(id)));
+      return;
     }
-  }, [styleReady, markers, paths]);
+
+    const bbox: [number, number, number, number] = [
+      bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth(),
+    ];
+    for (const f of index.getClusters(bbox, Math.round(zoom))) {
+      const [lng, lat] = f.geometry.coordinates as [number, number];
+      const props = f.properties;
+      if ('cluster' in props && props.cluster) {
+        const clusterId = props.cluster_id;
+        addMarker(lng, lat, createClusterEl(props.point_count, () => {
+          const expansionZoom = index.getClusterExpansionZoom(clusterId);
+          map.easeTo({ center: [lng, lat], zoom: expansionZoom });
+        }));
+      } else {
+        const m = (props as LeafProps).marker;
+        addMarker(lng, lat, createMarkerEl(m, (id) => clickRef.current(id)));
+      }
+    }
+  }
 
   // Effect 2b: fit the viewport to the base markers ONLY (not overlay layers),
   // and only when their POSITIONS actually change (initial load, day filter).
