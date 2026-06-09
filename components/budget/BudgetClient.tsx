@@ -12,9 +12,11 @@ import {
   type BudgetCategory,
 } from '@/src/lib/budgetView';
 import { EmptyState } from '@/components/EmptyState';
+import { SwipeRow } from '@/components/SwipeRow';
 import { BudgetSummary } from '@/components/budget/BudgetSummary';
 import { ExpenseSheet, type PlaceOption } from '@/components/budget/ExpenseSheet';
 import { SetBudgetSheet } from '@/components/budget/SetBudgetSheet';
+import { deleteExpenseAction } from '@/app/_actions/expenses';
 import type { ExpenseDTO, TargetDTO } from '@/app/api/trips/[tripId]/budget/route';
 
 type GroupMode = 'day' | 'category';
@@ -90,6 +92,18 @@ export function BudgetClient({
     void load();
   }, [load]);
 
+  /** Online-only delete + refresh. Reachable via swipe and the edit sheet's Delete. */
+  function deleteExpense(id: string) {
+    if (!online) return;
+    void (async () => {
+      try {
+        await deleteExpenseAction(id);
+      } finally {
+        void load();
+      }
+    })();
+  }
+
   if (state.status === 'loading') {
     return <p className="px-4 py-8 text-center text-body text-ink-muted">{t('loading')}</p>;
   }
@@ -103,26 +117,34 @@ export function BudgetClient({
 
   function ExpenseRow({ e }: { e: ExpenseDTO }) {
     return (
-      <button
-        type="button"
+      <SwipeRow
         disabled={!online}
-        onClick={() => setExpenseSheet({ open: true, expense: e })}
-        className="flex w-full items-center justify-between rounded-card bg-card px-4 py-3 text-left shadow-card disabled:opacity-60"
+        actions={[
+          { label: t('edit'), onClick: () => setExpenseSheet({ open: true, expense: e }) },
+          { label: t('delete'), danger: true, onClick: () => deleteExpense(e.id) },
+        ]}
       >
-        <span className="min-w-0">
-          <span className="block truncate text-body text-ink">
-            {e.note ?? t(`categories.${e.category as BudgetCategory}`)}
-          </span>
-          {e.placeName ? (
-            <span className="mt-0.5 inline-block rounded-chip bg-paper px-2 py-0.5 text-caption text-ink-muted">
-              {e.placeName}
+        <button
+          type="button"
+          disabled={!online}
+          onClick={() => setExpenseSheet({ open: true, expense: e })}
+          className="flex w-full items-center justify-between rounded-card bg-card px-4 py-3 text-left shadow-card disabled:opacity-60"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-body text-ink">
+              {e.note ?? t(`categories.${e.category as BudgetCategory}`)}
             </span>
-          ) : null}
-        </span>
-        <span className="ml-3 shrink-0 text-label font-medium text-ink [font-variant-numeric:tabular-nums]">
-          {formatMoney(e.amount, currency, locale)}
-        </span>
-      </button>
+            {e.placeName ? (
+              <span className="mt-0.5 inline-block rounded-chip bg-paper px-2 py-0.5 text-caption text-ink-muted">
+                {e.placeName}
+              </span>
+            ) : null}
+          </span>
+          <span className="ml-3 shrink-0 text-label font-medium text-ink [font-variant-numeric:tabular-nums]">
+            {formatMoney(e.amount, currency, locale)}
+          </span>
+        </button>
+      </SwipeRow>
     );
   }
 

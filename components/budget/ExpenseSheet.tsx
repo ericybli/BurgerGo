@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useFocusTrap } from '@/src/lib/useFocusTrap';
 import { inputToMinor, minorToInput } from '@/src/lib/currency';
 import { BUDGET_CATEGORIES, type BudgetCategory } from '@/src/lib/budgetView';
 import {
@@ -56,6 +57,9 @@ export function ExpenseSheet({
   // locale-specific parsing is applied here.
   void locale;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
+
   if (!open) return null;
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
@@ -106,6 +110,7 @@ export function ExpenseSheet({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={isEdit ? t('editExpense') : t('addExpense')}

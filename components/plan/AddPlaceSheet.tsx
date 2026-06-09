@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useFocusTrap } from '@/src/lib/useFocusTrap';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { addPlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
 import { usePlacesAutocomplete } from '@/components/plan/useGooglePlaces';
@@ -60,6 +61,9 @@ export function AddPlaceSheet({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const { predictions, search, select, clear } = usePlacesAutocomplete();
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   if (!open) return null;
 
@@ -145,6 +149,7 @@ export function AddPlaceSheet({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={t('addPlace')}

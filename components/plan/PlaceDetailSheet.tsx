@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useFocusTrap } from '@/src/lib/useFocusTrap';
 import type { PlaceDTO } from '@/src/lib/planView';
 import { placeUrl } from '@/src/lib/googleMapsUrl';
 import { updatePlaceAction, generatePlaceSummaryAction } from '@/app/_actions/places';
@@ -58,6 +59,9 @@ export function PlaceDetailSheet({
 
   // M2: clear stale photo error whenever the sheet opens for a different place.
   useEffect(() => { setPhotoError(null); }, [place.id]);
+
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open);
 
   if (!open) return null;
 
@@ -149,6 +153,7 @@ export function PlaceDetailSheet({
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={place.name}

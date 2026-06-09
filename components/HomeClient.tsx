@@ -8,6 +8,7 @@ import { TripCard } from '@/components/TripCard';
 import { NewTripSheet } from '@/components/NewTripSheet';
 import { ManageTripSheet } from '@/components/ManageTripSheet';
 import { EmptyState } from '@/components/EmptyState';
+import { OnboardingNote } from '@/components/OnboardingNote';
 
 type LoadState =
   | { status: 'loading' }
@@ -46,6 +47,7 @@ export function HomeClient({ tz }: { tz: string }) {
 
   return (
     <main className="mx-auto w-full max-w-md px-4 pb-24 pt-4">
+      <OnboardingNote />
       {state.status === 'loading' ? (
         <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
           {/* Bundled mascot → always renders offline. */}
