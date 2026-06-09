@@ -5,6 +5,8 @@ import { getTrip } from '@/src/db/repos/trips';
 import { listEntriesForTrip, type JournalEntry } from '@/src/db/repos/journalEntries';
 import { listLinksForTrip, type SavedLink } from '@/src/db/repos/savedLinks';
 import { photos, type Photo } from '@/src/db/schema';
+import { addEntryAction, type AddEntryActionInput } from '@/app/_actions/journal';
+import { restWrite } from '@/src/lib/restWrite';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,4 +50,14 @@ export async function GET(
   const links: SavedLink[] = listLinksForTrip(db, tripId);
 
   return NextResponse.json({ entries, links });
+}
+
+/** Create a journal entry. POST { title, body?, entryDate? }. */
+export async function POST(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await ctx.params;
+  return restWrite(req, async (raw) => {
+    if (!getTrip(db, tripId)) throw new Error('Trip not found');
+    const input = { ...(raw as object), tripId } as AddEntryActionInput;
+    return { entry: await addEntryAction(input) };
+  });
 }
