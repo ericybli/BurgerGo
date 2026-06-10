@@ -6,7 +6,7 @@
  * reload (web behavior); photo ops reload while staying open.
  */
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, DeviceEventEmitter, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { api, type Restaurant } from '../../lib/api';
 import { useTrip } from '../../navigation/TripContext';
@@ -74,6 +74,14 @@ export function EatsScreen() {
 
   useFocusEffect(load);
 
+  // AI import (trip header) creates restaurants while this tab is focused — refetch.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('burgergo:dataChanged', () => {
+      load();
+    });
+    return () => sub.remove();
+  }, [load]);
+
   const restaurants = state.status === 'loaded' ? state.restaurants : [];
   const visible = useMemo(() => filterByStatus(restaurants, filter), [restaurants, filter]);
 
@@ -84,7 +92,7 @@ export function EatsScreen() {
   if (state.status === 'error') {
     return (
       <ErrorState
-        headline="Couldn’t load your eats"
+        headline="Couldn't load your eats"
         subtext="Connect to the internet and try again."
         onRetry={() => {
           setState({ status: 'loading' });

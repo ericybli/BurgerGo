@@ -154,7 +154,7 @@ export function RestaurantForm({
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>Couldn’t save — please try again.</Text>
+            <Text style={styles.errorText}>Couldn't save — please try again.</Text>
           </View>
         ) : null}
 
@@ -170,7 +170,7 @@ export function RestaurantForm({
           autoCorrect={false}
         />
         <Text style={styles.hint}>
-          Pick a suggestion, or just type an address. We’ll map it for you.
+          Pick a suggestion, or just type an address. We'll map it for you.
         </Text>
 
         {predictions.length > 0 ? (

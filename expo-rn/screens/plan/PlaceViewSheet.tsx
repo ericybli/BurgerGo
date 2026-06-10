@@ -119,10 +119,11 @@ export function PlaceViewSheet({
         >
           <Text style={styles.mapsText}>Open in Google Maps</Text>
         </Pressable>
+        {/* Web parity: Edit opens even offline — the edit sheet renders read-only
+            (fields disabled, Save off) and is the only surface showing Cost. */}
         <Pressable
-          disabled={!online}
           onPress={onEdit}
-          style={({ pressed }) => [styles.editBtn, !online && { opacity: 0.4 }, pressed && { backgroundColor: colors.surface }]}
+          style={({ pressed }) => [styles.editBtn, pressed && { backgroundColor: colors.surface }]}
         >
           <Text style={styles.editText}>Edit</Text>
         </Pressable>

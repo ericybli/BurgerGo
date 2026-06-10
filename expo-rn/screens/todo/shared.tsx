@@ -4,8 +4,9 @@
  *
  * - MascotEmpty: web `components/EmptyState.tsx` parity (bundled mascot 112px
  *   @ 90% opacity above headline/subtext).
- * - CheckBox: Atlas 21×21 / radius 7 / 1.5px faint border; checked = accent
- *   fill + white lucide Check (strokeWidth 3).
+ * - CheckBox: Atlas 21×21 / 1.5px faint border; checked = accent fill + white
+ *   lucide Check (strokeWidth 3). Radius 7 (web Packing `rounded-[7px]`), or a
+ *   full circle via `round` (web Tasks `rounded-chip` = 999px).
  * - useTwoTapConfirm: cross-platform destructive-action confirm (first tap
  *   arms → danger "Sure?", second tap executes; auto-disarms after 3s).
  * - FadeUp: tasks-list entrance stagger (web `animate-fade-up`, 40ms × min(i,6)).
@@ -39,11 +40,14 @@ export function CheckBox({
   checked,
   onToggle,
   disabled,
+  round,
   accessibilityLabel,
 }: {
   checked: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  /** Circle (web Tasks `rounded-chip`); default is radius 7 (web Packing). */
+  round?: boolean;
   accessibilityLabel: string;
 }) {
   return (
@@ -54,7 +58,7 @@ export function CheckBox({
       accessibilityRole="checkbox"
       accessibilityState={{ checked, disabled }}
       accessibilityLabel={accessibilityLabel}
-      style={[st.checkbox, checked && st.checkboxOn, disabled && st.dim40]}
+      style={[st.checkbox, round && st.checkboxRound, checked && st.checkboxOn, disabled && st.dim40]}
     >
       {checked ? <Check size={14} color={colors.white} strokeWidth={3} /> : null}
     </Pressable>
@@ -142,6 +146,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  checkboxRound: { borderRadius: 999 },
   checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
   dim40: { opacity: 0.4 },
 

@@ -30,17 +30,14 @@ import { colors, font, radius, type } from '../../lib/theme';
 import { todayLocal } from '../../lib/days';
 import {
   Button,
-  EmptyState,
-  ErrorState,
   Field,
   Loading,
-  OfflineHint,
   SegmentedControl,
-  Select,
-  Sheet,
   SheetPanel,
 } from '../../components/ui';
-import { formatMoney, inputToMinor, minorToInput } from '../../lib/currency';
+import { inputToMinor, minorToInput } from '../../lib/currency';
+import { formatMoney } from './money';
+import { BudgetSelect, BudgetSheet, MascotState, OfflineNote, sheetShadow } from './ui';
 import {
   BUDGET_CATEGORIES,
   CATEGORY_LABELS,
@@ -90,13 +87,21 @@ export function BudgetScreen() {
   if (state.status === 'loading') return <Loading label="Loading your budget…" />;
   if (state.status === 'error') {
     return (
-      <ErrorState
+      <MascotState
+        fill
+        alt="Budget"
         headline="Couldn't load this budget"
         subtext="Connect to the internet and try again."
-        onRetry={() => {
-          setState({ status: 'loading' });
-          load();
-        }}
+        action={
+          <Button
+            title="Retry"
+            variant="secondary"
+            onPress={() => {
+              setState({ status: 'loading' });
+              load();
+            }}
+          />
+        }
       />
     );
   }
@@ -143,7 +148,8 @@ export function BudgetScreen() {
         </View>
 
         {expenses.length === 0 ? (
-          <EmptyState
+          <MascotState
+            alt="Budget"
             headline="No expenses yet"
             subtext="Tap Add expense to start tracking what you spend."
           />
@@ -166,7 +172,7 @@ export function BudgetScreen() {
         )}
       </ScrollView>
 
-      <Sheet visible={expenseForm !== null} onClose={() => setExpenseForm(null)}>
+      <BudgetSheet visible={expenseForm !== null} onClose={() => setExpenseForm(null)}>
         {expenseForm ? (
           <ExpenseForm
             key={expenseForm.expense?.id ?? 'new'}
@@ -182,9 +188,9 @@ export function BudgetScreen() {
             }}
           />
         ) : null}
-      </Sheet>
+      </BudgetSheet>
 
-      <Sheet visible={budgetForm > 0} onClose={() => setBudgetForm(0)}>
+      <BudgetSheet visible={budgetForm > 0} onClose={() => setBudgetForm(0)}>
         {budgetForm > 0 ? (
           <SetBudgetForm
             key={`budget-${budgetForm}`}
@@ -199,7 +205,7 @@ export function BudgetScreen() {
             }}
           />
         ) : null}
-      </Sheet>
+      </BudgetSheet>
     </View>
   );
 }
@@ -568,7 +574,7 @@ function ExpenseForm({
 
   const editable = !busy && online;
   return (
-    <SheetPanel title={expense ? 'Edit expense' : 'Add expense'}>
+    <SheetPanel title={expense ? 'Edit expense' : 'Add expense'} style={sheetShadow}>
       <ScrollView
         style={{ maxHeight: Math.round(height * 0.85) - 120 }}
         keyboardShouldPersistTaps="handled"
@@ -579,7 +585,7 @@ function ExpenseForm({
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
-        {!online ? <OfflineHint /> : null}
+        {!online ? <OfflineNote /> : null}
         <Field
           label="Amount"
           value={amount}
@@ -590,7 +596,7 @@ function ExpenseForm({
           autoFocus={!expense}
           style={{ fontVariant: ['tabular-nums'] }}
         />
-        <Select
+        <BudgetSelect
           label="Category"
           value={category}
           options={CATEGORY_OPTIONS}
@@ -607,7 +613,7 @@ function ExpenseForm({
           style={{ fontVariant: ['tabular-nums'] }}
         />
         <Field label="Note" value={note} onChangeText={setNote} editable={editable} />
-        <Select
+        <BudgetSelect
           label="Link a place"
           value={linkedPlaceId}
           options={placeOptions}
@@ -700,7 +706,7 @@ function SetBudgetForm({
 
   const editable = !busy && online;
   return (
-    <SheetPanel title="Set budget">
+    <SheetPanel title="Set budget" style={sheetShadow}>
       <ScrollView
         style={{ maxHeight: Math.round(height * 0.85) - 120 }}
         keyboardShouldPersistTaps="handled"
@@ -711,7 +717,7 @@ function SetBudgetForm({
             <Text style={styles.errorText}>{error}</Text>
           </View>
         ) : null}
-        {!online ? <OfflineHint /> : null}
+        {!online ? <OfflineNote /> : null}
         <Field
           label="Overall budget"
           value={values.overall}

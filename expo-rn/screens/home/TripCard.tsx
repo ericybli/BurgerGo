@@ -4,8 +4,9 @@
  * footer with the trip name + "Sep 4 – Sep 12 · 9 days" and a stat box (days
  * out for upcoming trips, trip length otherwise). The whole card navigates.
  */
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
 import { Pencil } from 'lucide-react-native';
 import { photoUrl, type Trip } from '../../lib/api';
 import { colors, font, radius } from '../../lib/theme';
@@ -24,43 +25,40 @@ const PILL_LABEL: Record<TripStatus, string> = {
 };
 
 // Web cover fallback: linear-gradient(135deg, #F7F1E4 0%, #EDF1EE 55%, #E6EFF1 100%).
-// No gradient package available → approximate with stacked interpolated bands
-// (vertical cream → sage → teal-tint blend).
-const GRADIENT_STOPS: [string, number][] = [
-  ['#F7F1E4', 0],
-  ['#EDF1EE', 0.55],
-  ['#E6EFF1', 1],
-];
-const BAND_COUNT = 12;
-
-function mixHex(a: string, b: string, t: number): string {
-  const pa = parseInt(a.slice(1), 16);
-  const pb = parseInt(b.slice(1), 16);
-  let out = '#';
-  for (const shift of [16, 8, 0]) {
-    const ca = (pa >> shift) & 255;
-    const cb = (pb >> shift) & 255;
-    out += Math.round(ca + (cb - ca) * t).toString(16).padStart(2, '0');
-  }
-  return out;
-}
-
-function gradientColorAt(t: number): string {
-  const [c0, p0] = GRADIENT_STOPS[0]!;
-  const [c1, p1] = GRADIENT_STOPS[1]!;
-  const [c2, p2] = GRADIENT_STOPS[2]!;
-  if (t <= p1) return mixHex(c0, c1, (t - p0) / (p1 - p0));
-  return mixHex(c1, c2, (t - p1) / (p2 - p1));
-}
-
-const BANDS = Array.from({ length: BAND_COUNT }, (_, i) => gradientColorAt(i / (BAND_COUNT - 1)));
-
+// Drawn smoothly with react-native-svg (bundled in Expo Go; expo-linear-gradient
+// isn't a dependency). userSpaceOnUse endpoints reproduce the CSS 135° gradient
+// line exactly: direction (√2/2, √2/2) through the center with line length
+// (w+h)·√2/2, which works out to center ± (w+h)/4 on each axis.
 function CoverGradient() {
+  // Unique per instance — on react-native-web the SVG ids land in one document.
+  const gradId = `cover-grad-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
+  const [box, setBox] = useState({ w: 0, h: 0 });
+  const k = (box.w + box.h) / 4;
   return (
-    <View style={StyleSheet.absoluteFill}>
-      {BANDS.map((c, i) => (
-        <View key={i} style={{ flex: 1, backgroundColor: c }} />
-      ))}
+    <View
+      // Mid-stop solid until the first layout pass so there's no white flash.
+      style={[StyleSheet.absoluteFill, { backgroundColor: '#EDF1EE' }]}
+      onLayout={(e) => setBox({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height })}
+    >
+      {box.w > 0 && box.h > 0 ? (
+        <Svg width="100%" height="100%">
+          <Defs>
+            <SvgLinearGradient
+              id={gradId}
+              gradientUnits="userSpaceOnUse"
+              x1={box.w / 2 - k}
+              y1={box.h / 2 - k}
+              x2={box.w / 2 + k}
+              y2={box.h / 2 + k}
+            >
+              <Stop offset={0} stopColor="#F7F1E4" />
+              <Stop offset={0.55} stopColor="#EDF1EE" />
+              <Stop offset={1} stopColor="#E6EFF1" />
+            </SvgLinearGradient>
+          </Defs>
+          <Rect x={0} y={0} width={box.w} height={box.h} fill={`url(#${gradId})`} />
+        </Svg>
+      ) : null}
     </View>
   );
 }

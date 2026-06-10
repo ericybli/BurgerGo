@@ -22,7 +22,7 @@ export const colors = {
   success: '#3E8E6E',
   danger: '#B3402C',
   white: '#FFFFFF',
-  scrim: 'rgba(27, 31, 28, 0.35)', // sheet/select backdrops
+  scrim: 'rgba(27, 31, 28, 0.42)', // sheet/select backdrops (web --scrim)
 
   // ── Legacy aliases (pre-Atlas screens; migrate to canonical names) ──
   coral: '#E0502C',
@@ -72,7 +72,7 @@ export const radius = {
 };
 
 const GLYPH: Record<string, string> = {
-  sightseeing: '🏛️',
+  sightseeing: '🏞️',
   lodging: '🛏️',
   hotel: '🏨',
   airbnb: '🏠',
@@ -82,7 +82,7 @@ const GLYPH: Record<string, string> = {
   shopping: '🛍️',
   parking: '🅿️',
   entrance: '🚪',
-  museum: '🖼️',
+  museum: '🏛️',
   event: '🎉',
   other: '📍',
 };

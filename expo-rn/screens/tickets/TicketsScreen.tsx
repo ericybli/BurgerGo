@@ -8,6 +8,7 @@
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  Image,
   Linking,
   Platform,
   Pressable,
@@ -22,7 +23,7 @@ import { api, type Ticket } from '../../lib/api';
 import { useTrip } from '../../navigation/TripContext';
 import { useOnline } from '../../lib/online';
 import { colors, font, radius, type } from '../../lib/theme';
-import { EmptyState, ErrorState, Loading, Sheet } from '../../components/ui';
+import { Button, Loading, Sheet } from '../../components/ui';
 import { TicketSheet } from './TicketSheet';
 
 type LoadState =
@@ -72,13 +73,20 @@ export function TicketsScreen() {
   if (state.status === 'loading') return <Loading label="Loading your tickets…" />;
   if (state.status === 'error') {
     return (
-      <ErrorState
+      <MascotState
         headline="Couldn't load tickets"
         subtext="Check your connection and try again."
-        onRetry={() => {
-          setState({ status: 'loading' });
-          load();
-        }}
+        action={
+          // RN-only enhancement (web has no retry on this state) — kept per audit.
+          <Button
+            title="Retry"
+            variant="secondary"
+            onPress={() => {
+              setState({ status: 'loading' });
+              load();
+            }}
+          />
+        }
       />
     );
   }
@@ -99,12 +107,14 @@ export function TicketsScreen() {
         </View>
 
         {tickets.length === 0 ? (
-          <EmptyState
+          <MascotState
             headline="No tickets yet"
             subtext="Keep reservations, booking PDFs, and QR codes in one place."
             action={
+              // Web: large orange CTA (rounded-12, 14px semibold) = kit primary Button;
+              // hidden offline, exactly like web's `actionLabel={online ? add : undefined}`.
               online ? (
-                <AddTicketButton disabled={false} onPress={() => setSheet({ ticket: null })} />
+                <Button title="Add ticket" onPress={() => setSheet({ ticket: null })} />
               ) : undefined
             }
           />
@@ -142,7 +152,31 @@ export function TicketsScreen() {
   );
 }
 
-// --- Header / empty-state action (web: small orange "Add ticket") ------------
+// --- Empty / error state (web components/EmptyState.tsx: bundled mascot 112px
+// @ 90% opacity above headline/subtext — always rendered for both states) -----
+
+const MASCOT = require('../../assets/burgergo-logo.png');
+
+function MascotState({
+  headline,
+  subtext,
+  action,
+}: {
+  headline: string;
+  subtext: string;
+  action?: ReactNode;
+}) {
+  return (
+    <View style={styles.empty}>
+      <Image source={MASCOT} accessibilityLabel="Tickets" style={styles.mascot} resizeMode="contain" />
+      <Text style={styles.emptyHead}>{headline}</Text>
+      <Text style={styles.emptySub}>{subtext}</Text>
+      {action ? <View style={styles.emptyAction}>{action}</View> : null}
+    </View>
+  );
+}
+
+// --- Header action (web: small orange "Add ticket") ---------------------------
 
 function AddTicketButton({ disabled, onPress }: { disabled: boolean; onPress: () => void }) {
   return (
@@ -259,6 +293,21 @@ function FadeUp({ delayIndex, children }: { delayIndex: number; children: ReactN
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   list: { padding: 16, paddingBottom: 40, gap: 12 },
+
+  // Web EmptyState recipe: px-6 py-16 centered; mascot mb-6 h-28 w-28 opacity-90;
+  // subtext mt-2 max-w-xs; CTA mt-6.
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 64,
+    backgroundColor: colors.bg,
+  },
+  mascot: { width: 112, height: 112, opacity: 0.9, marginBottom: 24 },
+  emptyHead: { ...type.heading, color: colors.ink, textAlign: 'center' },
+  emptySub: { ...type.body, color: colors.sub, textAlign: 'center', marginTop: 8, maxWidth: 320 },
+  emptyAction: { marginTop: 24 },
 
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   h1: { fontFamily: font.bold, fontSize: 21, letterSpacing: -0.42, color: colors.ink },

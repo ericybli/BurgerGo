@@ -9,13 +9,13 @@ import { useEffect, useRef, useState } from 'react';
 import { BackHandler, Platform, StyleSheet, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from 'react-native-maps';
 import * as Location from 'expo-location';
-import { EmptyState } from '../../components/ui';
 import { colors } from '../../lib/theme';
 import { regionForCoords, type LatLng } from '../../lib/legView';
 import type { PlanMapProps } from './PlanMap.types';
 import { type MapPin, type MapSeg } from './map/mapData';
 import { useMapShell } from './map/useMapShell';
 import { PinView } from './map/Pin';
+import { EmptyMapHint } from './map/EmptyHint';
 import { MapChrome } from './map/MapChrome';
 import { LegChip } from './map/LegChip';
 import { DayLegend } from './map/DayLegend';
@@ -112,26 +112,10 @@ export default function PlanMap(props: PlanMapProps) {
 
   const showLegend = props.bucket === 'days' && shell.legend.length > 0 && !fullscreen;
 
-  if (basePins.length === 0) {
-    // Online-but-empty: keep the legend visible (days bucket) so the user can
-    // hop back to a day that has mapped stops.
-    return (
-      <View style={s.fill}>
-        {showLegend ? (
-          <DayLegend
-            entries={shell.legend}
-            allVisible={shell.allVisible}
-            onSelectDate={props.onSelectDate}
-          />
-        ) : null}
-        <EmptyState
-          headline="Nothing to map here"
-          subtext="Add places with an address and they'll appear on the map."
-        />
-      </View>
-    );
-  }
-
+  // Online-but-empty selection: the map STAYS live (web parity — layers,
+  // locate, satellite and POI taps remain reachable); a floating hint overlays
+  // the canvas instead of replacing it. With no pins the fit is skipped, so
+  // the viewport simply persists.
   const initialRegion =
     regionForCoords(basePins.map((p) => ({ latitude: p.lat, longitude: p.lng }))) ?? undefined;
 
@@ -187,6 +171,8 @@ export default function PlanMap(props: PlanMapProps) {
             </Marker>
           ) : null}
         </MapView>
+
+        {basePins.length === 0 ? <EmptyMapHint /> : null}
 
         <MapChrome
           showLayers={props.bucket === 'days'}
@@ -246,7 +232,7 @@ function segPolylines(seg: MapSeg, onPress: (seg: MapSeg) => void) {
       strokeColor={seg.color}
       strokeWidth={3}
       lineCap="round"
-      lineDashPattern={isWalk ? [1, 10] : undefined}
+      lineDashPattern={isWalk ? [1, 8] : undefined}
     />,
     <Polyline
       key={`${seg.key}-hit`}
@@ -261,15 +247,19 @@ function segPolylines(seg: MapSeg, onPress: (seg: MapSeg) => void) {
 
 /**
  * Marker wrapper: anchors the pin disc center on the coordinate and stops
- * tracking view changes shortly after mount (perf) — long enough for the
- * emoji glyph/badge to have rendered into the marker snapshot.
+ * tracking view changes shortly after render (perf) — long enough for the
+ * emoji glyph/badge to have rendered into the marker snapshot. Tracking is
+ * RE-ARMED whenever the rendered pin content changes (badge number after a
+ * reorder, time pill, day color, glyph), otherwise react-native-maps keeps
+ * the stale marker bitmap (pin keys are stable per place, so no remount).
  */
 function NativePin({ pin, onPress }: { pin: MapPin; onPress: () => void }) {
   const [tracks, setTracks] = useState(true);
   useEffect(() => {
+    setTracks(true);
     const t = setTimeout(() => setTracks(false), 700);
     return () => clearTimeout(t);
-  }, []);
+  }, [pin.label, pin.scheduledTime, pin.color, pin.glyph]);
   return (
     <Marker
       coordinate={{ latitude: pin.lat, longitude: pin.lng }}

@@ -343,10 +343,21 @@ function LinkRow({
         </View>
       </Pressable>
       <View style={js.linkActions}>
-        <Pressable hitSlop={6} disabled={!online || busy} onPress={onEdit}>
+        <Pressable
+          hitSlop={6}
+          disabled={!online || busy}
+          onPress={onEdit}
+          // Web parity: active:opacity-70 on the link-row actions.
+          style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
+        >
           <Text style={[js.linkEdit, (!online || busy) && { opacity: 0.4 }]}>{STR.edit}</Text>
         </Pressable>
-        <Pressable hitSlop={6} disabled={!online || busy} onPress={remove}>
+        <Pressable
+          hitSlop={6}
+          disabled={!online || busy}
+          onPress={remove}
+          style={({ pressed }) => (pressed ? { opacity: 0.7 } : null)}
+        >
           <Text style={[js.linkDelete, (!online || busy) && { opacity: 0.4 }]}>
             {STR.deleteLink}
           </Text>

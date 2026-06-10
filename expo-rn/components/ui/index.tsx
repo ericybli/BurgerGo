@@ -7,7 +7,7 @@
  * - primary button = solid orange (create/save only); disabled = surface bg +
  *   faint text (never opacity — it washes orange to pink)
  * - segmented control = surface track (3px padding) + white thumb w/ subtle
- *   shadow + ink text; inactive = faint text
+ *   shadow + ink text; inactive = sub text (web EatsClient)
  * - bottom sheet = white panel, top radius 22, 40×4 drag handle, ink scrim
  * - text buttons: accent teal = info/nav, danger = destructive
  */
@@ -16,6 +16,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -235,6 +236,8 @@ export function EmptyState({
 }) {
   return (
     <View style={s.center}>
+      {/* Web EmptyState: bundled mascot above the headline (112×112, opacity .9). */}
+      <Image source={require('../../assets/burgergo-logo.png')} style={s.emptyMascot} />
       <Text style={s.emptyHead}>{headline}</Text>
       {subtext ? <Text style={s.emptySub}>{subtext}</Text> : null}
       {action ? <View style={{ marginTop: 16 }}>{action}</View> : null}
@@ -425,6 +428,8 @@ const s = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 40 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 6 },
   mutedSpaced: { marginTop: 10, color: colors.sub, fontSize: 14, fontFamily: font.regular },
+  // mb-6 on web = 24px below mascot; container gap (6) supplies the rest.
+  emptyMascot: { width: 112, height: 112, opacity: 0.9, marginBottom: 18 },
   emptyHead: { ...type.heading, fontSize: 16, color: colors.ink, textAlign: 'center' },
   emptySub: { marginTop: 6, fontSize: 13.5, lineHeight: 20, color: colors.sub, textAlign: 'center', fontFamily: font.regular },
 
@@ -462,7 +467,7 @@ const s = StyleSheet.create({
     // Atlas thumb shadow (the one allowed card shadow).
     shadowColor: colors.ink, shadowOpacity: 0.1, shadowRadius: 2, shadowOffset: { width: 0, height: 1 }, elevation: 1,
   },
-  segmentText: { fontSize: 13, fontFamily: font.semibold, color: colors.faint },
+  segmentText: { fontSize: 13, fontFamily: font.semibold, color: colors.sub },
   segmentTextActive: { color: colors.ink },
 
   iconBtn: {

@@ -23,8 +23,9 @@ const Tab = createBottomTabNavigator<TripTabParamList>();
 type IconCmp = typeof MapPin;
 
 function tabIcon(Icon: IconCmp) {
+  // Web BottomTabBar: size 21 / stroke 2 in BOTH states — active is color-only.
   return ({ focused }: { focused: boolean; color: string; size: number }) => (
-    <Icon size={20} color={focused ? colors.accent : colors.faint} strokeWidth={focused ? 2.4 : 2} />
+    <Icon size={21} color={focused ? colors.accent : colors.faint} strokeWidth={2} />
   );
 }
 
@@ -37,7 +38,7 @@ export function TripScreen({ route }: NativeStackScreenProps<RootStackParamList,
           headerShown: false,
           tabBarActiveTintColor: colors.accent,
           tabBarInactiveTintColor: colors.faint,
-          tabBarLabelStyle: { fontFamily: font.semibold, fontSize: 10.5 },
+          tabBarLabelStyle: { fontFamily: font.semibold, fontSize: 10 },
           tabBarStyle: {
             backgroundColor: colors.bg,
             borderTopColor: colors.line,

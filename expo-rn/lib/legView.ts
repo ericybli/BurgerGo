@@ -25,12 +25,9 @@ export function formatLeg(leg: Leg): string {
   return `${MODE_GLYPH[leg.mode]} ${formatDuration(leg.durationSeconds)} · ${formatDistance(leg.distanceMeters)}`;
 }
 
+/** Web-parity duration: ALWAYS minutes, floored at 1 ("65 min", never "1 h 5 min" or "0 min"). */
 export function formatDuration(seconds: number): string {
-  const mins = Math.round(seconds / 60);
-  if (mins < 60) return `${mins} min`;
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return m === 0 ? `${h} h` : `${h} h ${m} min`;
+  return `${Math.max(1, Math.round(seconds / 60))} min`;
 }
 
 export const MODE_GLYPH: Record<TravelMode, string> = {

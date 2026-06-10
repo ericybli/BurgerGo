@@ -14,6 +14,7 @@ import type { PlanMapProps } from './PlanMap.types';
 import type { MapPin, MapSeg } from './map/mapData';
 import { useMapShell } from './map/useMapShell';
 import { buildPinEl } from './map/markerDom';
+import { EmptyMapHint } from './map/EmptyHint';
 import { MapChrome } from './map/MapChrome';
 import { LegChip } from './map/LegChip';
 import { DayLegend } from './map/DayLegend';
@@ -179,7 +180,7 @@ export default function PlanMap(props: PlanMapProps) {
                     fillColor: seg.color,
                     fillOpacity: 0.9,
                     strokeOpacity: 0,
-                    scale: 2.5,
+                    scale: 1.6,
                   },
                   offset: '0',
                   repeat: '10px',
@@ -318,26 +319,6 @@ export default function PlanMap(props: PlanMapProps) {
 
   const showLegend = props.bucket === 'days' && shell.legend.length > 0 && !fullscreen;
 
-  if (basePins.length === 0) {
-    // Online-but-empty: keep the legend visible (days bucket) so the user can
-    // hop back to a day that has mapped stops.
-    return (
-      <View style={s.fill}>
-        {showLegend ? (
-          <DayLegend
-            entries={shell.legend}
-            allVisible={shell.allVisible}
-            onSelectDate={props.onSelectDate}
-          />
-        ) : null}
-        <EmptyState
-          headline="Nothing to map here"
-          subtext="Add places with an address and they'll appear on the map."
-        />
-      </View>
-    );
-  }
-
   if (loadFailed) {
     return (
       <View style={s.fill}>
@@ -362,6 +343,12 @@ export default function PlanMap(props: PlanMapProps) {
       <View style={fullscreen ? FULLSCREEN_STYLE : s.mapBox}>
         {/* Google owns this node's DOM (a div is appended imperatively). */}
         <View ref={hostRef} style={StyleSheet.absoluteFill} />
+
+        {/* Online-but-empty selection: the map STAYS live (web parity — layers,
+            locate, satellite and POI taps remain reachable); a floating hint
+            overlays the canvas instead of replacing it. With no pins the fit
+            is skipped, so the viewport simply persists. */}
+        {basePins.length === 0 ? <EmptyMapHint /> : null}
 
         <MapChrome
           showLayers={props.bucket === 'days'}

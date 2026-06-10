@@ -108,19 +108,31 @@ export function TicketSheet({
 
   async function addPhotos() {
     setError(null);
+    // Parity (spec line 64): the web uploads the picked file's exact bytes — QR
+    // codes must stay pixel-identical. So: no `quality` (defaults to max; iOS
+    // passes PNG/BMP through untouched) and ask iOS for the asset's *current*
+    // representation to avoid transcoding. RN-web returns the original File
+    // blob unmodified either way.
     const picked = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      quality: 0.85,
       allowsMultipleSelection: true,
+      preferredAssetRepresentationMode:
+        ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
     });
     if (picked.canceled) return;
     appendPicked(
-      picked.assets.map((a, i) => ({
-        uri: a.uri,
-        name: a.fileName ?? `photo-${Date.now()}-${i}.jpg`,
-        type: a.mimeType ?? 'image/jpeg',
-        size: a.fileSize ?? undefined,
-      })),
+      picked.assets.map((a, i) => {
+        // iOS photo-library picks often lack a real filename; derive the
+        // fallback extension from the actual mime so PNGs aren't labeled .jpg.
+        const mime = a.mimeType ?? 'image/jpeg';
+        const ext = (mime.split('/')[1] ?? 'jpg').replace('jpeg', 'jpg');
+        return {
+          uri: a.uri,
+          name: a.fileName ?? `photo-${Date.now()}-${i}.${ext}`,
+          type: mime,
+          size: a.fileSize ?? undefined,
+        };
+      }),
     );
   }
 

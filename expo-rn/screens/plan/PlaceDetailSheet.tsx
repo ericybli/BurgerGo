@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { X } from 'lucide-react-native';
 import { api, photoUrl, type Place, type PlacePatch } from '../../lib/api';
@@ -81,6 +81,17 @@ export function PlaceDetailSheet({
   const [photos, setPhotos] = useState<Thumb[]>(place.photos);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  // Full-screen photo viewer (web PhotoGallery): tap a thumb → /full image on a
+  // dark scrim with ‹ / › wrap-around when >1 photo + "Close photo".
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const viewerPhoto = viewerIndex != null ? (photos[viewerIndex] ?? null) : null;
+
+  function prevPhoto() {
+    setViewerIndex((i) => (i == null ? i : (i - 1 + photos.length) % photos.length));
+  }
+  function nextPhoto() {
+    setViewerIndex((i) => (i == null ? i : (i + 1) % photos.length));
+  }
 
   const [links, setLinks] = useState<LinkLite[]>(place.links);
   const [linkUrl, setLinkUrl] = useState('');
@@ -382,9 +393,15 @@ export function PlaceDetailSheet({
         {photoError ? <Text style={styles.errorText}>{photoError}</Text> : null}
         {disabled ? <Text style={styles.hint}>Connect to add photos</Text> : null}
         <View style={styles.thumbWrap}>
-          {photos.map((p) => (
+          {photos.map((p, i) => (
             <View key={p.id} style={styles.thumbItem}>
-              <Image source={{ uri: photoUrl.personal(p.id, 'thumb') }} style={styles.thumb} />
+              <Pressable
+                accessibilityLabel={`Photo of ${place.name}`}
+                onPress={() => setViewerIndex(i)}
+                style={({ pressed }) => [pressed && { opacity: 0.85 }]}
+              >
+                <Image source={{ uri: photoUrl.personal(p.id, 'thumb') }} style={styles.thumb} />
+              </Pressable>
               <Pressable
                 accessibilityLabel="Delete photo"
                 style={styles.thumbDelete}
@@ -407,6 +424,59 @@ export function PlaceDetailSheet({
         </View>
       </View>
 
+      {/* Full-screen viewer (web PhotoGallery: dark scrim, object-contain /full image,
+          ‹ / › when >1 photo, "Close photo"; tap outside the image closes). */}
+      <Modal
+        visible={viewerPhoto != null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewerIndex(null)}
+      >
+        <Pressable
+          accessibilityLabel={`Photo of ${place.name}`}
+          style={styles.viewerScrim}
+          onPress={() => setViewerIndex(null)}
+        >
+          {viewerPhoto ? (
+            // Noop pressable so tapping the photo itself doesn't dismiss (web parity).
+            <Pressable onPress={() => {}} style={styles.viewerImageWrap}>
+              <Image
+                source={{ uri: photoUrl.personal(viewerPhoto.id, 'full') }}
+                style={styles.viewerImage}
+                resizeMode="contain"
+              />
+            </Pressable>
+          ) : null}
+          <View style={styles.viewerControls}>
+            {photos.length > 1 ? (
+              <>
+                <Pressable
+                  accessibilityLabel="Previous photo"
+                  onPress={prevPhoto}
+                  style={({ pressed }) => [styles.viewerBtn, pressed && { opacity: 0.85 }]}
+                >
+                  <Text style={styles.viewerBtnText}>‹</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Next photo"
+                  onPress={nextPhoto}
+                  style={({ pressed }) => [styles.viewerBtn, pressed && { opacity: 0.85 }]}
+                >
+                  <Text style={styles.viewerBtnText}>›</Text>
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable
+              accessibilityLabel="Close photo"
+              onPress={() => setViewerIndex(null)}
+              style={({ pressed }) => [styles.viewerBtn, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.viewerBtnText}>Close photo</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
+
       <View style={styles.linksSection}>
         <Text style={styles.label}>Travel guides</Text>
         {links.map((l) => (
@@ -427,6 +497,7 @@ export function PlaceDetailSheet({
         <View style={styles.linkAddRow}>
           <View style={{ flex: 1 }}>
             <Field
+              accessibilityLabel="Add a guide link"
               value={linkUrl}
               onChangeText={setLinkUrl}
               editable={!disabled && !linkBusy}
@@ -450,7 +521,7 @@ export function PlaceDetailSheet({
                 (disabled || linkBusy || !isHttpUrl(linkUrl)) && { color: colors.faint },
               ]}
             >
-              {linkBusy ? '…' : 'Add'}
+              {linkBusy ? '…' : 'Add a guide link'}
             </Text>
           </Pressable>
         </View>
@@ -570,6 +641,28 @@ const styles = StyleSheet.create({
   },
   addPhotoPlus: { fontSize: 20, color: colors.sub },
   addPhotoText: { fontSize: 10.5, fontFamily: font.medium, color: colors.sub },
+
+  // Web PhotoGallery viewer: rgb(0 0 0 / .85) scrim, contained image, white
+  // chip buttons (rounded-chip px-4 py-2 text-label text-ink).
+  viewerScrim: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  viewerImageWrap: { alignSelf: 'stretch', height: '70%' },
+  viewerImage: { width: '100%', height: '100%', borderRadius: radius.card },
+  viewerControls: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  viewerBtn: {
+    borderRadius: radius.chip,
+    backgroundColor: colors.white,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  viewerBtnText: { ...type.label, color: colors.ink },
 
   linksSection: { marginTop: 16 },
   linkRow: {

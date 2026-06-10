@@ -73,15 +73,26 @@ export function PhotoGallery({
             <View style={pg.viewerControls}>
               {photos.length > 1 ? (
                 <>
-                  <Pressable style={pg.viewerChip} onPress={prev} accessibilityLabel="Previous photo">
+                  <Pressable
+                    style={({ pressed }) => [pg.viewerChip, pressed && pg.viewerChipPressed]}
+                    onPress={prev}
+                    accessibilityLabel="Previous photo"
+                  >
                     <Text style={pg.viewerChipText}>‹</Text>
                   </Pressable>
-                  <Pressable style={pg.viewerChip} onPress={next} accessibilityLabel="Next photo">
+                  <Pressable
+                    style={({ pressed }) => [pg.viewerChip, pressed && pg.viewerChipPressed]}
+                    onPress={next}
+                    accessibilityLabel="Next photo"
+                  >
                     <Text style={pg.viewerChipText}>›</Text>
                   </Pressable>
                 </>
               ) : null}
-              <Pressable style={pg.viewerChip} onPress={close}>
+              <Pressable
+                style={({ pressed }) => [pg.viewerChip, pressed && pg.viewerChipPressed]}
+                onPress={close}
+              >
                 <Text style={pg.viewerChipText}>{STR.closePhoto}</Text>
               </Pressable>
             </View>
@@ -140,4 +151,6 @@ const pg = StyleSheet.create({
     alignItems: 'center',
   },
   viewerChipText: { ...type.label, color: colors.ink },
+  // Web parity: active:scale-95 on the viewer chips.
+  viewerChipPressed: { transform: [{ scale: 0.95 }] },
 });

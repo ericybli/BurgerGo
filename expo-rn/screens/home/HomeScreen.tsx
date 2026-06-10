@@ -50,7 +50,13 @@ function LoadingState() {
   }, [opacity]);
   return (
     <View style={s.center}>
-      <Animated.Image source={MASCOT} style={[s.mascotSmall, { opacity }]} resizeMode="contain" />
+      <Animated.Image
+        source={MASCOT}
+        style={[s.mascotSmall, { opacity }]}
+        resizeMode="contain"
+        accessible
+        accessibilityLabel="BurgerGo the Siamese cat"
+      />
       <Text style={s.centerBody}>Fetching your trips…</Text>
     </View>
   );
@@ -70,7 +76,13 @@ function MascotState({
 }) {
   return (
     <View style={s.center}>
-      <Image source={MASCOT} style={s.mascotBig} resizeMode="contain" />
+      <Image
+        source={MASCOT}
+        style={s.mascotBig}
+        resizeMode="contain"
+        accessible
+        accessibilityLabel="BurgerGo the Siamese cat"
+      />
       <Text style={s.centerHead}>{headline}</Text>
       <Text style={s.centerSub}>{subtext}</Text>
       <Pressable
@@ -120,10 +132,13 @@ export function HomeScreen({ navigation }: Props) {
     [],
   );
 
-  // Header: bundled logo + display-type wordmark (the settings chip lives in App.tsx).
+  // Header: bundled logo + display-type wordmark (the settings chip lives in
+  // App.tsx). Mounted as headerLeft — the web header is left-aligned, and the
+  // iOS native-stack centers custom headerTitle components.
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: () => (
+      headerTitle: () => null,
+      headerLeft: () => (
         <View style={s.headerTitle}>
           <Image source={MASCOT} style={s.headerLogo} resizeMode="contain" />
           <Text style={s.headerText}>BurgerGo</Text>

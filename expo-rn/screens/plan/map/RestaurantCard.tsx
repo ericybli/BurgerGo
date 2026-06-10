@@ -1,30 +1,42 @@
 /**
- * Pin-tap info card for a Restaurants-layer marker: 🍽️ glyph square, name,
- * cuisine, and an "Open in Google Maps" deep link (offline-safe). The PlanMap
- * contract's MapRestaurant carries id/name/coords/cuisine only, so the richer
- * web fields (address/notes/photo) are omitted here.
+ * Pin-tap info card for a Restaurants-layer marker (web RestaurantInfoCard
+ * parity): glyph square ONLY when there's no photo, name, cuisine, Google
+ * rating (when persisted), photo (first personal → cached Google), address,
+ * notes, and an "Open in Google Maps" deep link built from the exact POI
+ * identity (googlePlaceId + address) so Maps opens the real place card.
+ * The richer MapRestaurant fields are optional — the card degrades to the
+ * glyph + name + cuisine basics when they're absent.
  */
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Star } from 'lucide-react-native';
 import { colors, font, type } from '../../../lib/theme';
 import { placeUrl } from '../../../lib/googleMapsUrl';
 import type { MapRestaurant } from '../PlanMap.types';
 import { RESTAURANT_GLYPH } from './mapData';
 
+const GOLD = '#C99231'; // day-2 amber: rating stars (same as PoiCard)
+
+/** `notes` is web-card content not yet in the frozen contract; read when present. */
+type CardRestaurant = MapRestaurant & { notes?: string | null };
+
 export function RestaurantCard({
   restaurant,
   onClose,
 }: {
-  restaurant: MapRestaurant;
+  restaurant: CardRestaurant;
   onClose: () => void;
 }) {
+  const photo = restaurant.photoUrl ?? null;
   return (
     <View style={s.backdropHost}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
       <View style={s.card}>
         <View style={s.headerRow}>
-          <View style={s.glyphBox}>
-            <Text style={s.glyph}>{RESTAURANT_GLYPH}</Text>
-          </View>
+          {photo == null ? (
+            <View style={s.glyphBox}>
+              <Text style={s.glyph}>{RESTAURANT_GLYPH}</Text>
+            </View>
+          ) : null}
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={s.name} numberOfLines={1}>
               {restaurant.name}
@@ -33,6 +45,12 @@ export function RestaurantCard({
               <Text style={s.cuisine} numberOfLines={1}>
                 {restaurant.cuisine}
               </Text>
+            ) : null}
+            {restaurant.googleRating != null ? (
+              <View style={s.ratingRow}>
+                <Star size={12} color={GOLD} fill={GOLD} strokeWidth={0} />
+                <Text style={s.ratingValue}>{restaurant.googleRating.toFixed(1)}</Text>
+              </View>
             ) : null}
           </View>
           <Pressable
@@ -45,10 +63,28 @@ export function RestaurantCard({
           </Pressable>
         </View>
 
+        {photo != null ? (
+          <Image
+            source={{ uri: photo }}
+            style={s.photo}
+            resizeMode="cover"
+            accessibilityLabel={restaurant.name}
+          />
+        ) : null}
+
+        {restaurant.address ? <Text style={s.address}>{restaurant.address}</Text> : null}
+        {restaurant.notes ? <Text style={s.notes}>{restaurant.notes}</Text> : null}
+
         <Pressable
           onPress={() => {
             Linking.openURL(
-              placeUrl({ name: restaurant.name, lat: restaurant.lat, lng: restaurant.lng }),
+              placeUrl({
+                name: restaurant.name,
+                lat: restaurant.lat,
+                lng: restaurant.lng,
+                googlePlaceId: restaurant.googlePlaceId,
+                address: restaurant.address,
+              }),
             ).catch(() => {});
           }}
           accessibilityRole="link"
@@ -92,6 +128,13 @@ const s = StyleSheet.create({
   glyph: { fontSize: 20 },
   name: { fontSize: 14, lineHeight: 19, fontFamily: font.semibold, color: colors.ink },
   cuisine: { ...type.caption, color: colors.sub, marginTop: 1 },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+  ratingValue: {
+    fontSize: 12,
+    fontFamily: font.semibold,
+    color: colors.ink,
+    fontVariant: ['tabular-nums'],
+  },
   close: {
     width: 30,
     height: 30,
@@ -101,6 +144,16 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   closeText: { color: colors.sub, fontSize: 13, fontFamily: font.medium },
+  // Web: mt-3 h-44 rounded-[10px] object-cover.
+  photo: {
+    marginTop: 12,
+    height: 176,
+    width: '100%',
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+  },
+  address: { ...type.caption, color: colors.ink, marginTop: 8 },
+  notes: { ...type.caption, color: colors.sub, marginTop: 4 },
   mapsBtn: {
     marginTop: 12,
     borderRadius: 10,

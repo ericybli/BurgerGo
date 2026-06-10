@@ -66,9 +66,10 @@ const s = StyleSheet.create({
     color: colors.ink,
     fontVariant: ['tabular-nums'],
   },
+  // Web: h-7 w-7 (28px).
   close: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 999,
     backgroundColor: colors.surface,
     alignItems: 'center',

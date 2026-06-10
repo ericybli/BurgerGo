@@ -55,6 +55,7 @@ export function PoiCard({
   const [state, setState] = useState<PoiState>({ status: 'loading' });
   const [added, setAdded] = useState<AddedKind>(null);
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const [photoIdx, setPhotoIdx] = useState(0);
   const [hoursOpen, setHoursOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -78,11 +79,13 @@ export function PoiCard({
   async function run(kind: Exclude<AddedKind, null>, fn: () => Promise<void>) {
     if (saving || added) return;
     setSaving(true);
+    setSaveFailed(false);
     try {
       await fn();
       setAdded(kind);
     } catch {
-      // keep the card usable; the buttons return to their idle labels
+      // Keep the card usable; surface the failure (web mutation-error parity).
+      setSaveFailed(true);
     } finally {
       setSaving(false);
     }
@@ -228,6 +231,12 @@ export function PoiCard({
                   ))}
                 </View>
               </View>
+            ) : null}
+
+            {saveFailed ? (
+              <Text accessibilityRole="alert" style={s.saveError}>
+                Couldn't save — please try again.
+              </Text>
             ) : null}
 
             {d.isFood ? (
@@ -453,6 +462,14 @@ const s = StyleSheet.create({
   reviewRatingText: { fontSize: 12, fontFamily: font.medium, color: colors.sub, fontVariant: ['tabular-nums'] },
   reviewTime: { fontSize: 12, fontFamily: font.medium, color: colors.faint },
   reviewText: { fontSize: 12.5, lineHeight: 18, fontFamily: font.regular, color: colors.sub, marginTop: 2 },
+
+  saveError: {
+    marginTop: 12,
+    fontSize: 12.5,
+    lineHeight: 17,
+    fontFamily: font.medium,
+    color: colors.danger,
+  },
 
   actionRow: { flexDirection: 'row', gap: 8, marginTop: 12 },
   actionBtn: {

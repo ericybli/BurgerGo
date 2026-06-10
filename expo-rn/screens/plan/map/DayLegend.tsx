@@ -29,7 +29,13 @@ export function DayLegend({
       <Pressable
         onPress={() => onSelectDate(null)}
         accessibilityState={{ selected: allVisible }}
-        style={[s.chip, allVisible && s.chipActive]}
+        style={({ pressed }) => [
+          s.chip,
+          allVisible && s.chipActive,
+          // Web: active:scale-95 + hover:bg-surface (inactive chips only).
+          pressed && s.chipPressed,
+          pressed && !allVisible && s.chipPressedInactive,
+        ]}
       >
         <Text style={[s.text, allVisible && s.textActive]}>All days</Text>
       </Pressable>
@@ -38,7 +44,12 @@ export function DayLegend({
           key={e.date}
           onPress={() => onSelectDate(e.date)}
           accessibilityState={{ selected: e.visible }}
-          style={[s.chip, e.visible && s.chipActive]}
+          style={({ pressed }) => [
+            s.chip,
+            e.visible && s.chipActive,
+            pressed && s.chipPressed,
+            pressed && !e.visible && s.chipPressedInactive,
+          ]}
         >
           <View style={[s.dot, { backgroundColor: e.visible ? colors.white : e.color }]} />
           <Text style={[s.text, e.visible && s.textActive]}>Day {e.dayNumber}</Text>
@@ -63,6 +74,8 @@ const s = StyleSheet.create({
     paddingVertical: 6,
   },
   chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chipPressed: { transform: [{ scale: 0.95 }] },
+  chipPressedInactive: { backgroundColor: colors.surface },
   dot: { width: 7, height: 7, borderRadius: 999 },
   text: { fontSize: 12, fontFamily: font.semibold, color: colors.sub },
   textActive: { color: colors.white },

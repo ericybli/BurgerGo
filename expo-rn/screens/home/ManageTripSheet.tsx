@@ -314,9 +314,24 @@ export function ManageTripSheet({
   );
 }
 
-/** Bare input matching the kit Field's control recipe, without its label/margins. */
+/** Bare input matching the kit Field's control recipe (incl. its accent focus border), without its label/margins. */
 function Input(props: TextInputProps) {
-  return <TextInput placeholderTextColor={colors.faint} {...props} style={[s.input, props.style]} />;
+  const [focused, setFocused] = useState(false);
+  return (
+    <TextInput
+      placeholderTextColor={colors.faint}
+      {...props}
+      onFocus={(e) => {
+        setFocused(true);
+        props.onFocus?.(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        props.onBlur?.(e);
+      }}
+      style={[s.input, focused && s.inputFocused, props.style]}
+    />
+  );
 }
 
 const s = StyleSheet.create({
@@ -339,6 +354,7 @@ const s = StyleSheet.create({
     color: colors.ink,
     fontFamily: font.regular,
   },
+  inputFocused: { borderColor: colors.accent },
   pillTeal: {
     borderRadius: radius.control,
     borderWidth: 1,

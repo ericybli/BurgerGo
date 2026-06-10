@@ -160,7 +160,7 @@ export function RestaurantDetail({
       onPhotoChanged(); // sheet stays open; list + gallery re-fetch
     } catch {
       setBusy(false);
-      setPhotoError('Couldn’t upload — please try again.');
+      setPhotoError("Couldn't upload — please try again.");
     }
   }
 
@@ -184,7 +184,7 @@ export function RestaurantDetail({
     } catch (e) {
       setUploading(false);
       const code = e instanceof Error ? e.message : '';
-      setPhotoError(UPLOAD_ERRORS[code] ?? 'Couldn’t upload — please try again.');
+      setPhotoError(UPLOAD_ERRORS[code] ?? "Couldn't upload — please try again.");
     }
   }
 
@@ -201,7 +201,7 @@ export function RestaurantDetail({
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>Couldn’t save — please try again.</Text>
+            <Text style={styles.errorText}>Couldn't save — please try again.</Text>
           </View>
         ) : null}
 
@@ -232,7 +232,8 @@ export function RestaurantDetail({
                 <Text style={styles.googleRatingValue}>{restaurant.googleRating.toFixed(1)}</Text>
                 {restaurant.googleRatingCount != null ? (
                   <Text style={styles.googleRatingCount}>
-                    · {restaurant.googleRatingCount} {restaurant.googleRatingCount === 1 ? 'review' : 'reviews'}
+                    · {restaurant.googleRatingCount.toLocaleString('en-US')}{' '}
+                    {restaurant.googleRatingCount === 1 ? 'review' : 'reviews'}
                   </Text>
                 ) : null}
                 <Text style={styles.googleSource}>· Google</Text>

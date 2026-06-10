@@ -40,6 +40,7 @@ export function FormField({
           fb.input,
           inputProps.multiline && fb.inputMultiline,
           focused && fb.inputFocused,
+          inputProps.editable === false && fb.inputDisabled,
           style,
         ]}
       />
@@ -123,6 +124,7 @@ const fb = StyleSheet.create({
   },
   inputFocused: { borderColor: colors.accent },
   inputMultiline: { textAlignVertical: 'top' },
+  inputDisabled: { opacity: 0.6 }, // web parity: disabled:opacity-60
 
   banner: {
     backgroundColor: 'rgba(179, 64, 44, 0.10)',

@@ -216,7 +216,11 @@ export function EntrySheet({
           onFocus={() => setBodyFocused(true)}
           onBlur={() => setBodyFocused(false)}
           placeholderTextColor={colors.faint}
-          style={[es.bodyInput, bodyFocused && { borderColor: colors.accent }]}
+          style={[
+            es.bodyInput,
+            bodyFocused && { borderColor: colors.accent },
+            !editable && es.bodyInputDisabled,
+          ]}
         />
       </View>
 
@@ -292,6 +296,7 @@ const es = StyleSheet.create({
     minHeight: 192, // ~8 rows at 24px leading (web rows={8})
     textAlignVertical: 'top',
   },
+  bodyInputDisabled: { opacity: 0.6 }, // web parity: disabled:opacity-60
 
   photoCaption: { marginTop: 12, ...type.caption, color: colors.faint },
   btnRow: { flexDirection: 'row', gap: 8, marginTop: 20 },

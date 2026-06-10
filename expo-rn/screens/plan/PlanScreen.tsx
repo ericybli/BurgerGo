@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   api,
+  photoUrl,
   type Leg,
   type Place,
   type PlacePatch,
@@ -75,9 +76,27 @@ export function PlanScreen() {
         api.eats.list(tripId).catch(() => ({ restaurants: [] })),
       ]);
       if (!mountedRef.current) return;
-      const restaurants: MapRestaurant[] = e.restaurants
+      // `notes` rides along beyond the frozen MapRestaurant contract — the
+      // restaurant pin card (web RestaurantInfoCard parity) renders it.
+      const restaurants: (MapRestaurant & { notes?: string | null })[] = e.restaurants
         .filter((x) => x.lat != null && x.lng != null)
-        .map((x) => ({ id: x.id, name: x.name, lat: x.lat as number, lng: x.lng as number, cuisine: x.cuisine }));
+        .map((x) => ({
+          id: x.id,
+          name: x.name,
+          lat: x.lat as number,
+          lng: x.lng as number,
+          cuisine: x.cuisine,
+          notes: x.notes,
+          address: x.address,
+          googlePlaceId: x.googlePlaceId,
+          googleRating: x.googleRating,
+          // Web thumbForRestaurant precedence: first personal photo → cached Google photo.
+          photoUrl: x.photos[0]
+            ? photoUrl.personal(x.photos[0].id, 'card')
+            : x.photoPath != null
+              ? photoUrl.restaurant(x.id, 'card')
+              : null,
+        }));
       setState({
         status: 'loaded',
         data: {
@@ -104,6 +123,12 @@ export function PlanScreen() {
       };
     }, [fetchData]),
   );
+
+  // AI import (trip header) creates places while this tab is focused — refetch.
+  useEffect(() => {
+    const sub = DeviceEventEmitter.addListener('burgergo:dataChanged', () => void fetchData());
+    return () => sub.remove();
+  }, [fetchData]);
 
   const data = state.status === 'loaded' ? state.data : null;
   const places = data?.places ?? [];
@@ -151,8 +176,11 @@ export function PlanScreen() {
       } catch {
         if (mountedRef.current) setMutationError(errorMessage);
       } finally {
-        if (mountedRef.current) setPending(false);
+        // Hold the in-flight guard through the refetch (web startTransition
+        // parity): re-enabling before the reload paints opens a double-fire
+        // window against stale ids/orderIndex.
         await fetchData();
+        if (mountedRef.current) setPending(false);
       }
     })();
   }
@@ -266,13 +294,20 @@ export function PlanScreen() {
   }
 
   async function onPoiSaveRestaurant(poi: PoiDetails) {
-    await api.eats.create(tripId, {
+    // The POST schema rejects null fields and strips lat/lng/googlePlaceId
+    // (the server re-geocodes the address into an address-type place id) —
+    // create lean, then PATCH the tapped POI's exact identity. The PATCH path
+    // (updateRestaurantAction) also refreshes persisted Google rating/hours/
+    // photo, matching web addRestaurantAction (same pattern as RestaurantForm).
+    const { restaurant } = await api.eats.create(tripId, {
       name: poi.name,
-      address: poi.address,
+      status: 'want-to-try',
+      ...(poi.address ? { address: poi.address } : {}),
+    });
+    await api.eats.update(tripId, restaurant.id, {
       lat: poi.lat,
       lng: poi.lng,
       googlePlaceId: poi.googlePlaceId,
-      cuisine: null,
     });
     await fetchData();
   }

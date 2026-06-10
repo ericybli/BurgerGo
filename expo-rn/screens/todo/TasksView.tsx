@@ -180,6 +180,7 @@ function TaskCard({
           checked={task.done}
           onToggle={() => void save({ done: !task.done })}
           disabled={frozen}
+          round
           accessibilityLabel={`Done: ${task.title}`}
         />
         <TextInput

@@ -13,6 +13,14 @@ export type MapRestaurant = {
   lat: number;
   lng: number;
   cuisine: string | null;
+  // Richer restaurant-pin card (web parity). Optional so the two plan agents
+  // can land independently: PlanScreen fills these; the map renders them.
+  address?: string | null;
+  googlePlaceId?: string | null;
+  /** Prebuilt card photo URL (first personal photo → cached Google), or null. */
+  photoUrl?: string | null;
+  /** Persisted Google rating, when known. */
+  googleRating?: number | null;
 };
 
 export type PlanMapProps = {
