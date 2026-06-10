@@ -54,6 +54,10 @@ function makeFakeGoogle() {
     }),
     Polyline: vi.fn(function (this: any, opts: any) {
       this.opts = opts;
+      this.listeners = {} as Record<string, () => void>;
+      this.addListener = (ev: string, cb: () => void) => {
+        this.listeners[ev] = cb;
+      };
       captured.polylines.push(this);
     }),
     LatLngBounds: vi.fn(function (this: any) {}),
@@ -169,6 +173,22 @@ describe('GoogleMapCanvas', () => {
     // Container still visible; pins were never created.
     expect(screen.getByTestId('google-map-canvas')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Senso-ji' })).not.toBeInTheDocument();
+  });
+
+  it('routes a tap on a leg-carrying segment to onLegClick (via the wide hit line)', async () => {
+    const seg: DayPath = {
+      date: '2026-06-04', color: '#EE5B3C',
+      path: [{ lat: 35.0, lng: 139.0 }, { lat: 35.1, lng: 139.1 }],
+      seg: { fromName: 'Senso-ji', toName: 'Skytree', leg: null },
+    };
+    const onLegClick = vi.fn();
+    renderCanvas({ markers: MARKERS, paths: [seg], onMarkerClick: vi.fn(), onLegClick });
+    // Visible line + invisible 16px hit line for the seg-carrying path.
+    await waitFor(() => expect(captured.polylines).toHaveLength(2));
+    const hit = captured.polylines.find((pl: any) => pl.opts.strokeWeight === 16);
+    expect(hit).toBeTruthy();
+    hit.listeners['click']!();
+    expect(onLegClick).toHaveBeenCalledWith(seg);
   });
 
   it('routes basemap POI taps to onPoiClick only while the POI toggle is on', async () => {

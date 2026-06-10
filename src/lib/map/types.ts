@@ -10,6 +10,7 @@
  */
 export type { PlaceDTO, LegDTO } from '@/src/lib/planView';
 export type { DayGroup } from '@/src/lib/planUrl';
+import type { LegDTO } from '@/src/lib/planView';
 
 export interface LatLngLiteral {
   lat: number;
@@ -21,4 +22,14 @@ export interface DayPath {
   date: string;
   color: string;
   path: LatLngLiteral[];
+  /**
+   * Present when this path is a SINGLE leg (buildDayLegPaths): tap metadata
+   * for the map's leg-info chip. `leg` is null when the leg hasn't been
+   * computed yet (straight-line fallback) — the chip shows the placeholder.
+   */
+  seg?: {
+    fromName: string;
+    toName: string;
+    leg: LegDTO | null;
+  };
 }

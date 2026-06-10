@@ -23,6 +23,8 @@ export interface MapCanvasProps {
    * Google-only: the Mapbox basemap has no equivalent tappable-POI affordance.
    */
   onPoiClick?: (googlePlaceId: string) => void;
+  /** Tapping a route segment with leg metadata (Google-only duration chip). */
+  onLegClick?: (segment: DayPath) => void;
 }
 
 /**
@@ -32,7 +34,7 @@ export interface MapCanvasProps {
  * `cluster` is Mapbox-only (Google renders flat) and `onPoiClick` is
  * Google-only, so each is kept off the other provider's spread.
  */
-export function MapCanvas({ cluster = true, onPoiClick, ...props }: MapCanvasProps) {
+export function MapCanvas({ cluster = true, onPoiClick, onLegClick, ...props }: MapCanvasProps) {
   if (MAP_PROVIDER === 'mapbox') return <MapboxCanvas {...props} cluster={cluster} />;
-  return <GoogleMapCanvas {...props} onPoiClick={onPoiClick} />;
+  return <GoogleMapCanvas {...props} onPoiClick={onPoiClick} onLegClick={onLegClick} />;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { NextIntlClientProvider } from 'next-intl';
 import en from '@/messages/en.json';
@@ -10,9 +10,13 @@ vi.mock('@/components/map/GoogleMapCanvas', () => ({
   GoogleMapCanvas: ({
     markers,
     onMarkerClick,
+    paths,
+    onLegClick,
   }: {
     markers: { id: string; name: string }[];
     onMarkerClick: (id: string) => void;
+    paths?: Array<{ seg?: { fromName: string; toName: string } }>;
+    onLegClick?: (p: unknown) => void;
   }) => (
     <div data-testid="map-canvas">
       {markers.map((m) => (
@@ -20,6 +24,13 @@ vi.mock('@/components/map/GoogleMapCanvas', () => ({
           pin:{m.name}
         </button>
       ))}
+      {(paths ?? [])
+        .filter((p) => p.seg)
+        .map((p, i) => (
+          <button key={`leg-${i}`} type="button" onClick={() => onLegClick?.(p)}>
+            leg:{p.seg!.fromName}→{p.seg!.toName}
+          </button>
+        ))}
     </div>
   ),
 }));
@@ -101,6 +112,16 @@ describe('PlanMap (online, days bucket)', () => {
     expect(screen.getByRole('button', { name: 'pin:a' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'pin:b' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'pin:c' })).toBeInTheDocument();
+  });
+
+  it('shows the leg duration chip when a route segment is tapped, and dismisses it', async () => {
+    const user = userEvent.setup();
+    renderMap();
+    await user.click(screen.getByRole('button', { name: 'leg:a→b' }));
+    const chip = screen.getByRole('status');
+    expect(chip).toHaveTextContent('a → b'); // from → to names
+    await user.click(within(chip).getByRole('button', { name: en.planMap.closeInfoCard }));
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('calls onShowOnlyDate when a day chip is clicked', async () => {

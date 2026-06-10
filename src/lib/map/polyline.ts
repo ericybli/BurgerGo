@@ -110,3 +110,62 @@ export function buildDayPaths(groups: DayGroup[], legs: LegDTO[], defaultMode: T
 
   return result;
 }
+
+/**
+ * Like buildDayPaths, but emits ONE DayPath PER LEG (consecutive plottable
+ * pair) with `seg` metadata, so the map can make each route segment tappable
+ * (duration/distance chip). Rendering the segments back-to-back draws the same
+ * route as the per-day concatenation; leg matching mirrors buildDayPaths.
+ */
+export function buildDayLegPaths(
+  groups: DayGroup[],
+  legs: LegDTO[],
+  defaultMode: TravelMode,
+): DayPath[] {
+  const byPair = new Map<string, LegDTO>();
+  for (const leg of legs) {
+    byPair.set(legKey(leg.fromPlaceId, leg.toPlaceId, leg.mode), leg);
+  }
+
+  const result: DayPath[] = [];
+
+  for (const group of groups) {
+    if (!group.date) continue;
+
+    const plottable = group.places
+      .slice()
+      .sort((a, b) => a.orderIndex - b.orderIndex)
+      .filter(hasCoords) as Array<{
+      id: string;
+      name: string;
+      lat: number;
+      lng: number;
+      legMode: TravelMode | null;
+    }>;
+
+    if (plottable.length < 2) continue;
+    const color = colorForGroup(group);
+
+    for (let i = 0; i < plottable.length - 1; i += 1) {
+      const from = plottable[i]!;
+      const to = plottable[i + 1]!;
+      const leg = byPair.get(legKey(from.id, to.id, to.legMode ?? defaultMode)) ?? null;
+      const decoded = leg?.polyline ? decodePolyline(leg.polyline) : [];
+      const path =
+        decoded.length >= 2
+          ? decoded
+          : [
+              { lat: from.lat, lng: from.lng },
+              { lat: to.lat, lng: to.lng },
+            ];
+      result.push({
+        date: group.date,
+        color,
+        path,
+        seg: { fromName: from.name, toName: to.name, leg },
+      });
+    }
+  }
+
+  return result;
+}

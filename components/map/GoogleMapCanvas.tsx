@@ -26,6 +26,7 @@ export function GoogleMapCanvas({
   onMarkerClick,
   fitMarkers,
   onPoiClick,
+  onLegClick,
 }: {
   markers: PlaceMarker[];
   paths: DayPath[];
@@ -33,6 +34,8 @@ export function GoogleMapCanvas({
   fitMarkers?: PlaceMarker[];
   /** Tapping a Google basemap landmark (POI) while the POI toggle is on. */
   onPoiClick?: (googlePlaceId: string) => void;
+  /** Tapping a route segment that carries leg metadata (duration chip). */
+  onLegClick?: (segment: DayPath) => void;
 }) {
   // Viewport tracks the base markers; overlay toggles keep the same fitSet so the
   // view doesn't move when layers turn on/off.
@@ -44,6 +47,8 @@ export function GoogleMapCanvas({
   clickRef.current = onMarkerClick;
   const poiClickRef = useRef(onPoiClick);
   poiClickRef.current = onPoiClick;
+  const legClickRef = useRef(onLegClick);
+  legClickRef.current = onLegClick;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
@@ -125,7 +130,9 @@ export function GoogleMapCanvas({
     }
     overlaysRef.current = [];
 
-    // Polylines under the markers — solid 3px day-color route lines.
+    // Polylines under the markers — solid 3px day-color route lines. Segments
+    // that carry leg metadata also get a WIDE invisible hit line so a finger
+    // tap reliably lands → onLegClick shows the duration/distance chip.
     for (const dp of paths) {
       if (dp.path.length < 2) continue;
       const line = new maps.Polyline({
@@ -133,9 +140,21 @@ export function GoogleMapCanvas({
         strokeColor: dp.color,
         strokeOpacity: 0.9,
         strokeWeight: 3,
+        clickable: false,
         map,
       });
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });
+      if (dp.seg) {
+        const hit = new maps.Polyline({
+          path: dp.path,
+          strokeColor: dp.color,
+          strokeOpacity: 0.001, // invisible but clickable
+          strokeWeight: 16,
+          map,
+        });
+        hit.addListener?.('click', () => legClickRef.current?.(dp));
+        overlaysRef.current.push(hit as unknown as { setMap: (m: unknown) => void });
+      }
     }
 
     // Atlas pins: the SAME DOM as the Mapbox provider (white disc + day-color

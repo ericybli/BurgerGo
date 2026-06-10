@@ -7,7 +7,8 @@ import type { PlanBucket, DayGroup } from '@/src/lib/planUrl';
 import type { LegDTO, PlaceDTO } from '@/src/lib/planView';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 import { dayRouteUrl, placeUrl } from '@/src/lib/googleMapsUrl';
-import type { LatLngLiteral } from '@/src/lib/map/types';
+import type { DayPath } from '@/src/lib/map/types';
+import { formatLeg } from '@/src/lib/legView';
 import {
   buildMarkers,
   buildSavedMarkers,
@@ -15,7 +16,7 @@ import {
   type PlaceMarker,
   type RestaurantMarkerInput,
 } from '@/src/lib/map/markers';
-import { buildDayPaths } from '@/src/lib/map/polyline';
+import { buildDayLegPaths } from '@/src/lib/map/polyline';
 import { colorForGroup } from '@/src/lib/map/colors';
 import { MapCanvas } from '@/components/map/MapCanvas';
 import { MapLegend, type LegendEntry } from '@/components/map/MapLegend';
@@ -83,6 +84,8 @@ export function PlanMap({
   // The per-day "Open day route" links collapse into one toggle (multi-day) so
   // they don't eat the map's vertical space; collapsed by default.
   const [routesOpen, setRoutesOpen] = useState(false);
+  // Tapped route segment → small duration/distance chip over the map.
+  const [tappedLeg, setTappedLeg] = useState<DayPath | null>(null);
 
   // Body scroll-lock + Escape while the fullscreen map overlay is open. No-op
   // until isFullscreen is true (offline/saved/tests unaffected); the toggle
@@ -101,6 +104,11 @@ export function PlanMap({
     };
   }, [isFullscreen]);
 
+  // Clear the leg chip whenever the visible route set changes.
+  useEffect(() => {
+    setTappedLeg(null);
+  }, [visibleDates, bucket, mode]);
+
   // --- Days bucket: filter groups to visible, build markers + polylines. ---
   const visibleDayGroups = useMemo(
     () =>
@@ -116,7 +124,7 @@ export function PlanMap({
   );
 
   const dayPaths = useMemo(
-    () => (bucket === 'days' ? buildDayPaths(visibleDayGroups, legs, mode) : []),
+    () => (bucket === 'days' ? buildDayLegPaths(visibleDayGroups, legs, mode) : []),
     [bucket, visibleDayGroups, legs, mode],
   );
 
@@ -296,6 +304,7 @@ export function PlanMap({
             restaurantMarkerIds.has(id) ? onViewRestaurant(id) : onViewPlace(id)
           }
           onPoiClick={onPoiClick}
+          onLegClick={setTappedLeg}
         />
 
         {bucket === 'days' ? (
@@ -352,6 +361,29 @@ export function PlanMap({
           )}
         </button>
 
+        {tappedLeg?.seg ? (
+          <div
+            role="status"
+            className="absolute bottom-[4.5rem] left-1/2 z-[3] flex w-max max-w-[calc(100%-1.5rem)] -translate-x-1/2 items-center gap-2.5 rounded-card border border-line bg-bg/95 px-3 py-2 shadow-lift backdrop-blur"
+          >
+            <div className="min-w-0">
+              <p className="truncate text-caption text-sub">
+                {tappedLeg.seg.fromName} → {tappedLeg.seg.toName}
+              </p>
+              <p className="text-label tabular-nums text-ink">
+                {formatLeg(tappedLeg.seg.leg ?? undefined)}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label={t('closeInfoCard')}
+              onClick={() => setTappedLeg(null)}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-chip bg-surface text-sub transition hover:bg-line active:scale-95"
+            >
+              ✕
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {bucket === 'days' && routeLinks.length > 0 ? (
