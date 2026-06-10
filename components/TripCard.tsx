@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Pencil } from 'lucide-react';
 import type { Trip } from '@/src/db/schema';
 import { tripStatus, today, diffDays } from '@/src/lib/days';
+import { personalPhotoUrl } from '@/src/lib/planUrl';
 
 // Atlas status pill: white pill, role-colored text (info=teal, active=orange, past=sub).
 const PILL_CLASS: Record<'upcoming' | 'active' | 'past', string> = {
@@ -45,10 +46,16 @@ export function TripCard({ trip, tz, onManage }: { trip: Trip; tz: string; onMan
       href={`/trip/${trip.id}`}
       className="block overflow-hidden rounded-[18px] border border-line bg-bg transition active:scale-[0.99]"
     >
-      <div
-        className="relative block h-[180px] overflow-hidden bg-cover-gradient"
-        // future: a later plan serves cover photos via /api/photos
-      >
+      <div className="relative block h-[180px] overflow-hidden bg-cover-gradient">
+        {trip.coverPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={personalPhotoUrl(trip.coverPhoto, 'card')}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <span
           className={`absolute left-3 top-3 z-10 rounded-chip bg-white/95 px-3 py-[5px] text-[11.5px] font-bold ${PILL_CLASS[status]}`}
         >

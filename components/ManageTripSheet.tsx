@@ -4,11 +4,15 @@ import { useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Trip } from '@/src/db/schema';
 import { diffDays } from '@/src/lib/days';
+import { personalPhotoUrl } from '@/src/lib/planUrl';
+import { usePhotoUpload } from '@/components/plan/usePhotoUpload';
+import { deletePhotoAction } from '@/app/_actions/photos';
 import {
   renameTripAction,
   shiftTripDatesAction,
   addTripDayAction,
   removeTripDayAction,
+  setTripCoverAction,
 } from '@/app/_actions/trips';
 
 type ManageTripSheetProps = {
@@ -31,6 +35,50 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { upload, uploading } = usePhotoUpload();
+
+  /** Upload a new cover photo, set it on the trip, and drop the previous one. */
+  async function handleCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file || !file.type.startsWith('image/')) return;
+    setError(null);
+    setStatus(null);
+    const previous = current.coverPhoto;
+    const { photo } = await upload({ file, tripId: current.id, ownerId: current.id, ownerType: 'trip' });
+    if (!photo) {
+      setError(t('saveError'));
+      return;
+    }
+    try {
+      const updated = await setTripCoverAction(current.id, photo.id);
+      if (previous) void deletePhotoAction(previous).catch(() => {});
+      setCurrent(updated);
+      setStatus(t('saved'));
+      onChanged();
+    } catch {
+      setError(t('saveError'));
+    }
+  }
+
+  /** Remove the current cover (falls back to the gradient on the card). */
+  function handleCoverRemove() {
+    const previous = current.coverPhoto;
+    if (!previous) return;
+    setError(null);
+    setStatus(null);
+    startTransition(async () => {
+      try {
+        const updated = await setTripCoverAction(current.id, null);
+        void deletePhotoAction(previous).catch(() => {});
+        setCurrent(updated);
+        setStatus(t('saved'));
+        onChanged();
+      } catch {
+        setError(t('saveError'));
+      }
+    });
+  }
 
   const lengthDays = diffDays(current.startDate, current.endDate) + 1;
 
@@ -138,6 +186,41 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
           </button>
         </div>
         <p className="mt-1 text-caption text-sub">{t('removeDayHint')}</p>
+
+        {/* Cover photo: upload / replace / remove; the trip card shows it. */}
+        <p className="mt-6 text-heading text-ink">{t('coverTitle')}</p>
+        {current.coverPhoto ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={personalPhotoUrl(current.coverPhoto, 'card')}
+            alt={current.name}
+            className="mt-2 h-32 w-full rounded-card border border-line object-cover"
+          />
+        ) : (
+          <p className="mt-1 text-caption text-sub">{t('coverHint')}</p>
+        )}
+        <div className="mt-2 flex items-center gap-2">
+          <label className={`inline-flex cursor-pointer items-center justify-center rounded-control border border-line bg-bg px-3 py-2 text-label text-accent transition hover:bg-accent-tint active:opacity-70 ${uploading ? 'pointer-events-none opacity-40' : ''}`}>
+            {uploading ? t('coverUploading') : current.coverPhoto ? t('coverReplace') : t('coverUpload')}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={uploading}
+              onChange={handleCoverChange}
+              className="sr-only"
+            />
+          </label>
+          {current.coverPhoto ? (
+            <button
+              type="button"
+              disabled={isPending || uploading}
+              onClick={handleCoverRemove}
+              className="rounded-control px-3 py-2 text-label text-danger transition active:opacity-70 disabled:text-faint"
+            >
+              {t('coverRemove')}
+            </button>
+          ) : null}
+        </div>
 
         <button
           type="button"

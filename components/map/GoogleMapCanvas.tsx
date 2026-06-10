@@ -135,12 +135,31 @@ export function GoogleMapCanvas({
     // tap reliably lands → onLegClick shows the duration/distance chip.
     for (const dp of paths) {
       if (dp.path.length < 2) continue;
+      // Walk legs render DOTTED (repeated round dots); drive/transit solid.
+      const isWalk = dp.seg?.mode === 'walk';
       const line = new maps.Polyline({
         path: dp.path,
         strokeColor: dp.color,
-        strokeOpacity: 0.9,
+        strokeOpacity: isWalk ? 0 : 0.9,
         strokeWeight: 3,
         clickable: false,
+        ...(isWalk
+          ? {
+              icons: [
+                {
+                  icon: {
+                    path: maps.SymbolPath?.CIRCLE ?? 0,
+                    fillColor: dp.color,
+                    fillOpacity: 0.9,
+                    strokeOpacity: 0,
+                    scale: 1.6,
+                  },
+                  offset: '0',
+                  repeat: '10px',
+                },
+              ],
+            }
+          : {}),
         map,
       });
       overlaysRef.current.push(line as unknown as { setMap: (m: unknown) => void });

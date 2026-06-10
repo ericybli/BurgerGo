@@ -206,7 +206,7 @@ export const photos = sqliteTable(
     tripId: text('trip_id')
       .notNull()
       .references(() => trips.id, { onDelete: 'cascade' }),
-    ownerType: text('owner_type', { enum: ['place', 'journal', 'restaurant', 'photo_list'] }).notNull(),
+    ownerType: text('owner_type', { enum: ['place', 'journal', 'restaurant', 'photo_list', 'trip'] }).notNull(),
     ownerId: text('owner_id').notNull(), // places.id / journal_entries.id / restaurants.id
     path: text('path').notNull(), // base path `<tripId>/<photoId>`
     width: integer('width'), // of the `full` derivative
@@ -367,6 +367,58 @@ export const savedLists = sqliteTable(
 );
 
 /**
+ * Tickets / reservations (the "Tickets" tab): bookings with an optional
+ * date/time/location and free-form note. Attachments (booking PDFs, QR-code
+ * screenshots) live in `ticket_files`. Cards sort by (date, time) ascending
+ * with undated tickets last.
+ */
+export const tickets = sqliteTable(
+  'tickets',
+  {
+    id: text('id').primaryKey(),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    date: text('date'), // YYYY-MM-DD, nullable
+    time: text('time'), // HH:MM, nullable
+    location: text('location'),
+    note: text('note'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTrip: index('idx_tickets_trip').on(t.tripId, t.date, t.time),
+  }),
+);
+
+/**
+ * One uploaded ticket attachment (image or PDF), stored on the uploads volume
+ * at `tickets/<ticketId>/<fileId>` (original bytes; no re-encode so PDFs and
+ * QR codes stay scannable). Served by GET /api/tickets/files/[fileId].
+ */
+export const ticketFiles = sqliteTable(
+  'ticket_files',
+  {
+    id: text('id').primaryKey(),
+    ticketId: text('ticket_id')
+      .notNull()
+      .references(() => tickets.id, { onDelete: 'cascade' }),
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(), // original filename (display + download name)
+    path: text('path').notNull(), // uploads-relative
+    mime: text('mime').notNull(), // image/* or application/pdf
+    size: integer('size').notNull(), // bytes
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    byTicket: index('idx_ticket_files_ticket').on(t.ticketId),
+  }),
+);
+
+/**
  * A named, per-trip photography list (Journal ▸ Photography). Each list holds
  * reference photos uploaded via the shared `photos` table with
  * owner_type='photo_list' and owner_id = this row's id — a place to collect
@@ -500,3 +552,7 @@ export type SavedListRow = typeof savedLists.$inferSelect;
 export type NewSavedListRow = typeof savedLists.$inferInsert;
 export type PhotoList = typeof photoLists.$inferSelect;
 export type NewPhotoList = typeof photoLists.$inferInsert;
+export type Ticket = typeof tickets.$inferSelect;
+export type NewTicket = typeof tickets.$inferInsert;
+export type TicketFile = typeof ticketFiles.$inferSelect;
+export type NewTicketFile = typeof ticketFiles.$inferInsert;

@@ -34,7 +34,7 @@ function renderLeg(
 describe('LegConnector', () => {
   it('renders the formatted cached leg without the offline caption', () => {
     renderLeg(leg());
-    expect(screen.getByText('🚶 12 min · 0.9 km')).toBeInTheDocument();
+    expect(screen.getByText('🚶 12 min · 0.6 mi')).toBeInTheDocument();
     expect(screen.queryByText(en.plan.legNeedsConnection)).not.toBeInTheDocument();
   });
 

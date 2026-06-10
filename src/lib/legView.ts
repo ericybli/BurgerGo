@@ -40,14 +40,13 @@ export function legBetween(
   return lookup.get(key(fromId, toId, mode));
 }
 
-/** "🚶 12 min · 0.9 km" for a leg, or the canonical `—` when absent. */
+/** "🚶 12 min · 0.6 mi" for a leg, or the canonical `—` when absent. */
 export function formatLeg(leg: LegDTO | undefined): string {
   if (!leg) return LEG_PLACEHOLDER;
   const minutes = Math.max(1, Math.round(leg.durationSeconds / 60));
-  // Round to 1 decimal using integer arithmetic to avoid JS float issues
-  // (e.g. 150m → Math.round(150/100)/10 = 1.5/10 rounds to 0.2, not 0.1).
-  const km = (Math.round(leg.distanceMeters / 100) / 10).toFixed(1);
-  return `${MODE_GLYPH[leg.mode]} ${minutes} min · ${km} km`;
+  // Distances display in miles (1 mi = 1609.344 m), rounded to 1 decimal.
+  const miles = (Math.round((leg.distanceMeters / 1609.344) * 10) / 10).toFixed(1);
+  return `${MODE_GLYPH[leg.mode]} ${minutes} min · ${miles} mi`;
 }
 
 /**

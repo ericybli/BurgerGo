@@ -149,7 +149,8 @@ export function buildDayLegPaths(
     for (let i = 0; i < plottable.length - 1; i += 1) {
       const from = plottable[i]!;
       const to = plottable[i + 1]!;
-      const leg = byPair.get(legKey(from.id, to.id, to.legMode ?? defaultMode)) ?? null;
+      const segMode = to.legMode ?? defaultMode;
+      const leg = byPair.get(legKey(from.id, to.id, segMode)) ?? null;
       const decoded = leg?.polyline ? decodePolyline(leg.polyline) : [];
       const path =
         decoded.length >= 2
@@ -162,7 +163,7 @@ export function buildDayLegPaths(
         date: group.date,
         color,
         path,
-        seg: { fromName: from.name, toName: to.name, leg },
+        seg: { fromName: from.name, toName: to.name, mode: segMode, leg },
       });
     }
   }

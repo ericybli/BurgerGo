@@ -77,7 +77,7 @@ describe('DayItinerary', () => {
     renderDay();
     expect(screen.getByText('A')).toBeInTheDocument();
     expect(screen.getByText('B')).toBeInTheDocument();
-    expect(screen.getByText('🚶 12 min · 0.9 km')).toBeInTheDocument();
+    expect(screen.getByText('🚶 12 min · 0.6 mi')).toBeInTheDocument();
   });
 
   it('shows the day default mode control and forwards a mode change', async () => {

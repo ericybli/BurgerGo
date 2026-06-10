@@ -56,7 +56,7 @@ describe('TodayHero', () => {
     // Stop B is the last stop → no Skip control.
     expect(screen.queryByRole('button', { name: en.plan.skip })).not.toBeInTheDocument();
     // The leg into Stop B is shown.
-    expect(screen.getByText('🚶 12 min · 0.9 km')).toBeInTheDocument();
+    expect(screen.getByText('🚶 12 min · 0.6 mi')).toBeInTheDocument();
   });
 
   it('Skip advances the transient pointer and clamps at the last stop', async () => {

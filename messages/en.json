@@ -44,7 +44,13 @@
     "removeDayHint": "Removing the last day moves any of its places to Saved.",
     "saved": "Saved ✓",
     "saveError": "Couldn't save — please try again.",
-    "close": "Close"
+    "close": "Close",
+    "coverTitle": "Cover photo",
+    "coverHint": "No cover yet — the card shows a gradient.",
+    "coverUpload": "Upload cover",
+    "coverReplace": "Replace cover",
+    "coverRemove": "Remove",
+    "coverUploading": "Uploading…"
   },
   "newTripSheet": {
     "title": "New trip",
@@ -71,7 +77,8 @@
     "eats": "Eats",
     "budget": "Budget",
     "packing": "To do",
-    "journal": "Journal"
+    "journal": "Journal",
+    "tickets": "Tickets"
   },
   "todo": {
     "packingTab": "Packing list",
@@ -525,5 +532,34 @@
     "deleteList": "Delete list",
     "deleteListConfirm": "Delete list? Places stay",
     "emptyListHint": "No places in this list yet."
+  },
+  "tickets": {
+    "title": "Tickets",
+    "add": "Add ticket",
+    "newTitle": "New ticket",
+    "editTitle": "Edit ticket",
+    "titleLabel": "Title",
+    "dateLabel": "Date",
+    "timeLabel": "Time",
+    "locationLabel": "Location",
+    "noteLabel": "Note",
+    "filesLabel": "Attachments",
+    "addFiles": "Add files",
+    "filesHint": "Images or PDFs — booking confirmations, QR codes.",
+    "removeFile": "Remove file",
+    "badFileType": "Only images and PDFs are supported.",
+    "titleRequired": "Add a title for this ticket.",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirmDelete": "Tap again to delete",
+    "saveFailed": "Couldn't save. Try again.",
+    "emptyHeadline": "No tickets yet",
+    "emptySubtext": "Keep reservations, booking PDFs, and QR codes in one place.",
+    "loading": "Loading your tickets…",
+    "errorHeadline": "Couldn't load tickets",
+    "errorSubtext": "Check your connection and try again."
   }
 }

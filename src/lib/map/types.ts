@@ -11,6 +11,7 @@
 export type { PlaceDTO, LegDTO } from '@/src/lib/planView';
 export type { DayGroup } from '@/src/lib/planUrl';
 import type { LegDTO } from '@/src/lib/planView';
+import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
 export interface LatLngLiteral {
   lat: number;
@@ -30,6 +31,8 @@ export interface DayPath {
   seg?: {
     fromName: string;
     toName: string;
+    /** Resolved travel mode for this pair (leg override or day default). */
+    mode: TravelMode;
     leg: LegDTO | null;
   };
 }

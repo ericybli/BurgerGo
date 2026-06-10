@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic';
 const MAX_PER_OWNER = 12;
 
 /** Owner types that may receive uploads (Plan 3 'journal'; Plan 4 'restaurant'; Photography 'photo_list'). */
-const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal', 'restaurant', 'photo_list'];
+const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal', 'restaurant', 'photo_list', 'trip'];
 
 /** Photo DTO returned to the client (full row). */
 export type PhotoDTO = Photo;
@@ -71,7 +71,9 @@ export async function POST(req: Request): Promise<Response> {
         ? getRestaurant(db, ownerId)?.tripId
         : owner === 'photo_list'
           ? getPhotoList(db, ownerId)?.tripId
-          : getEntry(db, ownerId)?.tripId;
+          : owner === 'trip'
+            ? getTrip(db, ownerId)?.id
+            : getEntry(db, ownerId)?.tripId;
   if (ownerTripId !== tripId) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }

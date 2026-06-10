@@ -175,11 +175,12 @@ export function MapboxCanvas({
         type: 'line',
         source: id,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
-        // Solid 3px day-color route line with round caps.
+        // Walk legs dotted, drive/transit solid 3px day-color lines.
         paint: {
           'line-color': dp.color,
           'line-width': 3,
           'line-opacity': 0.9,
+          ...(dp.seg?.mode === 'walk' ? { 'line-dasharray': [0.1, 2] } : {}),
         },
       });
       layerIdsRef.current.push(id);

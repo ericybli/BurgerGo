@@ -179,7 +179,7 @@ describe('GoogleMapCanvas', () => {
     const seg: DayPath = {
       date: '2026-06-04', color: '#EE5B3C',
       path: [{ lat: 35.0, lng: 139.0 }, { lat: 35.1, lng: 139.1 }],
-      seg: { fromName: 'Senso-ji', toName: 'Skytree', leg: null },
+      seg: { fromName: 'Senso-ji', toName: 'Skytree', mode: 'drive', leg: null },
     };
     const onLegClick = vi.fn();
     renderCanvas({ markers: MARKERS, paths: [seg], onMarkerClick: vi.fn(), onLegClick });

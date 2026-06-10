@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { MapPin, Utensils, CreditCard, SquareCheck, Book } from 'lucide-react';
+import { MapPin, Utensils, Ticket, CreditCard, SquareCheck, Book } from 'lucide-react';
 
-const TABS = ['plan', 'eats', 'budget', 'packing', 'journal'] as const;
+const TABS = ['plan', 'eats', 'tickets', 'budget', 'packing', 'journal'] as const;
 type Tab = (typeof TABS)[number];
 
 // Atlas tab icons: 2px-stroke outline set (pin / fork+knife / card / checkbox / book).
 const TAB_ICONS: Record<Tab, typeof MapPin> = {
   plan: MapPin,
   eats: Utensils,
+  tickets: Ticket,
   budget: CreditCard,
   packing: SquareCheck,
   journal: Book,

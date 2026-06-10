@@ -38,21 +38,21 @@ describe('legView helpers', () => {
     expect(legBetween(lookup, 'b', 'a', 'walk')).toBeUndefined();
   });
 
-  it('formatLeg renders mode glyph + minutes + km', () => {
+  it('formatLeg renders mode glyph + minutes + miles', () => {
     expect(formatLeg(leg({ mode: 'walk', durationSeconds: 720, distanceMeters: 900 }))).toBe(
-      '🚶 12 min · 0.9 km',
+      '🚶 12 min · 0.6 mi',
     );
     expect(formatLeg(leg({ mode: 'drive', durationSeconds: 305, distanceMeters: 4200 }))).toBe(
-      '🚗 5 min · 4.2 km',
+      '🚗 5 min · 2.6 mi',
     );
     expect(formatLeg(leg({ mode: 'transit', durationSeconds: 60, distanceMeters: 150 }))).toBe(
-      '🚆 1 min · 0.2 km',
+      '🚆 1 min · 0.1 mi',
     );
   });
 
   it('formatLeg clamps sub-minute durations to a 1 min floor', () => {
     expect(formatLeg(leg({ mode: 'walk', durationSeconds: 20, distanceMeters: 150 }))).toBe(
-      '🚶 1 min · 0.2 km',
+      '🚶 1 min · 0.1 mi',
     );
   });
 
