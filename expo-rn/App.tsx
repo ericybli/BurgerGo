@@ -17,6 +17,10 @@ import { HomeScreen } from './screens/home/HomeScreen';
 import { SettingsScreen } from './screens/settings/SettingsScreen';
 import { OfflineBanner } from './components/OfflineBanner';
 import { colors, font } from './lib/theme';
+import { initPhotoCache } from './lib/offlineStore';
+
+// Photo-cache index loads once per app launch (photoUrl checks it synchronously).
+void initPhotoCache();
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

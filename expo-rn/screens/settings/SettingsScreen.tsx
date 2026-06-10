@@ -13,6 +13,8 @@ import { APP_VERSION } from '../../lib/appVersion';
 import { colors, type } from '../../lib/theme';
 import { Button, Card, Field, Loading, OfflineHint, Screen, Select } from '../../components/ui';
 import { loadSettings, patchSettings } from './settingsApi';
+import { downloadAllForOffline, type SyncProgress } from '../../lib/offlineSync';
+import { getOfflineMeta, type OfflineMeta } from '../../lib/offlineStore';
 
 type Status = 'idle' | 'saved' | 'error';
 
@@ -30,6 +32,14 @@ export function SettingsScreen() {
   const [mapStatus, setMapStatus] = useState<Status>('idle');
   const [aiStatus, setAiStatus] = useState<Status>('idle');
   const [curBusy, setCurBusy] = useState(false);
+  // Offline download (Card 5)
+  const [offlineMeta, setOfflineMetaState] = useState<OfflineMeta | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncError, setSyncError] = useState(false);
+  useEffect(() => {
+    void getOfflineMeta().then(setOfflineMetaState);
+  }, []);
   const [mapBusy, setMapBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
 
@@ -250,13 +260,45 @@ export function SettingsScreen() {
         <Text style={styles.version}>Version {APP_VERSION}</Text>
       </Card>
 
-      {/* Card 5 — Offline & install + Your data (one card, divided) */}
+      {/* Card 5 — Offline download + Your data (one card, divided) */}
       <Card style={styles.cardSpace}>
-        <Text style={styles.cardTitle}>Offline & install</Text>
-        {/* RN adaptation: the web's HTTPS/install copy is PWA-only. */}
+        <Text style={styles.cardTitle}>Offline</Text>
         <Text style={styles.cardBody}>
-          Works offline for reading. Editing your trip needs a connection.
+          Download every trip — plans, eats, journal, tickets, and photos — to
+          use the app without a connection. Editing still needs one.
         </Text>
+        <Text style={styles.offlineStatus}>
+          {syncing && syncProgress
+            ? syncProgress.phase === 'data'
+              ? `Fetching ${syncProgress.label}…`
+              : `Photos ${syncProgress.done}/${syncProgress.total}…`
+            : offlineMeta
+              ? `Last downloaded ${formatWhen(offlineMeta.ts)} · ${offlineMeta.files} photos · ${(
+                  offlineMeta.bytes / 1048576
+                ).toFixed(1)} MB`
+              : 'Nothing downloaded yet.'}
+        </Text>
+        {syncError ? (
+          <Text style={styles.offlineError}>Couldn't download — check your connection.</Text>
+        ) : null}
+        <Button
+          title={offlineMeta ? 'Refresh offline data' : 'Download for offline'}
+          busy={syncing}
+          disabled={!online || syncing}
+          onPress={() => {
+            setSyncing(true);
+            setSyncError(false);
+            void downloadAllForOffline(setSyncProgress)
+              .then((m) => setOfflineMetaState(m))
+              .catch(() => setSyncError(true))
+              .finally(() => {
+                setSyncing(false);
+                setSyncProgress(null);
+              });
+          }}
+          style={styles.offlineBtn}
+        />
+        {!online ? <OfflineHint /> : null}
         <View style={styles.divider} />
         <Text style={styles.cardTitle}>Your data</Text>
         <Text style={styles.cardBody}>
@@ -266,6 +308,15 @@ export function SettingsScreen() {
       </Card>
     </Screen>
   );
+}
+
+/** "Jun 10, 14:32" without Intl (Hermes-safe). */
+function formatWhen(ts: number): string {
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const d = new Date(ts);
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}, ${hh}:${mm}`;
 }
 
 const styles = StyleSheet.create({
@@ -278,6 +329,9 @@ const styles = StyleSheet.create({
   rowLabel: { ...type.body, color: colors.ink },
   rowValue: { ...type.label, color: colors.sub },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line, marginVertical: 12 },
+  offlineStatus: { ...type.caption, color: colors.sub, marginTop: 10 },
+  offlineError: { ...type.caption, color: colors.danger, marginTop: 6 },
+  offlineBtn: { marginTop: 12 },
   status: { ...type.caption, marginTop: 10, color: colors.faint },
   cardSpace: { marginTop: 16 },
   cardTitle: { ...type.heading, color: colors.ink },

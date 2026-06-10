@@ -3,6 +3,8 @@
  * routes; writes are REST mirrors of the web app's Server Actions (open unless
  * the server sets BURGERGO_API_KEY — then set WRITE_KEY to the same value).
  */
+import { cacheJson, localPhotoUri, readCachedJson } from '../offlineStore';
+
 export const API_BASE =
   process.env.EXPO_PUBLIC_API_BASE || 'https://eric.month2month.com/burgergo';
 
@@ -11,10 +13,23 @@ export const WRITE_KEY: string = '';
 
 type PhotoSize = 'thumb' | 'card' | 'full';
 
+/**
+ * GET with offline support: every success is written through to the JSON
+ * cache; any failure (offline, server error) falls back to the last cached
+ * response for the same path. The original error propagates on a cache miss.
+ */
 export async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for GET ${path}`);
-  return (await res.json()) as T;
+  try {
+    const res = await fetch(`${API_BASE}${path}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for GET ${path}`);
+    const data = (await res.json()) as T;
+    void cacheJson(path, data);
+    return data;
+  } catch (err) {
+    const hit = await readCachedJson<T>(path);
+    if (hit) return hit.data;
+    throw err;
+  }
 }
 
 export async function writeJson<T>(method: string, path: string, body?: unknown): Promise<T> {
@@ -65,13 +80,16 @@ export async function postForm<T>(
 
 // --- image URL builders (build from id; never use raw path strings) ---------
 
+/** Offline-first: a locally downloaded copy wins over the remote URL. */
+const photo = (remote: string): string => localPhotoUri(remote) ?? remote;
+
 export const photoUrl = {
   personal: (photoId: string, size: PhotoSize = 'thumb') =>
-    `${API_BASE}/api/photos/p/${photoId}/${size}`,
+    photo(`${API_BASE}/api/photos/p/${photoId}/${size}`),
   restaurant: (restaurantId: string, size: PhotoSize = 'card') =>
-    `${API_BASE}/api/photos/r/${restaurantId}/${size}`,
+    photo(`${API_BASE}/api/photos/r/${restaurantId}/${size}`),
   /** A place's cached Google photo (keyed by place id). */
   place: (placeId: string, size: PhotoSize = 'card') =>
-    `${API_BASE}/api/photos/${placeId}/${size}`,
-  linkThumb: (linkId: string) => `${API_BASE}/api/links/thumb/${linkId}`,
+    photo(`${API_BASE}/api/photos/${placeId}/${size}`),
+  linkThumb: (linkId: string) => photo(`${API_BASE}/api/links/thumb/${linkId}`),
 };
