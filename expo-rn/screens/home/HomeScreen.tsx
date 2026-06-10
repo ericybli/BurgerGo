@@ -5,7 +5,7 @@
  * loading/error/empty states, and the orange New-trip FAB. Cards open the
  * trip; the pencil chip opens the Manage sheet.
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Animated,
@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Plus } from 'lucide-react-native';
+import { Plus, Settings as SettingsIcon } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { RootStackParamList } from '../../navigation/types';
 import { api, type Trip } from '../../lib/api';
 import { useOnline } from '../../lib/online';
@@ -121,6 +122,7 @@ function FadeUpItem({ index, children }: { index: number; children: ReactNode })
 
 export function HomeScreen({ navigation }: Props) {
   const online = useOnline();
+  const insets = useSafeAreaInsets();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [creating, setCreating] = useState(false);
   const [manageTrip, setManageTrip] = useState<Trip | null>(null);
@@ -131,23 +133,6 @@ export function HomeScreen({ navigation }: Props) {
     },
     [],
   );
-
-  // Header: bundled logo + display-type wordmark (the settings chip lives in
-  // App.tsx). Mounted as headerLeft — the web header is left-aligned, and the
-  // iOS native-stack centers custom headerTitle components.
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      // () => null makes native-stack FALL BACK to the string title (iOS showed
-      // a second "BurgerGo" next to the logo) — an empty View truly hides it.
-      headerTitle: () => <View />,
-      headerLeft: () => (
-        <View style={s.headerTitle}>
-          <Image source={MASCOT} style={s.headerLogo} resizeMode="contain" />
-          <Text style={s.headerText}>BurgerGo</Text>
-        </View>
-      ),
-    });
-  }, [navigation]);
 
   const load = useCallback(async () => {
     try {
@@ -236,6 +221,23 @@ export function HomeScreen({ navigation }: Props) {
 
   return (
     <View style={s.root}>
+      {/* Web (home)/layout.tsx header: 38px logo + display wordmark left,
+          36px surface settings chip right — drawn in-page, not in a nav bar. */}
+      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
+        <View style={s.headerTitle}>
+          <Image source={MASCOT} style={s.headerLogo} resizeMode="contain" />
+          <Text style={s.headerText}>BurgerGo</Text>
+        </View>
+        <Pressable
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+          style={({ pressed }) => [s.settingsChip, pressed && { transform: [{ scale: 0.95 }] }]}
+        >
+          <SettingsIcon size={18} color={colors.ink} />
+        </Pressable>
+      </View>
       {content}
 
       {/* Orange New-trip FAB (the one allowed extra shadow). Always enabled —
@@ -286,7 +288,23 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
 
-  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    backgroundColor: colors.bg,
+  },
+  headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  settingsChip: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   headerLogo: { width: 38, height: 36 },
   headerText: { ...type.display, color: colors.ink },
 

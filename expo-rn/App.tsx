@@ -1,4 +1,4 @@
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,7 +10,6 @@ import {
   InstrumentSans_600SemiBold,
   InstrumentSans_700Bold,
 } from '@expo-google-fonts/instrument-sans';
-import { Settings as SettingsIcon } from 'lucide-react-native';
 import type { RootStackParamList } from './navigation/types';
 import { TripScreen } from './navigation/TripTabs';
 import { TripHeaderRight, TripHeaderTitle } from './navigation/TripHeader';
@@ -50,31 +49,10 @@ export default function App() {
             <Stack.Screen
               name="Home"
               component={HomeScreen}
-              options={({ navigation }) => ({
-                title: 'BurgerGo',
-                headerRight: () => (
-                  // Web (home)/layout.tsx: 36px round surface chip, Settings 18 ink, active scale 0.95.
-                  <Pressable
-                    onPress={() => navigation.navigate('Settings')}
-                    hitSlop={10}
-                    accessibilityRole="button"
-                    accessibilityLabel="Settings"
-                    style={({ pressed }) => [
-                      {
-                        width: 36,
-                        height: 36,
-                        borderRadius: 999,
-                        backgroundColor: colors.surface,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                      pressed && { transform: [{ scale: 0.95 }] },
-                    ]}
-                  >
-                    <SettingsIcon size={18} color={colors.ink} />
-                  </Pressable>
-                ),
-              })}
+              // The big logo header is drawn inside the screen (web parity) —
+              // the cramped native nav bar made it look off. title kept for
+              // the iOS back label on Trip/Settings.
+              options={{ headerShown: false, title: 'BurgerGo' }}
             />
             <Stack.Screen
               name="Trip"
