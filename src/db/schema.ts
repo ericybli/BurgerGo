@@ -345,6 +345,25 @@ export const dayModes = sqliteTable(
 );
 
 /**
+ * Per-day itinerary title ("what's today about"). Sparse like day_modes: a row
+ * exists only for days the user titled; clearing the title deletes the row.
+ */
+export const dayTitles = sqliteTable(
+  'day_titles',
+  {
+    tripId: text('trip_id')
+      .notNull()
+      .references(() => trips.id, { onDelete: 'cascade' }),
+    dayDate: text('day_date').notNull(),
+    title: text('title').notNull(),
+    updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.tripId, t.dayDate] }),
+  }),
+);
+
+/**
  * A named, per-trip grouping ("list") for Saved-bucket places. A place points
  * here via `places.list_id`; deleting a list sets those places' list_id to NULL
  * (they become "loose" again — never deleted).
@@ -547,6 +566,7 @@ export type NewPackingItem = typeof packingItems.$inferInsert;
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type DayMode = typeof dayModes.$inferSelect;
+export type DayTitle = typeof dayTitles.$inferSelect;
 export type NewDayMode = typeof dayModes.$inferInsert;
 export type SavedListRow = typeof savedLists.$inferSelect;
 export type NewSavedListRow = typeof savedLists.$inferInsert;

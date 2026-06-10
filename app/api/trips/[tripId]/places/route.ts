@@ -6,6 +6,7 @@ import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip, addPlace, updatePlace } from '@/src/db/repos/places';
 import { listDayModes } from '@/src/db/repos/dayModes';
+import { listDayTitles } from '@/src/db/repos/dayTitles';
 import { listByTrip as listSavedLists, addList } from '@/src/db/repos/savedLists';
 import { getSettings } from '@/src/db/repos/settings';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
@@ -158,7 +159,10 @@ export async function GET(
   // Global display currency — lets the place-cost field format correctly (F3).
   const currency = getSettings(db)?.currency ?? env.DEFAULT_CURRENCY;
 
-  return NextResponse.json({ places: placesResult, legs, dayModes, lists, currency });
+  const dayTitles: Record<string, string> = Object.fromEntries(
+    listDayTitles(db, tripId).map((r) => [r.dayDate, r.title]),
+  );
+  return NextResponse.json({ places: placesResult, legs, dayModes, dayTitles, lists, currency });
 }
 
 const CATEGORY = z.enum([

@@ -47,6 +47,8 @@ function renderDay(props: Partial<React.ComponentProps<typeof DayItinerary>> = {
       <DayItinerary
         dayLabel="Day 1"
         dayDate="2026-05-03"
+        dayTitle={null}
+        onSaveDayTitle={vi.fn()}
         stops={[place({ id: 'a', orderIndex: 0, name: 'A' }), place({ id: 'b', orderIndex: 1, name: 'B' })]}
         legs={indexLegs([walkLeg])}
         mode="walk"
@@ -112,7 +114,7 @@ describe('DayItinerary', () => {
   });
 
   it('shows the empty state for a day with no stops', () => {
-    renderDay({ stops: [], dayLabel: 'Day 3' });
+    renderDay({ stops: [],  dayLabel: 'Day 3' });
     expect(
       screen.getByText(en.plan.emptyDayHeadline.replace('{dayLabel}', 'Day 3')),
     ).toBeInTheDocument();

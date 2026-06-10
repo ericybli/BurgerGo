@@ -324,7 +324,9 @@
     "move": "Move",
     "copy": "Copy",
     "moveToDayTitle": "Move to which day?",
-    "copyToDayTitle": "Copy to which day?"
+    "copyToDayTitle": "Copy to which day?",
+    "dayTitlePlaceholder": "Add a title…",
+    "dayTitleAria": "Day title"
   },
   "eats": {
     "title": "Eats",

@@ -37,6 +37,7 @@ import {
   recomputeDayLegsAction,
   setLegModeAction,
   setDayModeAction,
+  setDayTitleAction,
   setPlaceListAction,
 } from '@/app/_actions/places';
 import { fetchPoiDetails } from '@/components/plan/googleClient';
@@ -75,6 +76,8 @@ type PlanData = {
   restaurants: RestaurantMarkerInput[];
   /** Sparse per-day default travel mode (dayDate → mode); missing → DEFAULT_DAY_MODE. */
   dayModes: Record<string, TravelMode>;
+  /** Sparse per-day itinerary titles (dayDate → title). */
+  dayTitles: Record<string, string>;
   /** Saved-place grouping lists (id + name), in display order. */
   lists: SavedListItem[];
 };
@@ -226,10 +229,11 @@ export function PlanClient({
       ]);
       if (!placesRes.ok) throw new Error('load failed');
       const trip: TripLite = tripData.trip;
-      const { places, legs, dayModes, lists, currency: cur } = (await placesRes.json()) as {
+      const { places, legs, dayModes, dayTitles, lists, currency: cur } = (await placesRes.json()) as {
         places: PlaceDTO[];
         legs: LegDTO[];
         dayModes: Record<string, TravelMode>;
+        dayTitles?: Record<string, string>;
         lists: SavedListItem[];
         currency?: string;
       };
@@ -264,7 +268,7 @@ export function PlanClient({
         }));
       }
       // FIX C1: only setState if still mounted
-      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants, dayModes, lists } });
+      if (mountedRef.current) setState({ status: 'loaded', data: { trip, places, legs, restaurants, dayModes, dayTitles: dayTitles ?? {}, lists } });
     } catch {
       if (mountedRef.current) setState({ status: 'error' });
       return;
@@ -341,7 +345,7 @@ export function PlanClient({
     );
   }
 
-  const { trip, places, legs, restaurants, dayModes, lists } = state.data;
+  const { trip, places, legs, restaurants, dayModes, dayTitles, lists } = state.data;
   const days: DerivedDay[] = deriveDays(trip, tz);
   const landing = landingDate(trip, tz);
   const range = { startDate: trip.startDate, endDate: trip.endDate };
@@ -602,6 +606,21 @@ export function PlanClient({
     const first = days[0]?.date;
     if (first) setParams({ date: first });
   }
+  /** Save/clear a day's title: optimistic local update + server action. */
+  function saveDayTitle(date: string, title: string | null) {
+    setState((prev) => {
+      if (prev.status !== 'loaded') return prev;
+      const next = { ...prev.data.dayTitles };
+      if (title) next[date] = title;
+      else delete next[date];
+      return { ...prev, data: { ...prev.data, dayTitles: next } };
+    });
+    void setDayTitleAction(tripId, date, title).catch(() => {
+      setMutationError(t('saveFailed'));
+      void load({ full: true });
+    });
+  }
+
   /** List DayStrip pick: select the day AND focus the map route on it. */
   function selectDay(date: string) {
     setParams({ date });
@@ -724,6 +743,8 @@ export function PlanClient({
           <DayItinerary
             dayLabel={dayLabel}
             dayDate={params.date}
+            dayTitle={dayTitles[params.date] ?? null}
+            onSaveDayTitle={(title) => saveDayTitle(params.date, title)}
             stops={stops}
             legs={legLookup}
             mode={dayMode}

@@ -137,7 +137,8 @@ describe('GET /api/trips/[tripId]/places', () => {
       ctx('trip-empty'),
     );
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ places: [], legs: [], dayModes: {}, lists: [], currency: 'USD' });
+    await expect(res.json()).resolves.toEqual({ places: [], legs: [], dayModes: {},
+      dayTitles: {}, lists: [], currency: 'USD' });
   });
 
   it('returns the trip\'s saved lists (id+name) and each place\'s listId', async () => {

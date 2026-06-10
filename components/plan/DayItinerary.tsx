@@ -28,6 +28,10 @@ type DayItineraryProps = {
   dayLabel: string;
   /** The day's calendar date (YYYY-MM-DD), used in the text export header. */
   dayDate: string;
+  /** User-set "what's today about" title; null when unset. */
+  dayTitle: string | null;
+  /** Save (or clear, with empty/null) the day's title. */
+  onSaveDayTitle: (title: string | null) => void;
   stops: PlaceDTO[]; // already ordered by orderIndex
   legs: LegLookup;
   mode: TravelMode;
@@ -54,6 +58,8 @@ type DayItineraryProps = {
 export function DayItinerary({
   dayLabel,
   dayDate,
+  dayTitle,
+  onSaveDayTitle,
   stops,
   legs,
   mode,
@@ -76,6 +82,20 @@ export function DayItinerary({
   const t = useTranslations('plan');
   const tCat = useTranslations('placeCategory');
   const [exportOpen, setExportOpen] = useState(false);
+  // Tap-to-edit day title: inline input replaces the heading text while open.
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState('');
+
+  function commitTitle() {
+    setEditingTitle(false);
+    const next = titleDraft.trim() || null;
+    if (next !== (dayTitle ?? null)) onSaveDayTitle(next);
+  }
+
+  // Close any in-flight title edit when the selected day changes.
+  useEffect(() => {
+    setEditingTitle(false);
+  }, [dayDate]);
   // Itinerary density (approved Atlas affordance): compact rows vs large cards,
   // remembered across visits. localStorage is only touched post-mount (SSR-safe).
   const [density, setDensity] = useState<'rows' | 'cards'>('rows');
@@ -107,7 +127,41 @@ export function DayItinerary({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <span className="text-[13px] font-bold text-ink">{dayLabel}</span>
+        <span className="shrink-0 text-[13px] font-bold text-ink">{dayLabel}</span>
+        {editingTitle ? (
+          <input
+            type="text"
+            value={titleDraft}
+            // eslint-disable-next-line jsx-a11y/no-autofocus
+            autoFocus
+            placeholder={t('dayTitlePlaceholder')}
+            aria-label={t('dayTitleAria')}
+            onChange={(e) => setTitleDraft(e.target.value)}
+            onBlur={commitTitle}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') commitTitle();
+              if (e.key === 'Escape') setEditingTitle(false);
+            }}
+            className="min-w-0 flex-1 rounded-md border border-line bg-bg px-2 py-0.5 text-[12.5px] text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+          />
+        ) : (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label={t('dayTitleAria')}
+            onClick={() => {
+              setTitleDraft(dayTitle ?? '');
+              setEditingTitle(true);
+            }}
+            className="min-w-0 flex-1 truncate text-left text-[12.5px] transition active:opacity-70 disabled:opacity-60"
+          >
+            {dayTitle ? (
+              <span className="text-sub">{dayTitle}</span>
+            ) : (
+              <span className="text-faint">{t('dayTitlePlaceholder')}</span>
+            )}
+          </button>
+        )}
         <div role="group" className="flex shrink-0 items-center gap-0.5 rounded-lg bg-surface p-[2px]">
           <button
             type="button"

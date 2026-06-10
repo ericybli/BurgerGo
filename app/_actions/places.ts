@@ -16,6 +16,7 @@ import {
 } from '@/src/db/repos/places';
 import { invalidateLegsTouchingPlace } from '@/src/db/repos/legs';
 import { setDayMode } from '@/src/db/repos/dayModes';
+import { setDayTitle } from '@/src/db/repos/dayTitles';
 import { getTrip } from '@/src/db/repos/trips';
 import { getSettings } from '@/src/db/repos/settings';
 import { env } from '@/src/env';
@@ -322,6 +323,26 @@ export async function setDayModeAction(
   const row = setDayMode(db, parsedTrip, parsedDay, parsedMode);
   revalidatePath(`/trip/${parsedTrip}/plan`);
   return row;
+}
+
+// --- setDayTitleAction ------------------------------------------------------
+
+/**
+ * Set or clear one day's itinerary title ("what's today about"). Empty/null
+ * clears the sparse row. Online-only, like all writes.
+ */
+export async function setDayTitleAction(
+  tripId: string,
+  dayDate: string,
+  title: string | null,
+): Promise<void> {
+  const parsedTrip = z.string().min(1).parse(tripId);
+  const parsedDay = dateStr.parse(dayDate);
+  const parsedTitle = z.string().max(200).nullable().parse(title);
+  const trip = getTrip(db, parsedTrip);
+  if (!trip) throw new Error('Trip not found');
+  setDayTitle(db, parsedTrip, parsedDay, parsedTitle);
+  revalidatePath(`/trip/${parsedTrip}/plan`);
 }
 
 // --- setPlaceListAction ---------------------------------------------------
