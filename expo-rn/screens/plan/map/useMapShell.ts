@@ -103,14 +103,17 @@ export function useMapShell(props: PlanMapProps, opts: { poiSupported: boolean }
     [bucket, showRestaurants, restaurants],
   );
 
-  /** Base pins define the viewport; overlay layers never affect the fit. */
+  /** Base pins define the viewport; overlay layers never affect the fit.
+   *  (Deliberately NOT gated on showRoutes: toggling the layer keeps the
+   *  viewport and doesn't trigger the empty-day hint.) */
   const basePins: MapPin[] = bucket === 'days' ? dayPins : savedBucketPins;
+  // The Routes layer is the whole day itinerary: stop pins AND leg lines.
   const pins: MapPin[] = useMemo(
     () =>
       bucket === 'days'
-        ? [...dayPins, ...savedLayerPins, ...restaurantLayerPins]
+        ? [...(showRoutes ? dayPins : []), ...savedLayerPins, ...restaurantLayerPins]
         : savedBucketPins,
-    [bucket, dayPins, savedLayerPins, restaurantLayerPins, savedBucketPins],
+    [bucket, showRoutes, dayPins, savedLayerPins, restaurantLayerPins, savedBucketPins],
   );
   const fitKey = fitKeyFor(basePins);
 
