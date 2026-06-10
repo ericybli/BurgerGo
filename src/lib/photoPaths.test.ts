@@ -4,6 +4,8 @@ import {
   isPhotoSize,
   photoBasePath,
   photoDerivativeRelPath,
+  googleThumbRelPath,
+  googleFullRelPath,
   type PhotoSize,
 } from '@/src/lib/photoPaths';
 
@@ -35,5 +37,13 @@ describe('photoPaths', () => {
   it('PhotoSize type accepts the literal union (compile-time)', () => {
     const s: PhotoSize = 'card';
     expect(s).toBe('card');
+  });
+
+  it('googleThumbRelPath replaces the .webp extension with -thumb.webp', () => {
+    expect(googleThumbRelPath('gphotos/ChIJ_abc.webp')).toBe('gphotos/ChIJ_abc-thumb.webp');
+  });
+
+  it('googleFullRelPath replaces the .webp extension with -full.webp', () => {
+    expect(googleFullRelPath('gphotos/ChIJ_abc.webp')).toBe('gphotos/ChIJ_abc-full.webp');
   });
 });

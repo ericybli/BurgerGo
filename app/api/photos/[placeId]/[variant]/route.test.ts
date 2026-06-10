@@ -8,15 +8,18 @@ vi.mock('@/src/db/client', () => ({
   sqlite: {},
 }));
 
-// Mock async fs: only these exact files "exist" (card + its -thumb sibling for
-// gpid-1; card-only for gpid-nothumb to exercise the thumb→card fallback).
+// Mock async fs: only these exact files "exist" (card + its -thumb/-full
+// siblings for gpid-1; card-only for gpid-nothumb to exercise the
+// thumb/full→card fallback).
 const PHOTO_BYTES = Buffer.from('FAKE_CARD_DATA');
 const THUMB_BYTES = Buffer.from('FAKE_THUMB_DATA');
+const FULL_BYTES = Buffer.from('FAKE_FULL_DATA');
 vi.mock('node:fs/promises', () => {
   // Deref the byte consts at CALL time (not factory-construction time) so this
   // factory — hoisted above the const declarations — doesn't touch them early.
   const read = async (path: string) => {
     if (path === '/uploads/place-photos/gpid-1/card-thumb.webp') return THUMB_BYTES;
+    if (path === '/uploads/place-photos/gpid-1/card-full.webp') return FULL_BYTES;
     if (path === '/uploads/place-photos/gpid-1/card.webp') return PHOTO_BYTES;
     if (path === '/uploads/place-photos/gpid-nothumb/card.webp') return PHOTO_BYTES;
     throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
@@ -168,7 +171,16 @@ describe('GET /api/photos/[placeId]/[variant]', () => {
     expect(Buffer.from(await res.arrayBuffer())).toEqual(THUMB_BYTES);
   });
 
-  it('falls back to the card file for thumb when no -thumb derivative exists', async () => {
+  it('serves the larger -full derivative for the full variant', async () => {
+    const res = await GET(
+      new Request('http://x/api/photos/place-1/full'),
+      ctx('place-1', 'full'),
+    );
+    expect(res.status).toBe(200);
+    expect(Buffer.from(await res.arrayBuffer())).toEqual(FULL_BYTES);
+  });
+
+  it('falls back to the card file for thumb/full when no derivative sibling exists', async () => {
     testHandle.db.insert(places).values({
       id: 'nt', tripId: 'trip-1', dayDate: null, googlePlaceId: 'gpid-nothumb',
       name: 'NT', address: null, lat: null, lng: null, category: 'other',
@@ -180,11 +192,13 @@ describe('GET /api/photos/[placeId]/[variant]', () => {
       categoryGuess: 'other', photoRef: 'R', photoLocalPath: 'place-photos/gpid-nothumb/card.webp',
       rawJson: '{}', fetchedAt: TS,
     }).run();
-    const res = await GET(
-      new Request('http://x/api/photos/nt/thumb'),
-      ctx('nt', 'thumb'),
-    );
-    expect(res.status).toBe(200);
-    expect(Buffer.from(await res.arrayBuffer())).toEqual(PHOTO_BYTES);
+    for (const variant of ['thumb', 'full']) {
+      const res = await GET(
+        new Request(`http://x/api/photos/nt/${variant}`),
+        ctx('nt', variant),
+      );
+      expect(res.status).toBe(200);
+      expect(Buffer.from(await res.arrayBuffer())).toEqual(PHOTO_BYTES);
+    }
   });
 });

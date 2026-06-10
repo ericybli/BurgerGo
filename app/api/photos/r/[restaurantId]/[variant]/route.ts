@@ -6,7 +6,7 @@ import { serveCachedGooglePhoto } from '@/src/lib/photos/serveGooglePhoto';
 
 export const dynamic = 'force-dynamic';
 
-/** `thumb` serves the small derivative (fallback to card); `card`/`full` the card file. */
+/** `thumb`/`full` serve their derivative (fallback to the card base file); `card` the base. */
 const ALLOWED_VARIANTS = new Set(['thumb', 'card', 'full']);
 
 /**

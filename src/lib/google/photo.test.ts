@@ -31,14 +31,46 @@ it('downloads, re-encodes to webp, and returns the uploads-relative path', async
     const rel = await fetchAndStoreGooglePhoto({ photoRef: 'ref', googlePlaceId: 'ChIJ_abc-123', apiKey: 'k', uploadsDir: dir });
     expect(rel).toBe('gphotos/ChIJ_abc-123.webp');
     expect(existsSync(join(dir, rel!))).toBe(true);
-    // A small thumb sibling is written alongside the card-size file.
+    // Full + thumb siblings are written alongside the card-size base file.
+    expect(existsSync(join(dir, 'gphotos/ChIJ_abc-123-full.webp'))).toBe(true);
     expect(existsSync(join(dir, 'gphotos/ChIJ_abc-123-thumb.webp'))).toBe(true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
-it('passes the photo_reference + key to the Place Photo endpoint', async () => {
+it('caps each tier at its long edge (full 1600 / card 800 / thumb 320)', async () => {
+  // A 2000×500 source exercises all three caps.
+  const big = await sharp({
+    create: { width: 2000, height: 500, channels: 3, background: { r: 10, g: 20, b: 30 } },
+  }).png().toBuffer();
+  stubFetchOk(new Uint8Array(big).buffer);
+  const dir = tmp();
+  try {
+    const rel = await fetchAndStoreGooglePhoto({ photoRef: 'ref', googlePlaceId: 'big', apiKey: 'k', uploadsDir: dir });
+    expect(rel).toBe('gphotos/big.webp');
+    expect((await sharp(join(dir, 'gphotos/big-full.webp')).metadata()).width).toBe(1600);
+    expect((await sharp(join(dir, 'gphotos/big.webp')).metadata()).width).toBe(800);
+    expect((await sharp(join(dir, 'gphotos/big-thumb.webp')).metadata()).width).toBe(320);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('never enlarges a small source (all tiers keep the original size)', async () => {
+  stubFetchOk(await pngBytes()); // 8×8 source
+  const dir = tmp();
+  try {
+    await fetchAndStoreGooglePhoto({ photoRef: 'ref', googlePlaceId: 'tiny', apiKey: 'k', uploadsDir: dir });
+    expect((await sharp(join(dir, 'gphotos/tiny-full.webp')).metadata()).width).toBe(8);
+    expect((await sharp(join(dir, 'gphotos/tiny.webp')).metadata()).width).toBe(8);
+    expect((await sharp(join(dir, 'gphotos/tiny-thumb.webp')).metadata()).width).toBe(8);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+it('passes the photo_reference + key to the Place Photo endpoint at maxwidth 1600', async () => {
   const f = vi.fn(async (_url: string) => ({ ok: true, arrayBuffer: async () => pngBytes() }));
   vi.stubGlobal('fetch', f as unknown as typeof fetch);
   const dir = tmp();
@@ -46,6 +78,7 @@ it('passes the photo_reference + key to the Place Photo endpoint', async () => {
     await fetchAndStoreGooglePhoto({ photoRef: 'REF123', googlePlaceId: 'x', apiKey: 'SECRET', uploadsDir: dir });
     const url = f.mock.calls[0]![0];
     expect(url).toContain('maps.googleapis.com/maps/api/place/photo');
+    expect(url).toContain('maxwidth=1600');
     expect(url).toContain('photo_reference=REF123');
     expect(url).toContain('key=SECRET');
   } finally {

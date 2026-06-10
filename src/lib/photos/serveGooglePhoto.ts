@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import { join, resolve, sep, extname } from 'node:path';
 import { NextResponse } from 'next/server';
 import { env } from '@/src/env';
-import { googleThumbRelPath } from '@/src/lib/photoPaths';
+import { googleFullRelPath, googleThumbRelPath } from '@/src/lib/photoPaths';
 
 const MIME: Record<string, string> = {
   '.webp': 'image/webp',
@@ -13,11 +13,13 @@ const MIME: Record<string, string> = {
 
 /**
  * Serve a cached Google place photo (`gphotos/<id>.webp`, stored as
- * `photoLocalPath`) for a size variant. For `thumb` it prefers the smaller
- * `-thumb` derivative and falls back to the single card-size file when that
- * sibling isn't present (older photos fetched before thumbs existed). Reads are
- * async (no event-loop block) and every candidate path is constrained under
- * UPLOADS_DIR to prevent traversal. Returns a 404 JSON response on any miss.
+ * `photoLocalPath`) for a size variant. The base file is the card-size
+ * derivative; `thumb` prefers the smaller `-thumb` sibling and `full` the
+ * larger `-full` sibling, each falling back to the base file when that
+ * sibling isn't present (older photos fetched before the tier existed). Reads
+ * are async (no event-loop block) and every candidate path is constrained
+ * under UPLOADS_DIR to prevent traversal. Returns a 404 JSON response on any
+ * miss.
  *
  * Shared by the place (`/api/photos/[placeId]/[variant]`) and restaurant
  * (`/api/photos/r/[restaurantId]/[variant]`) photo routes.
@@ -28,7 +30,11 @@ export async function serveCachedGooglePhoto(
 ): Promise<Response> {
   const root = resolve(env.UPLOADS_DIR);
   const candidates =
-    variant === 'thumb' ? [googleThumbRelPath(photoLocalPath), photoLocalPath] : [photoLocalPath];
+    variant === 'thumb'
+      ? [googleThumbRelPath(photoLocalPath), photoLocalPath]
+      : variant === 'full'
+        ? [googleFullRelPath(photoLocalPath), photoLocalPath]
+        : [photoLocalPath];
 
   for (const rel of candidates) {
     const abs = resolve(join(env.UPLOADS_DIR, rel));

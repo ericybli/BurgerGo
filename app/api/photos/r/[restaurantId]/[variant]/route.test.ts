@@ -9,7 +9,7 @@ vi.mock('@/src/db/client', () => ({
 }));
 
 // Mock node:fs/promises: readFile succeeds only for our known fixture path
-// (its -thumb sibling also contains 'grest-1', so the thumb variant resolves too).
+// (its -thumb/-full siblings also contain 'grest-1', so those variants resolve too).
 const PHOTO_BYTES = Buffer.from('FAKE_WEBP_DATA');
 async function fakeRead(path: string) {
   if (path.includes('grest-1')) return PHOTO_BYTES;
@@ -111,6 +111,11 @@ describe('GET /api/photos/r/[restaurantId]/[variant]', () => {
 
   it('serves 200 for the thumb variant (prefers -thumb, falls back to card)', async () => {
     const res = await GET(new Request('http://x/api/photos/r/rest-1/thumb'), ctx('rest-1', 'thumb'));
+    expect(res.status).toBe(200);
+  });
+
+  it('serves 200 for the full variant (prefers -full, falls back to card)', async () => {
+    const res = await GET(new Request('http://x/api/photos/r/rest-1/full'), ctx('rest-1', 'full'));
     expect(res.status).toBe(200);
   });
 });

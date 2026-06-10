@@ -8,9 +8,10 @@ import { serveCachedGooglePhoto } from '@/src/lib/photos/serveGooglePhoto';
 export const dynamic = 'force-dynamic';
 
 /**
- * Allowed photo size variants. Google photos store a card-size file plus a thumb
- * sibling; `thumb` serves the smaller derivative (falling back to the card file
- * for photos fetched before thumbs existed), `card`/`full` serve the card file.
+ * Allowed photo size variants. Google photos store a card-size base file plus
+ * `-thumb`/`-full` siblings; `thumb` and `full` serve their derivative (falling
+ * back to the card file for photos fetched before that tier existed), `card`
+ * serves the base file.
  */
 const ALLOWED_VARIANTS = new Set(['thumb', 'card', 'full']);
 
