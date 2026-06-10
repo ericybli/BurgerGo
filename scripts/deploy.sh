@@ -40,6 +40,7 @@ rsync -az --delete \
   --exclude='*.db' --exclude='*.db-shm' --exclude='*.db-wal' \
   --exclude='.superpowers/' \
   --exclude='coverage/' \
+  --exclude='expo-rn/' \
   --exclude='public/sw.js' --exclude='public/sw.js.map' \
   --exclude='public/icons/' --exclude='public/burgergo-logo.png' \
   --exclude='scripts/migrate.js' \

@@ -1,0 +1,24 @@
+`npx tsc --noEmit` is clean for my files — the single remaining error is in `screens/eats/EatsScreen.tsx` (another agent's folder, outside my assigned paths).
+
+REPORT — home section port
+
+Files created/changed (all under /Users/eric/own/BurgerGo/expo-rn/screens/home/):
+- HomeScreen.tsx (rewritten) — logo+wordmark headerTitle via navigation.setOptions (headerRight untouched), onboarding note above every state, pulsing 96px mascot loading ("Fetching your trips…"), 112px mascot error ("Couldn't load trips" / "Connect to the internet and try again." / orange "Try again") and empty ("Where to first?" / "Plan your first trip and BurgerGo will tag along." / orange "New trip") states, "Trips" micro section label, server order rendered verbatim (no client sort), staggered fade-up entrance (min(i,6)×40ms), 56px orange FAB with the allowed orange-glow shadow (always enabled; offline writes surface the sheet's save error), key-remounted NewTripSheet, per-trip-keyed ManageTripSheet, refetch on focus + after every successful write.
+- TripCard.tsx (new) — 18px-radius hairline card, 180px cover (photoUrl.personal(coverPhoto,'card'), onError → gradient fallback; 12-band interpolated cream→sage→teal-tint vertical blend approximating the web 135° gradient — no gradient package allowed), white/95 status pill (Upcoming=accent / Active=orange / Past=sub, device-TZ today), 34px white/95 Pencil chip ("Edit trip") opening Manage without navigating, footer name (19 bold, −0.38 tracking) + "Sep 4 – Sep 12 · 9 days" tabular line, right stat box (12 radius; upcoming → days-out countdown, else inclusive length; "days out"/"days" labels).
+- NewTripSheet.tsx (new) — exact web copy ("New trip", "Trip name"/"Tokyo adventure", "Start date", "End date", "Please enter a trip name.", "End date must be on or after the start date.", "Couldn't save — please try again.", Cancel / Create trip), YYYY-MM-DD text inputs with lenient regex validation, pending-disabled orange submit.
+- ManageTripSheet.tsx (new) — per-control commits with inline "Saved ✓" (accent) / "Couldn't save — please try again." (danger), all controls disabled while pending: Rename (teal pill, disabled empty/unchanged), Move dates (PATCH startDate, syncs field to returned trip, hint copy), Length ("{n} days" + teal "Remove a day" disabled at ≤1 + orange "Add a day" + hint), Cover photo (preview h-128 / "No cover yet — the card shows a gradient.", teal Upload/Replace/"Uploading…" via expo-image-picker → POST /api/photos ownerType 'trip' → PATCH coverPhoto → best-effort delete of previous; danger-text "Remove" → PATCH coverPhoto:null + best-effort delete), full-width "Close". Kept the RN delete-trip, converted from Alert.alert to the two-tap confirm ("Delete trip" → "Sure? Delete trip", 3s disarm).
+- OnboardingNote.tsx (new) — exact web copy, orange "Got it", AsyncStorage key "burgergo.onboarded"='1', renders nothing until the flag is read.
+- tripDates.ts (new, local helpers since lib/** is off-limits) — formatMonthDay/formatRange (manual en-US MMM d, UTC parse, en dash, ICU-equivalent plural, inclusive count), diffDays, tripStatus (device-TZ today via lib/days.todayLocal).
+- homeApi.ts (new) — addTripDay/removeTripDay wrappers per the Gap-8 contract: PATCH /api/trips/:id {addDay:true}/{removeDay:true} via lib/api/client.writeJson.
+
+Spec items NOT done (with reason):
+- Gap 8 backend half: PATCH /api/trips/[tripId] in the main repo still only accepts name/startDate/coverPhoto — editing outside expo-rn/ is forbidden for me. The RN client is ready; until the backend accepts addDay/removeDay, homeApi.ts detects the no-op (returned endDate unchanged → throw) so the sheet shows "Couldn't save" instead of a false "Saved ✓". Backend change still required: extend that PATCH to wrap addTripDayAction/removeTripDayAction.
+- Gap 10 (TripTabs restyle + Tickets tab) and Gap 11 (trip header subtitle): live in expo-rn/navigation/** and App.tsx — not my assigned paths (Tickets tab + screens/tickets already exist, so another agent appears to own this).
+- Gap 12 decision: kept delete-trip per my brief (explicitly told not to regress it), placed inside ManageTripSheet behind a two-tap confirm — flagged for the caller as a deliberate web divergence.
+
+Contract assumptions:
+- addDay/removeDay return {trip} from PATCH /api/trips/:id; unchanged endDate in the response is treated as "backend doesn't support it yet" → save error.
+- Trip status / "days out" use device-local today (web uses server env.TZ — divergence accepted by the spec).
+- Cover-gradient is a vertical 12-band blend (no expo-linear-gradient dependency permitted).
+- Date inputs reject non-YYYY-MM-DD with "Start/End date must be YYYY-MM-DD." (RN free-text fields need a format gate the web's <input type=date> provides natively).
+- Cover-upload server errors (too_large/unsupported_type/too_many/etc.) all map to the web's generic "Couldn't save — please try again.", matching web ManageTripSheet.

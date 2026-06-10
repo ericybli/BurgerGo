@@ -35,6 +35,11 @@ coverage/
 # TypeScript incremental build artifacts
 *.tsbuildinfo
 
+# expo-rn native app
+expo-rn/.expo/
+expo-rn/dist/
+expo-rn/web-build/
+
 # misc
 .DS_Store
 *.log
