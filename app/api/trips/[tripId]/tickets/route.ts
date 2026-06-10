@@ -7,6 +7,8 @@ import {
   type Ticket,
   type TicketFile,
 } from '@/src/db/repos/tickets';
+import { addTicketAction, type AddTicketActionInput } from '@/app/_actions/tickets';
+import { restWrite } from '@/src/lib/restWrite';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,4 +32,13 @@ export async function GET(
   }
   const tickets: TicketDTO[] = rows.map((t) => ({ ...t, files: fileMap.get(t.id) ?? [] }));
   return NextResponse.json({ tickets });
+}
+
+/** Create a ticket. POST { title, date?, time?, location?, note? }. */
+export async function POST(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
+  const { tripId } = await ctx.params;
+  return restWrite(req, async (raw) => {
+    const input = { ...(raw as object), tripId } as AddTicketActionInput;
+    return { ticket: await addTicketAction(input) };
+  });
 }

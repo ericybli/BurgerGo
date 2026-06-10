@@ -39,6 +39,24 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: '12mb' },
   },
   serverExternalPackages: ['better-sqlite3', 'undici'],
+  // CORS for the whole API so browser-based native clients (e.g. Expo web on
+  // localhost) can call it cross-origin. The API is intentionally open (an
+  // optional x-api-key guards writes via BURGERGO_API_KEY), so `*` does not
+  // change its security posture. `source` is basePath-relative — Next prefixes
+  // it automatically, and these headers also apply to the auto-generated
+  // OPTIONS preflight responses for route handlers.
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,DELETE,OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'content-type,x-api-key' },
+        ],
+      },
+    ];
+  },
 };
 
 export default withSerwist(withNextIntl(nextConfig));

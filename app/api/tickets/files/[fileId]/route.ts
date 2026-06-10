@@ -6,6 +6,8 @@ import { Readable } from 'node:stream';
 import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { getTicketFile } from '@/src/db/repos/tickets';
+import { deleteTicketFileAction } from '@/app/_actions/tickets';
+import { restWrite } from '@/src/lib/restWrite';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,4 +44,12 @@ export async function GET(
   } catch {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
+}
+
+/** Delete one attachment (row + bytes), mirroring the web UI's per-file remove. */
+export async function DELETE(req: Request, ctx: { params: Promise<{ fileId: string }> }) {
+  const { fileId } = await ctx.params;
+  return restWrite(req, async () => {
+    await deleteTicketFileAction(fileId);
+  });
 }

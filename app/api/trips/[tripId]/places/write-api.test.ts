@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, dayModes } from '@/src/db/schema';
+import { trips, places, dayModes, dayTitles } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -17,6 +17,7 @@ import { PATCH, DELETE } from '@/app/api/trips/[tripId]/places/[placeId]/route';
 import { POST as MOVE } from '@/app/api/trips/[tripId]/places/[placeId]/move/route';
 import { POST as REORDER } from '@/app/api/trips/[tripId]/days/[date]/reorder/route';
 import { PUT as SET_MODE } from '@/app/api/trips/[tripId]/days/[date]/mode/route';
+import { PUT as SET_TITLE } from '@/app/api/trips/[tripId]/days/[date]/title/route';
 import { POST as RECOMPUTE } from '@/app/api/trips/[tripId]/days/[date]/recompute/route';
 import { POST as CREATE } from '@/app/api/trips/[tripId]/places/route';
 
@@ -114,6 +115,50 @@ describe('places write API', () => {
     expect(res.status).toBe(200);
     expect((await res.json()).dayMode.mode).toBe('transit');
     expect(testHandle.db.select().from(dayModes).all()[0]!.mode).toBe('transit');
+  });
+
+  it('PUT title sets the day title (sparse row)', async () => {
+    const res = await SET_TITLE(req({ title: 'Volcano day' }), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-04' }),
+    });
+    expect(res.status).toBe(200);
+    const rows = testHandle.db.select().from(dayTitles).all();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ tripId: 't1', dayDate: '2026-09-04', title: 'Volcano day' });
+  });
+
+  it('PUT title with null (or empty) clears the row', async () => {
+    await SET_TITLE(req({ title: 'Beach day' }), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-05' }),
+    });
+    expect(testHandle.db.select().from(dayTitles).all()).toHaveLength(1);
+
+    const cleared = await SET_TITLE(req({ title: null }), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-05' }),
+    });
+    expect(cleared.status).toBe(200);
+    expect(testHandle.db.select().from(dayTitles).all()).toHaveLength(0);
+
+    // Empty string clears too (set again, then blank it).
+    await SET_TITLE(req({ title: 'Again' }), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-05' }),
+    });
+    await SET_TITLE(req({ title: '' }), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-05' }),
+    });
+    expect(testHandle.db.select().from(dayTitles).all()).toHaveLength(0);
+  });
+
+  it('PUT title 404s on an unknown trip and 400s on a bad body', async () => {
+    const missing = await SET_TITLE(req({ title: 'x' }), {
+      params: Promise.resolve({ tripId: 'nope', date: '2026-09-04' }),
+    });
+    expect(missing.status).toBe(404);
+
+    const bad = await SET_TITLE(req({}), {
+      params: Promise.resolve({ tripId: 't1', date: '2026-09-04' }),
+    });
+    expect(bad.status).toBe(400);
   });
 
   it('recompute returns legs (empty without a Google key in tests)', async () => {
