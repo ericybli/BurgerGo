@@ -97,10 +97,11 @@ export function RestaurantDetail({
   // Live Google open-now + freshest hours (online only). Stored googleHours /
   // googleRating remain the offline fallback; openNow is never read from storage.
   const [live, setLive] = useState<LiveHours | null>(null);
-  const [hoursOpen, setHoursOpen] = useState(false);
+  // Hours start EXPANDED (user request) — the toggle can still collapse them.
+  const [hoursOpen, setHoursOpen] = useState(true);
   useEffect(() => {
     setLive(null);
-    setHoursOpen(false);
+    setHoursOpen(true);
     if (!online || !restaurant.googlePlaceId) return;
     let cancelled = false;
     void fetchPoiLive(restaurant.googlePlaceId).then((d) => {

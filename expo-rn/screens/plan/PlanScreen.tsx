@@ -90,6 +90,7 @@ export function PlanScreen() {
           address: x.address,
           googlePlaceId: x.googlePlaceId,
           googleRating: x.googleRating,
+          googleHours: x.googleHours,
           // Web thumbForRestaurant precedence: first personal photo → cached Google photo.
           photoUrl: x.photos[0]
             ? photoUrl.personal(x.photos[0].id, 'card')

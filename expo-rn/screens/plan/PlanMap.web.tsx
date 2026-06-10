@@ -354,6 +354,8 @@ export default function PlanMap(props: PlanMapProps) {
           showLayers={props.bucket === 'days'}
           layersOpen={shell.layersOpen}
           onToggleLayersMenu={() => shell.setLayersOpen((v) => !v)}
+          showRoutes={shell.showRoutes}
+          onToggleRoutes={() => shell.setShowRoutes((v) => !v)}
           showSaved={shell.showSaved}
           onToggleSaved={() => shell.setShowSaved((v) => !v)}
           showRestaurants={shell.showRestaurants}

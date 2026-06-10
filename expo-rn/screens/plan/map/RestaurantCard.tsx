@@ -7,12 +7,25 @@
  * The richer MapRestaurant fields are optional — the card degrades to the
  * glyph + name + cuisine basics when they're absent.
  */
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Star } from 'lucide-react-native';
+import { api } from '../../../lib/api';
 import { colors, font, type } from '../../../lib/theme';
 import { placeUrl } from '../../../lib/googleMapsUrl';
 import type { MapRestaurant } from '../PlanMap.types';
 import { RESTAURANT_GLYPH } from './mapData';
+
+/** Stored googleHours JSON → weekday lines ([] when absent/corrupt). */
+function parseStoredHours(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json) as unknown;
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
 
 const GOLD = '#C99231'; // day-2 amber: rating stars (same as PoiCard)
 
@@ -27,6 +40,25 @@ export function RestaurantCard({
   onClose: () => void;
 }) {
   const photo = restaurant.photoUrl ?? null;
+
+  // Live open-now + freshest hours (never stored); stored googleHours is the
+  // offline fallback for the weekday lines. Failures stay silent.
+  const [live, setLive] = useState<{ openNow: boolean | null; hours: string[] } | null>(null);
+  useEffect(() => {
+    if (!restaurant.googlePlaceId) return;
+    let cancelled = false;
+    api.google
+      .poi(restaurant.googlePlaceId)
+      .then((d) => {
+        if (!cancelled) setLive({ openNow: d.openNow, hours: d.hours });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [restaurant.googlePlaceId]);
+  const hours = live?.hours.length ? live.hours : parseStoredHours(restaurant.googleHours);
+
   return (
     <View style={s.backdropHost}>
       <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel="Close" />
@@ -63,17 +95,35 @@ export function RestaurantCard({
           </Pressable>
         </View>
 
-        {photo != null ? (
-          <Image
-            source={{ uri: photo }}
-            style={s.photo}
-            resizeMode="cover"
-            accessibilityLabel={restaurant.name}
-          />
-        ) : null}
+        <ScrollView bounces={false} style={s.body} showsVerticalScrollIndicator={false}>
+          {photo != null ? (
+            <Image
+              source={{ uri: photo }}
+              style={s.photo}
+              resizeMode="cover"
+              accessibilityLabel={restaurant.name}
+            />
+          ) : null}
 
-        {restaurant.address ? <Text style={s.address}>{restaurant.address}</Text> : null}
-        {restaurant.notes ? <Text style={s.notes}>{restaurant.notes}</Text> : null}
+          {restaurant.address ? <Text style={s.address}>{restaurant.address}</Text> : null}
+
+          {live?.openNow != null || hours.length > 0 ? (
+            <View style={s.hoursBlock}>
+              {live?.openNow != null ? (
+                <Text style={[s.openNow, { color: live.openNow ? colors.accent : colors.danger }]}>
+                  {live.openNow ? 'Open now' : 'Closed'}
+                </Text>
+              ) : null}
+              {hours.map((line) => (
+                <Text key={line} style={s.hoursLine}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+          ) : null}
+
+          {restaurant.notes ? <Text style={s.notes}>{restaurant.notes}</Text> : null}
+        </ScrollView>
 
         <Pressable
           onPress={() => {
@@ -110,12 +160,17 @@ const s = StyleSheet.create({
   card: {
     width: '100%',
     maxWidth: 384,
+    maxHeight: '88%',
     borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.bg,
     padding: 12,
   },
+  body: { flexGrow: 0 },
+  hoursBlock: { marginTop: 8 },
+  openNow: { fontSize: 12, fontFamily: font.bold, marginBottom: 3 },
+  hoursLine: { fontSize: 11, lineHeight: 16.5, fontFamily: font.regular, color: colors.sub },
   headerRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   glyphBox: {
     width: 40,

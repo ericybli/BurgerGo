@@ -40,6 +40,7 @@ export function useMapShell(props: PlanMapProps, opts: { poiSupported: boolean }
 
   // --- Chrome state ---------------------------------------------------------
   const [layersOpen, setLayersOpen] = useState(false);
+  const [showRoutes, setShowRoutes] = useState(true);
   const [showSaved, setShowSaved] = useState(false);
   const [showRestaurants, setShowRestaurants] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -114,8 +115,8 @@ export function useMapShell(props: PlanMapProps, opts: { poiSupported: boolean }
   const fitKey = fitKeyFor(basePins);
 
   const segs: MapSeg[] = useMemo(
-    () => (bucket === 'days' ? buildLegSegs(visibleGroups, legs, dayModes) : []),
-    [bucket, visibleGroups, legs, dayModes],
+    () => (bucket === 'days' && showRoutes ? buildLegSegs(visibleGroups, legs, dayModes) : []),
+    [bucket, showRoutes, visibleGroups, legs, dayModes],
   );
 
   const legend: LegendEntry[] = useMemo(
@@ -169,6 +170,8 @@ export function useMapShell(props: PlanMapProps, opts: { poiSupported: boolean }
     // chrome
     layersOpen,
     setLayersOpen,
+    showRoutes,
+    setShowRoutes,
     showSaved,
     setShowSaved,
     showRestaurants,

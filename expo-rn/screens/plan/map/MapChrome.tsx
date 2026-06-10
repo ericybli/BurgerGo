@@ -21,6 +21,8 @@ export function MapChrome({
   onToggleLayersMenu,
   showSaved,
   onToggleSaved,
+  showRoutes,
+  onToggleRoutes,
   showRestaurants,
   onToggleRestaurants,
   fullscreen,
@@ -39,6 +41,8 @@ export function MapChrome({
   onToggleLayersMenu: () => void;
   showSaved: boolean;
   onToggleSaved: () => void;
+  showRoutes: boolean;
+  onToggleRoutes: () => void;
   showRestaurants: boolean;
   onToggleRestaurants: () => void;
   fullscreen: boolean;
@@ -66,6 +70,7 @@ export function MapChrome({
           </Pressable>
           {layersOpen ? (
             <View style={s.layersMenu}>
+              <LayerRow label="Routes" value={showRoutes} onToggle={onToggleRoutes} />
               <LayerRow label="Saved places" value={showSaved} onToggle={onToggleSaved} />
               <LayerRow label="Restaurants" value={showRestaurants} onToggle={onToggleRestaurants} />
             </View>

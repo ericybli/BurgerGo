@@ -21,6 +21,8 @@ export type MapRestaurant = {
   photoUrl?: string | null;
   /** Persisted Google rating, when known. */
   googleRating?: number | null;
+  /** Persisted Google weekday hours (JSON array of localized lines). */
+  googleHours?: string | null;
 };
 
 export type PlanMapProps = {
