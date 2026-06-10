@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips } from '@/src/db/schema';
+import { trips, places } from '@/src/db/schema';
 import { getTrip } from '@/src/db/repos/trips';
 
 const testHandle = { db: makeTestDb().db };
@@ -86,6 +86,59 @@ describe('trip write API', () => {
     expect(trip.name).toBe('Combo');
     expect(trip.startDate).toBe('2026-09-05');
     expect(trip.coverPhoto).toBe('gphotos/x.jpg');
+  });
+
+  it('patch: { addDay: true } extends the trip by one day at the end', async () => {
+    const res = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 't1' }));
+    expect(res.status).toBe(200);
+    const trip = (await res.json()).trip as { startDate: string; endDate: string };
+    expect(trip.startDate).toBe('2026-09-04');
+    expect(trip.endDate).toBe('2026-09-13');
+  });
+
+  it('patch: { removeDay: true } drops the last day and moves its places to Saved', async () => {
+    testHandle.db.insert(places).values({
+      id: 'p1', tripId: 't1', dayDate: '2026-09-12', googlePlaceId: null, name: 'Last-day stop',
+      address: null, lat: 1, lng: 2, category: 'sightseeing', scheduledTime: null,
+      durationMin: null, cost: null, notes: null, aiSummary: null, legMode: null, listId: null,
+      orderIndex: 0, createdAt: TS, updatedAt: TS,
+    }).run();
+
+    const res = await PATCH_TRIP(req({ removeDay: true }), P({ tripId: 't1' }));
+    expect(res.status).toBe(200);
+    const trip = (await res.json()).trip as { endDate: string };
+    expect(trip.endDate).toBe('2026-09-11');
+    expect(testHandle.db.select().from(places).all()[0]!.dayDate).toBeNull(); // preserved in Saved
+  });
+
+  it('patch: removeDay on a one-day trip → 400', async () => {
+    testHandle.db.insert(trips).values({
+      id: 't2', name: 'One day', startDate: '2026-10-01', endDate: '2026-10-01',
+      coverPhoto: null, createdAt: TS, updatedAt: TS,
+    }).run();
+    const res = await PATCH_TRIP(req({ removeDay: true }), P({ tripId: 't2' }));
+    expect(res.status).toBe(400);
+    expect(getTrip(testHandle.db, 't2')?.endDate).toBe('2026-10-01');
+  });
+
+  it('patch: addDay + removeDay together → 400 (mutually exclusive)', async () => {
+    const res = await PATCH_TRIP(req({ addDay: true, removeDay: true }), P({ tripId: 't1' }));
+    expect(res.status).toBe(400);
+    expect(getTrip(testHandle.db, 't1')?.endDate).toBe('2026-09-12'); // untouched
+  });
+
+  it('patch: addDay on a missing trip → 404', async () => {
+    const res = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 'nope' }));
+    expect(res.status).toBe(404);
+  });
+
+  it('patch: addDay enforces the write key when BURGERGO_API_KEY is set', async () => {
+    process.env.BURGERGO_API_KEY = 'secret';
+    const noKey = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 't1' }));
+    expect(noKey.status).toBe(401);
+    const withKey = await PATCH_TRIP(req({ addDay: true }, 'secret'), P({ tripId: 't1' }));
+    expect(withKey.status).toBe(200);
+    expect((await withKey.json()).trip.endDate).toBe('2026-09-13');
   });
 
   it('create: rejects endDate before startDate → 400', async () => {

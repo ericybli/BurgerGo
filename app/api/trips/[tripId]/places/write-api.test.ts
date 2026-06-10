@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places, dayModes, dayTitles } from '@/src/db/schema';
+import { trips, places, dayModes, dayTitles, savedLists } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
 vi.mock('@/src/db/client', () => ({
@@ -12,9 +12,17 @@ vi.mock('@/src/db/client', () => ({
 }));
 // The wrapped Server Actions call revalidatePath; stub it (no request cache in tests).
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+// The summary route's action calls OpenAI server-side — mock it like the action tests do.
+vi.mock('@/src/lib/openai/server', () => ({
+  generatePlaceSummary: vi.fn(async () => 'Generated blurb.'),
+}));
 
+import { generatePlaceSummary } from '@/src/lib/openai/server';
 import { PATCH, DELETE } from '@/app/api/trips/[tripId]/places/[placeId]/route';
 import { POST as MOVE } from '@/app/api/trips/[tripId]/places/[placeId]/move/route';
+import { PUT as SET_LEG_MODE } from '@/app/api/trips/[tripId]/places/[placeId]/leg-mode/route';
+import { PUT as SET_LIST } from '@/app/api/trips/[tripId]/places/[placeId]/list/route';
+import { POST as SUMMARY } from '@/app/api/trips/[tripId]/places/[placeId]/summary/route';
 import { POST as REORDER } from '@/app/api/trips/[tripId]/days/[date]/reorder/route';
 import { PUT as SET_MODE } from '@/app/api/trips/[tripId]/days/[date]/mode/route';
 import { PUT as SET_TITLE } from '@/app/api/trips/[tripId]/days/[date]/title/route';
@@ -169,6 +177,100 @@ describe('places write API', () => {
     });
     expect(res.status).toBe(200);
     expect((await res.json()).legs).toEqual([]);
+  });
+
+  it('PUT leg-mode sets the per-leg override and null clears it', async () => {
+    seedPlace(testHandle.db);
+    const set = await SET_LEG_MODE(req({ mode: 'transit' }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(set.status).toBe(200);
+    expect((await set.json()).place.legMode).toBe('transit');
+
+    const cleared = await SET_LEG_MODE(req({ mode: null }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(cleared.status).toBe(200);
+    expect((await cleared.json()).place.legMode).toBeNull();
+  });
+
+  it('PUT leg-mode 404s when the place belongs to another trip', async () => {
+    seedPlace(testHandle.db);
+    const res = await SET_LEG_MODE(req({ mode: 'walk' }), {
+      params: Promise.resolve({ tripId: 'other', placeId: 'p1' }),
+    });
+    expect(res.status).toBe(404);
+  });
+
+  it('PUT leg-mode 400s on an invalid mode', async () => {
+    seedPlace(testHandle.db);
+    const res = await SET_LEG_MODE(req({ mode: 'teleport' }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('PUT list moves the place into a list and null makes it loose again', async () => {
+    seedPlace(testHandle.db, { dayDate: null });
+    testHandle.db.insert(savedLists).values({
+      id: 'l1', tripId: 't1', name: 'Cafés', orderIndex: 0, createdAt: TS, updatedAt: TS,
+    }).run();
+    const set = await SET_LIST(req({ listId: 'l1' }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(set.status).toBe(200);
+    expect((await set.json()).place.listId).toBe('l1');
+
+    const loose = await SET_LIST(req({ listId: null }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(loose.status).toBe(200);
+    expect((await loose.json()).place.listId).toBeNull();
+  });
+
+  it('PUT list 404s on a foreign place and 400s on a bad body', async () => {
+    seedPlace(testHandle.db);
+    const foreign = await SET_LIST(req({ listId: 'l1' }), {
+      params: Promise.resolve({ tripId: 'other', placeId: 'p1' }),
+    });
+    expect(foreign.status).toBe(404);
+
+    const bad = await SET_LIST(req({}), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(bad.status).toBe(400);
+
+    const empty = await SET_LIST(req({ listId: '' }), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(empty.status).toBe(400);
+  });
+
+  it('POST summary (no body) stores the AI summary and returns the place', async () => {
+    seedPlace(testHandle.db);
+    const res = await SUMMARY(req(), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).place.aiSummary).toBe('Generated blurb.');
+  });
+
+  it('POST summary returns { place: null } when generation yields nothing', async () => {
+    seedPlace(testHandle.db);
+    vi.mocked(generatePlaceSummary).mockResolvedValueOnce(null);
+    const res = await SUMMARY(req(), {
+      params: Promise.resolve({ tripId: 't1', placeId: 'p1' }),
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).place).toBeNull();
+  });
+
+  it('POST summary 404s when the place belongs to another trip', async () => {
+    seedPlace(testHandle.db);
+    const res = await SUMMARY(req(), {
+      params: Promise.resolve({ tripId: 'other', placeId: 'p1' }),
+    });
+    expect(res.status).toBe(404);
   });
 
   it('create adds a place to a day with explicit coords (native path)', async () => {

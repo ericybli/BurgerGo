@@ -7,6 +7,8 @@ import {
   renameTripAction,
   shiftTripDatesAction,
   setTripCoverAction,
+  addTripDayAction,
+  removeTripDayAction,
   deleteTripAction,
 } from '@/app/_actions/trips';
 import { restWrite } from '@/src/lib/restWrite';
@@ -31,8 +33,11 @@ export async function GET(
  *   { name }                  → rename
  *   { startDate }             → shift the whole window (length preserved)
  *   { coverPhoto: string|null} → set / clear the cover photo
+ *   { addDay: true }          → extend the trip by one day at the end
+ *   { removeDay: true }       → drop the last day (its places move to Saved)
  * Each present field is applied via its matching Server Action; the returned
- * `trip` reflects the final state.
+ * `trip` reflects the final state (incl. the updated endDate for add/removeDay).
+ * addDay and removeDay are mutually exclusive.
  */
 export async function PATCH(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await ctx.params;
@@ -41,12 +46,19 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ tripId: strin
       name?: string;
       startDate?: string;
       coverPhoto?: string | null;
+      addDay?: boolean;
+      removeDay?: boolean;
     };
+    if (patch.addDay && patch.removeDay) {
+      throw new Error('addDay and removeDay cannot be combined');
+    }
     let trip = getTrip(db, tripId);
     if (!trip) throw new Error('Trip not found');
     if (patch.name !== undefined) trip = await renameTripAction(tripId, patch.name);
     if (patch.startDate !== undefined) trip = await shiftTripDatesAction(tripId, patch.startDate);
     if (patch.coverPhoto !== undefined) trip = await setTripCoverAction(tripId, patch.coverPhoto);
+    if (patch.addDay) trip = await addTripDayAction(tripId);
+    if (patch.removeDay) trip = await removeTripDayAction(tripId);
     return { trip };
   });
 }
