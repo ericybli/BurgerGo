@@ -14,6 +14,9 @@ export function TodoScreen() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
+      // iOS: lift the focused add-item/add-task input above the keyboard
+      // (Android resizes the window itself; no-op on web).
+      automaticallyAdjustKeyboardInsets
     >
       <SegmentedControl
         options={[

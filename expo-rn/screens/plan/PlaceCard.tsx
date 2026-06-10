@@ -91,7 +91,9 @@ export function PlaceCard({
 }: PlaceCardProps) {
   const [managing, setManaging] = useState(false);
   const del = useTwoTapConfirm(onDelete);
-  const thumb = thumbForPlace(place, 'card');
+  // Large cards span the screen (~1100px at 3x): serve the 1600px 'full' tier;
+  // compact rows (54pt) keep the 800px 'card'.
+  const thumb = thumbForPlace(place, density === 'cards' ? 'full' : 'card');
   const hasMeta = place.scheduledTime != null || place.durationMin != null;
 
   const pin = (

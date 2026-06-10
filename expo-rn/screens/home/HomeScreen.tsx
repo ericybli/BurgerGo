@@ -137,7 +137,9 @@ export function HomeScreen({ navigation }: Props) {
   // iOS native-stack centers custom headerTitle components.
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerTitle: () => null,
+      // () => null makes native-stack FALL BACK to the string title (iOS showed
+      // a second "BurgerGo" next to the logo) — an empty View truly hides it.
+      headerTitle: () => <View />,
       headerLeft: () => (
         <View style={s.headerTitle}>
           <Image source={MASCOT} style={s.headerLogo} resizeMode="contain" />

@@ -98,7 +98,7 @@ export function TripCard({
           <Image
             // Key by photo id so a replaced cover resets the failure flag.
             key={trip.coverPhoto}
-            source={{ uri: photoUrl.personal(trip.coverPhoto!, 'card') }}
+            source={{ uri: photoUrl.personal(trip.coverPhoto!, 'full') }}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
             onError={() => setCoverFailed(true)}

@@ -6,7 +6,8 @@
  * style swap — the MapView is never remounted).
  */
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler, Platform, StyleSheet, View } from 'react-native';
+import { BackHandler, Modal, Platform, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import MapView, { Marker, Polyline, PROVIDER_DEFAULT, type Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { colors } from '../../lib/theme';
@@ -34,6 +35,7 @@ const EDGE_PADDING = { top: 64, right: 48, bottom: 64, left: 48 };
 
 export default function PlanMap(props: PlanMapProps) {
   const shell = useMapShell(props, { poiSupported: POI_SUPPORTED });
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const lastFitKeyRef = useRef('');
@@ -119,25 +121,18 @@ export default function PlanMap(props: PlanMapProps) {
   const initialRegion =
     regionForCoords(basePins.map((p) => ({ latitude: p.lat, longitude: p.lng }))) ?? undefined;
 
-  return (
-    <View style={s.fill}>
-      {showLegend ? (
-        <DayLegend
-          entries={shell.legend}
-          allVisible={shell.allVisible}
-          onSelectDate={props.onSelectDate}
-        />
-      ) : null}
-
-      {/* Single MapView: fullscreen swaps the wrapper to absolute-fill (no
-          remount, viewport preserved). */}
-      <View style={fullscreen ? s.mapFullscreen : s.mapBox}>
+  // The whole map block (canvas + floating chrome + cards). Rendered inline
+  // normally; inside a true full-screen Modal when fullscreen (a Modal is the
+  // only way to cover the day strip/tab bar). The MapView remounts on toggle,
+  // so initialRegion comes from the last tracked region — viewport preserved.
+  const mapBlock = (
+      <View style={s.mapBox}>
         <MapView
           ref={mapRef}
           style={StyleSheet.absoluteFill}
           provider={PROVIDER_DEFAULT}
           mapType={shell.satellite ? 'hybrid' : 'standard'}
-          initialRegion={initialRegion}
+          initialRegion={lastRegionRef.current ?? initialRegion}
           onMapReady={() => setMapReady(true)}
           onRegionChangeComplete={(r) => {
             lastRegionRef.current = r;
@@ -212,6 +207,29 @@ export default function PlanMap(props: PlanMapProps) {
           <RestaurantCard restaurant={restaurantCard} onClose={() => setRestaurantCard(null)} />
         ) : null}
       </View>
+  );
+
+  return (
+    <View style={s.fill}>
+      {showLegend ? (
+        <DayLegend
+          entries={shell.legend}
+          allVisible={shell.allVisible}
+          onSelectDate={props.onSelectDate}
+        />
+      ) : null}
+
+      {fullscreen ? <View style={s.mapBox} /> : mapBlock}
+
+      <Modal
+        visible={fullscreen}
+        animationType="fade"
+        onRequestClose={() => setFullscreen(false)}
+      >
+        <View style={[s.fullscreenRoot, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+          {fullscreen ? mapBlock : null}
+        </View>
+      </Modal>
 
       {props.bucket === 'days' && !fullscreen ? <RouteLinks links={shell.routeLinks} /> : null}
     </View>
@@ -275,7 +293,7 @@ function NativePin({ pin, onPress }: { pin: MapPin; onPress: () => void }) {
 const s = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   mapBox: { flex: 1, overflow: 'hidden' },
-  mapFullscreen: { ...StyleSheet.absoluteFillObject, zIndex: 10, backgroundColor: colors.bg },
+  fullscreenRoot: { flex: 1, backgroundColor: colors.bg },
   blueDotRing: {
     width: 22,
     height: 22,

@@ -151,10 +151,13 @@ export function parseStoredHours(googleHours: string | null): string[] {
 }
 
 /** Thumb precedence (web `thumbForRestaurant`): personal → cached Google → none. */
-export function restaurantThumb(restaurant: Restaurant): string | null {
+export function restaurantThumb(
+  restaurant: Restaurant,
+  size: 'thumb' | 'card' | 'full' = 'card',
+): string | null {
   const first = restaurant.photos[0];
-  if (first) return photoUrl.personal(first.id, 'card');
-  if (restaurant.photoPath != null) return photoUrl.restaurant(restaurant.id, 'card');
+  if (first) return photoUrl.personal(first.id, size);
+  if (restaurant.photoPath != null) return photoUrl.restaurant(restaurant.id, size);
   return null;
 }
 

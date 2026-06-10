@@ -114,7 +114,8 @@ export function RestaurantDetail({
   const disabled = busy || uploading || !online;
   const stars = ratingStars(restaurant.rating);
   const price = priceLevelLabel(restaurant.priceLevel);
-  const hero = restaurantThumb(restaurant);
+  // Full-width hero on a 3x screen needs the 1600px tier — 'card' (800) blurs.
+  const hero = restaurantThumb(restaurant, 'full');
   const photos = restaurant.photos;
 
   const storedHours = parseStoredHours(restaurant.googleHours);
