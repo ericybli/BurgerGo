@@ -12,10 +12,10 @@
  * restored on remount and never refits.
  */
 import { useEffect, useRef, useState } from 'react';
-import { BackHandler, Modal, Platform, StyleSheet, View } from 'react-native';
+import { BackHandler, Modal, Platform, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
-import { colors } from '../../lib/theme';
+import { colors, font } from '../../lib/theme';
 import type { LatLng } from '../../lib/legView';
 import type { PlanMapProps } from './PlanMap.types';
 import type { MapSeg } from './map/mapData';
@@ -28,7 +28,6 @@ import { MapChrome } from './map/MapChrome';
 import { LegChip } from './map/LegChip';
 import { DayLegend } from './map/DayLegend';
 import { RouteLinks } from './map/RouteLinks';
-import { OfflineMap } from './map/OfflineMap';
 import { PoiCard } from './map/PoiCard';
 import { RestaurantCard } from './map/RestaurantCard';
 
@@ -41,7 +40,8 @@ const IS_IOS = Platform.OS === 'ios';
 const POI_SUPPORTED = true;
 
 export default function PlanMap(props: PlanMapProps) {
-  const shell = useMapShell(props, { poiSupported: POI_SUPPORTED });
+  // POI taps need a live Google fetch — the toggle hides while offline.
+  const shell = useMapShell(props, { poiSupported: POI_SUPPORTED && props.online });
   const insets = useSafeAreaInsets();
   const canvasRef = useRef<MapCanvasHandle | null>(null);
   // Cross-remount canvas state (the canvas remounts on fullscreen toggle).
@@ -96,11 +96,6 @@ export default function PlanMap(props: PlanMapProps) {
     }
   }
 
-  // --- Offline: deep-link list replaces the whole map. ---
-  if (!props.online) {
-    return <OfflineMap places={shell.offlinePlaces} />;
-  }
-
   const showLegend = props.bucket === 'days' && shell.legend.length > 0 && !fullscreen;
 
   const handleLegTap = (seg: MapSeg) => {
@@ -136,11 +131,21 @@ export default function PlanMap(props: PlanMapProps) {
   // remounts on toggle and restores its viewport from the persist ref.
   const mapBlock = (
       <View style={s.mapBox}>
-        {IS_IOS ? (
+        {/* Online iOS → Google (JS in a WebView). Offline → the native canvas:
+            Apple Maps (iOS) / Google (Android) render whatever tiles the OS
+            has cached from recent browsing, and our cached pins + routes draw
+            on top regardless — so the itinerary stays readable with no net. */}
+        {IS_IOS && props.online ? (
           <GoogleWebCanvas ref={canvasRef} {...canvasProps} persist={webPersistRef} />
         ) : (
           <NativeCanvas ref={canvasRef} {...canvasProps} persist={nativePersistRef} />
         )}
+
+        {!props.online ? (
+          <View style={s.offlinePill} pointerEvents="none">
+            <Text style={s.offlinePillText}>Offline — cached map</Text>
+          </View>
+        ) : null}
 
         {/* Online-but-empty selection: the map STAYS live (web parity — layers,
             locate, satellite and POI taps remain reachable); a floating hint
@@ -164,7 +169,7 @@ export default function PlanMap(props: PlanMapProps) {
           onToggleSatellite={() => shell.setSatellite((v) => !v)}
           locating={shell.locating}
           onLocate={() => void locate()}
-          poiSupported={POI_SUPPORTED}
+          poiSupported={shell.poiSupported}
           poiEnabled={shell.poiEnabled}
           onTogglePoi={shell.togglePoi}
         />
@@ -221,4 +226,15 @@ const s = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   mapBox: { flex: 1, overflow: 'hidden' },
   fullscreenRoot: { flex: 1, backgroundColor: colors.bg },
+  offlinePill: {
+    position: 'absolute',
+    top: 12,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(27, 31, 28, 0.82)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    zIndex: 5,
+  },
+  offlinePillText: { fontSize: 11.5, fontFamily: font.medium, color: colors.white },
 });
