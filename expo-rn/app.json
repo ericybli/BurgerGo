@@ -7,9 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.month2month.burgergo"
     },
     "android": {
+      "package": "com.month2month.burgergo",
       "adaptiveIcon": {
         "backgroundColor": "#F7F1E4",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -32,6 +34,12 @@
           "backgroundColor": "#F7F1E4"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "56c8cec3-2fd5-4e7e-805f-5d10234f6dc1"
+      }
+    },
+    "owner": "devopsholidale"
   }
 }
