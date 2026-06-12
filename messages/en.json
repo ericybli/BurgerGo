@@ -549,6 +549,18 @@
     "changeAvatar": "Change avatar",
     "signOut": "Sign out"
   },
+  "members": {
+    "title": "Members",
+    "you": "(you)",
+    "pending": "Invite pending",
+    "owner": "Owner",
+    "remove": "Remove",
+    "leave": "Leave",
+    "invite": "Invite",
+    "emailPlaceholder": "friend@example.com",
+    "hint": "Invited people see and edit this trip after signing in with that Google account.",
+    "error": "Couldn't update members — please try again."
+  },
   "tickets": {
     "title": "Tickets",
     "add": "Add ticket",
