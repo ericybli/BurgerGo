@@ -22,8 +22,8 @@
  * The pin DOM is the markerDom.ts layout gone liquid-glass (glass disc with a
  * 2px day-color ring, glyph, stop badge, glass time pill) hosted in an
  * OverlayView subclass, with a staggered drop-in entrance per SET_DATA; route
- * legs are dotted circle-symbol lines (walk dots tighter than drive/transit)
- * crawling via one shared interval. fitBounds runs ONCE
+ * legs are solid colored lines with a flowing white-streak overlay gliding
+ * along them via one shared interval. fitBounds runs ONCE
  * per distinct fitKey — the initial key (and camera) are baked in from the
  * persisted values so a WebView remount restores the view without refitting.
  */
@@ -113,34 +113,33 @@ var poiEnabled = false;
 var DomOverlay = null;             /* OverlayView subclass, defined on init */
 var pending = [];                  /* RN messages that beat map creation */
 
-/* ---- Route dash crawl (#6): one shared interval marches every dotted
-   polyline's symbol offset. Lines are rebuilt per SET_DATA; the interval
-   only runs while dotted lines exist (and never under reduced motion). ---- */
-var dashLines = [];                /* [{line, repeat}], cleared per SET_DATA */
-var dashTimer = null;              /* single interval — never duplicated */
-var dashTick = 0;
+/* ---- Route flow overlay (#6): one shared interval advances a short white
+   streak along every flow polyline. Lines are rebuilt per SET_DATA; the
+   interval only runs while flow lines exist (and never under reduced motion). ---- */
+var flowLines = [];                /* [line], cleared per SET_DATA */
+var flowTimer = null;              /* single interval — never duplicated */
+var flowOffset = 0;                /* px within the 96px repeat cycle */
 var REDUCED_MOTION = !!(
   window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
 );
 
-function stepDash() {
-  dashTick = (dashTick + 1) % 77; /* 7 × 11 — both repeat lengths wrap cleanly */
-  for (var i = 0; i < dashLines.length; i++) {
-    var d = dashLines[i];
-    var icons = d.line.get('icons');
+function stepFlow() {
+  flowOffset = (flowOffset + 1.2) % 96; /* ≈15 px/s at 80ms tick */
+  for (var i = 0; i < flowLines.length; i++) {
+    var icons = flowLines[i].get('icons');
     if (!icons || !icons[0]) continue;
-    icons[0].offset = (dashTick % d.repeat) + 'px';
-    d.line.set('icons', icons);
+    icons[0].offset = flowOffset.toFixed(1) + 'px';
+    flowLines[i].set('icons', icons);
   }
 }
 
-function syncDashTimer() {
-  if (REDUCED_MOTION) return; /* static dots */
-  if (dashLines.length > 0) {
-    if (dashTimer == null) dashTimer = setInterval(stepDash, 80);
-  } else if (dashTimer != null) {
-    clearInterval(dashTimer);
-    dashTimer = null;
+function syncFlowTimer() {
+  if (REDUCED_MOTION) return; /* solid lines only */
+  if (flowLines.length > 0) {
+    if (flowTimer == null) flowTimer = setInterval(stepFlow, 80);
+  } else if (flowTimer != null) {
+    clearInterval(flowTimer);
+    flowTimer = null;
   }
 }
 
@@ -191,7 +190,7 @@ function applyData(msg) {
   var i;
   for (i = 0; i < overlays.length; i++) overlays[i].setMap(null);
   overlays = [];
-  dashLines = [];
+  flowLines = [];
 
   var segs = msg.segs || [];
   for (i = 0; i < segs.length; i++) addSeg(segs[i]);
@@ -199,7 +198,7 @@ function applyData(msg) {
   var pins = msg.pins || [];
   for (i = 0; i < pins.length; i++) addPin(pins[i], i);
 
-  syncDashTimer();
+  syncFlowTimer();
 
   if (msg.fitKey && msg.fitKey !== lastFitKey) {
     lastFitKey = msg.fitKey;
@@ -212,36 +211,51 @@ function applyData(msg) {
   }
 }
 
-/* Visible route line — liquid-glass spec: ALL modes are dotted circle-symbol
-   lines (walk dots pack tighter than drive/transit so the mode stays readable
-   at a glance) with the day color, crawling via the shared dash interval —
-   plus a WIDE invisible hit line so a finger tap reliably lands → LEG_TAP. */
+/* Visible route line — solid base in the day color, with a flowing white-streak
+   overlay riding on top (reduced-motion: base only). WIDE invisible hit line
+   underneath so a finger tap reliably lands → LEG_TAP. */
 function addSeg(seg) {
   if (!seg.path || seg.path.length < 2) return;
-  var repeat = seg.mode === 'walk' ? 7 : 11;
-  var line = new google.maps.Polyline({
+
+  /* Base: solid colored line. zIndex 1 — above basemap, below markers. */
+  var base = new google.maps.Polyline({
     path: seg.path,
     strokeColor: seg.color,
-    strokeOpacity: 0,
+    strokeOpacity: 0.9,
     strokeWeight: 3,
     clickable: false,
+    zIndex: 1,
     map: map,
-    icons: [
-      {
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 1.6,
-          strokeOpacity: 1,
-          strokeColor: seg.color,
-          strokeWeight: 2,
-        },
-        offset: '0',
-        repeat: repeat + 'px',
-      },
-    ],
   });
-  overlays.push(line);
-  dashLines.push({ line: line, repeat: repeat });
+  overlays.push(base);
+
+  /* Flow overlay: transparent base + short white streak icon gliding along it.
+     Only created when reduced motion is off. zIndex 2 — above base, below markers. */
+  if (!REDUCED_MOTION) {
+    var flow = new google.maps.Polyline({
+      path: seg.path,
+      strokeOpacity: 0,
+      strokeWeight: 3,
+      clickable: false,
+      zIndex: 2,
+      map: map,
+      icons: [
+        {
+          icon: {
+            path: 'M 0,-2.6 0,2.6',
+            strokeOpacity: 0.9,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2.5,
+            scale: 1,
+          },
+          offset: flowOffset.toFixed(1) + 'px',
+          repeat: '96px',
+        },
+      ],
+    });
+    overlays.push(flow);
+    flowLines.push(flow);
+  }
 
   var hit = new google.maps.Polyline({
     path: seg.path,

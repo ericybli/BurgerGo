@@ -19,7 +19,7 @@ RN approximation of `docs/handoff/liquid-glass/` (the handoff targets web CSS; t
 | 10 Press scale | ✅ kit Button/IconButton + PillButton |
 | 1 List stagger | ✅ DayItinerary rows, keyed by day date, delay capped at 12×45ms |
 | 8 FAB breathing | ✅ scale 1→1.04 + glow halo opacity pulse (RN can't animate shadows natively) |
-| 5 Pin drop-in / 6 dash crawl | ✅ **WebView (iOS) canvas only** — original handoff CSS injected into `webviewMapHtml.ts`; routes now dotted (walk 7px / drive 11px repeat) with offset crawl. expo-web debug uses `PlanMap.web` (solid lines, no drop-in) and the native fallback canvas is untouched — both out of scope |
+| 5 Pin drop-in / 6 flow overlay | ✅ **WebView (iOS) canvas only** — original handoff CSS injected into `webviewMapHtml.ts`; routes are solid lines + flowing white streak overlay (user-tuned from dotted crawl). expo-web debug uses `PlanMap.web` (solid lines, no drop-in) and the native fallback canvas is untouched — both out of scope |
 | 9 List↔Map cross-fade | ✅ `useCrossFade` wrapper (opacity + scale; skips initial mount) |
 | 2 Header compress on scroll | ❌ skipped (native-stack title scaling too invasive); headers are static `GlassBar` via `headerTransparent` |
 | Reduced motion | ✅ all loops skipped, entrances render final state |
