@@ -46,20 +46,46 @@ export function listMembers(db: Db, tripId: string): MemberView[] {
   );
 }
 
-/** Insert the owner row for a trip if it has none. Links userId when the email is registered. */
+/** Insert the owner row for a trip if it has none. Links userId when the email is registered.
+ *  If a member row for the same (normalised) email already exists it is upgraded to 'owner'
+ *  instead of inserting a duplicate, preventing a UNIQUE constraint crash. */
 export function ensureOwner(db: Db, tripId: string, email: string): void {
-  const existing = db
+  const ownerRow = db
     .select({ id: tripMembers.id })
     .from(tripMembers)
     .where(and(eq(tripMembers.tripId, tripId), eq(tripMembers.role, 'owner')))
     .get();
-  if (existing) return;
+  if (ownerRow) return;
+
+  const resolvedUserId = userByEmail(db, email)?.id ?? null;
+  const normalised = norm(email);
+
+  const existingRow = db
+    .select({ id: tripMembers.id, userId: tripMembers.userId })
+    .from(tripMembers)
+    .where(and(eq(tripMembers.tripId, tripId), eq(tripMembers.invitedEmail, normalised)))
+    .get();
+
+  if (existingRow) {
+    // Upgrade existing member row to owner; also link userId if not yet linked.
+    db.update(tripMembers)
+      .set({
+        role: 'owner',
+        ...(existingRow.userId === null && resolvedUserId !== null
+          ? { userId: resolvedUserId }
+          : {}),
+      })
+      .where(eq(tripMembers.id, existingRow.id))
+      .run();
+    return;
+  }
+
   db.insert(tripMembers)
     .values({
       id: newId(),
       tripId,
-      userId: userByEmail(db, email)?.id ?? null,
-      invitedEmail: norm(email),
+      userId: resolvedUserId,
+      invitedEmail: normalised,
       role: 'owner',
       createdAt: new Date(now()),
     })
@@ -94,6 +120,7 @@ export function getMember(db: Db, memberId: string): TripMember | undefined {
   return db.select().from(tripMembers).where(eq(tripMembers.id, memberId)).get();
 }
 
+/** Remove a single member row by id. */
 export function removeMember(db: Db, memberId: string): void {
   db.delete(tripMembers).where(eq(tripMembers.id, memberId)).run();
 }
@@ -109,13 +136,23 @@ export function isMember(db: Db, userId: string, tripId: string): boolean {
   );
 }
 
+/** All trip ids where userId holds a claimed membership. Deduplicates in case the
+ *  same user claimed multiple invite rows for one trip (preserves first-seen order). */
 export function tripIdsForUser(db: Db, userId: string): string[] {
-  return db
+  const rows = db
     .select({ tripId: tripMembers.tripId })
     .from(tripMembers)
     .where(eq(tripMembers.userId, userId))
-    .all()
-    .map((r) => r.tripId);
+    .all();
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const r of rows) {
+    if (!seen.has(r.tripId)) {
+      seen.add(r.tripId);
+      result.push(r.tripId);
+    }
+  }
+  return result;
 }
 
 /** Attach a freshly registered user to every pending invite for their email. */

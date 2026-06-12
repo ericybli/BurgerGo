@@ -80,4 +80,33 @@ describe('tripMembers repo', () => {
     removeMember(t.db, m.id);
     expect(listMembers(t.db, trip.id)).toHaveLength(0);
   });
+
+  it('ensureOwner upgrades existing member row instead of throwing UNIQUE crash', () => {
+    const trip = createTrip(t.db, TRIP);
+    addUser(t, 'u1', 'x@y.z');
+    // invite creates a member row for the normalised email
+    inviteMember(t.db, trip.id, 'X@Y.Z');
+    // ensureOwner must not throw and must upgrade the row to owner
+    expect(() => ensureOwner(t.db, trip.id, 'X@Y.Z')).not.toThrow();
+    const members = listMembers(t.db, trip.id);
+    expect(members).toHaveLength(1);
+    expect(members[0]).toMatchObject({
+      role: 'owner',
+      invitedEmail: 'x@y.z',
+      userId: 'u1',
+    });
+  });
+
+  it('tripIdsForUser deduplicates when user claimed two invites for the same trip', () => {
+    const trip = createTrip(t.db, TRIP);
+    addUser(t, 'u1', 'alice@example.com');
+    // add two distinct invited-email rows for the same trip
+    inviteMember(t.db, trip.id, 'alice@example.com');
+    inviteMember(t.db, trip.id, 'alice.alias@example.com');
+    // claim both; claimInvites matches by normalised email + null userId
+    claimInvites(t.db, 'u1', 'alice@example.com');
+    claimInvites(t.db, 'u1', 'alice.alias@example.com');
+    const ids = tripIdsForUser(t.db, 'u1');
+    expect(ids).toEqual([trip.id]);
+  });
 });
