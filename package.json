@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "gen:icons": "tsx scripts/gen-icons.ts",
-    "build:migrator": "esbuild scripts/migrate.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/migrate.js --external:better-sqlite3 --tsconfig=tsconfig.json"
+    "build:migrator": "esbuild scripts/migrate.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/migrate.js --external:better-sqlite3 --tsconfig=tsconfig.json",
+    "build:seeder": "esbuild scripts/seed-owner.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/seed-owner.js --external:better-sqlite3 --tsconfig=tsconfig.json"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.6.17",
