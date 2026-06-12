@@ -8,13 +8,21 @@ import { user, session, account, verification } from '@/src/db/schema';
 import { claimInvites } from '@/src/db/repos/tripMembers';
 
 /**
- * Server-side Better Auth instance. Endpoints live under
- * `{basePath}/api/auth/*` (basePath = the /burgergo sub-path in prod). Google
- * is the only sign-in method; sessions are rolling 90-day.
+ * Server-side Better Auth instance. Google is the only sign-in method;
+ * sessions are rolling 90-day.
+ *
+ * Sub-path deploy subtleties (BETTER_AUTH_URL = external site root INCLUDING
+ * the /burgergo sub-path in prod):
+ *  - Next strips its basePath BEFORE route handlers run, so the auth router
+ *    must match the INTERNAL '/api/auth' path — never '/burgergo/api/auth'
+ *    (that config 404'd every auth endpoint in prod).
+ *  - Google redirects the browser to the EXTERNAL URL, so the redirect URI is
+ *    built from BETTER_AUTH_URL explicitly and must match the GCP console
+ *    registration: <BETTER_AUTH_URL>/api/auth/callback/google.
  */
 export const auth = betterAuth({
-  baseURL: env.BETTER_AUTH_URL,
-  basePath: `${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/api/auth`,
+  baseURL: new URL(env.BETTER_AUTH_URL).origin,
+  basePath: '/api/auth',
   secret: env.BETTER_AUTH_SECRET,
   database: drizzleAdapter(db, {
     provider: 'sqlite',
@@ -25,6 +33,7 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID,
       clientSecret: env.GOOGLE_CLIENT_SECRET,
       prompt: 'select_account',
+      redirectURI: `${env.BETTER_AUTH_URL}/api/auth/callback/google`,
     },
   },
   session: {

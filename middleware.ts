@@ -21,6 +21,11 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    // The bare root needs its own entry: under a basePath deploy the pattern
+    // below compiles to `^/<basePath>/(...)`, which a slash-less `/<basePath>`
+    // request never matches (this exact gap shipped once — homepage skipped
+    // the login redirect in prod while every deeper page worked).
+    '/',
     // Everything except: api, _next, static files with an extension, login
     '/((?!api|_next|login|.*\\..*).*)',
   ],
