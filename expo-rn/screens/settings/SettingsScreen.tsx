@@ -13,6 +13,7 @@ import { APP_VERSION } from '../../lib/appVersion';
 import { colors, type } from '../../lib/theme';
 import { Button, Card, Field, Loading, OfflineHint, Screen, Select } from '../../components/ui';
 import { loadSettings, patchSettings } from './settingsApi';
+import { ProfileCard } from './ProfileCard';
 import { downloadAllForOffline, type SyncProgress } from '../../lib/offlineSync';
 import { getOfflineMeta, type OfflineMeta } from '../../lib/offlineStore';
 
@@ -129,8 +130,11 @@ export function SettingsScreen() {
 
   return (
     <Screen scroll>
+      {/* Card 0 — Profile (account, avatar, sign-out) */}
+      <ProfileCard online={online} />
+
       {/* Card 1 — Language & Currency */}
-      <Card>
+      <Card style={styles.cardSpace}>
         <View style={styles.rowBetween}>
           <Text style={styles.rowLabel}>Language</Text>
           <Text style={styles.rowValue}>English</Text>

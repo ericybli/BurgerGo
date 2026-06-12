@@ -98,4 +98,6 @@ export const photoUrl = {
   place: (placeId: string, size: PhotoSize = 'card') =>
     photo(`${API_BASE}/api/photos/${placeId}/${size}`),
   linkThumb: (linkId: string) => photo(`${API_BASE}/api/links/thumb/${linkId}`),
+  /** User avatar; `imagePath` is the relative path stored on user.image. */
+  avatar: (imagePath: string) => photo(`${API_BASE}${imagePath}`),
 };
