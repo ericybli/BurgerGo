@@ -8,7 +8,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.month2month.burgergo"
+      "bundleIdentifier": "com.month2month.burgergo",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.month2month.burgergo",
@@ -40,6 +43,12 @@
         "projectId": "56c8cec3-2fd5-4e7e-805f-5d10234f6dc1"
       }
     },
-    "owner": "devopsholidale"
+    "owner": "devopsholidale",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/56c8cec3-2fd5-4e7e-805f-5d10234f6dc1"
+    }
   }
 }
