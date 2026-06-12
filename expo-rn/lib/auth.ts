@@ -13,7 +13,7 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { createAuthClient } from 'better-auth/react';
 import { expoClient } from '@better-auth/expo/client';
-import { API_BASE } from './api/client';
+import { API_BASE } from './api/base';
 
 export const authClient = createAuthClient({
   baseURL: `${API_BASE}/api/auth`,
