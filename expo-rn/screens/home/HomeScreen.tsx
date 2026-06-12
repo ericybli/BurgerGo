@@ -21,11 +21,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Plus, Settings as SettingsIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { GlassBar } from '../../components/ui/glass';
+import { GlassBar, GlassTintPlate } from '../../components/ui/glass';
 import type { RootStackParamList } from '../../navigation/types';
 import { api, type Trip } from '../../lib/api';
 import { useOnline } from '../../lib/online';
 import { colors, font, type } from '../../lib/theme';
+import { useReduceMotion, usePressScale } from '../../components/ui/motion';
 import { TripCard } from './TripCard';
 import { NewTripSheet } from './NewTripSheet';
 import { ManageTripSheet } from './ManageTripSheet';
@@ -134,6 +135,50 @@ export function HomeScreen({ navigation }: Props) {
     },
     [],
   );
+
+  // --- Breathing pulse (handoff #8) ---
+  const reduceMotion = useReduceMotion();
+  const breatheScale = useRef(new Animated.Value(1)).current;
+  const glowOpacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (reduceMotion) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(breatheScale, {
+            toValue: 1.04,
+            duration: 1300,
+            easing: (t) => Math.sin((t * Math.PI) / 2),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(glowOpacity, {
+            toValue: 0.35,
+            duration: 1300,
+            easing: (t) => Math.sin((t * Math.PI) / 2),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(breatheScale, {
+            toValue: 1,
+            duration: 1300,
+            easing: (t) => Math.sin((t * Math.PI) / 2),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+          Animated.timing(glowOpacity, {
+            toValue: 0,
+            duration: 1300,
+            easing: (t) => Math.sin((t * Math.PI) / 2),
+            useNativeDriver: USE_NATIVE_DRIVER,
+          }),
+        ]),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [reduceMotion, breatheScale, glowOpacity]);
+
+  const pressScale = usePressScale();
 
   const load = useCallback(async () => {
     try {
@@ -244,14 +289,23 @@ export function HomeScreen({ navigation }: Props) {
 
       {/* Orange New-trip FAB (the one allowed extra shadow). Always enabled —
           web behavior; an offline save surfaces the sheet's error instead. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="New trip"
-        onPress={() => setCreating(true)}
-        style={({ pressed }) => [s.fab, pressed && s.fabPressed]}
+      <Animated.View
+        style={[s.fabWrapper, { transform: [{ scale: breatheScale }, ...pressScale.style.transform] }]}
       >
-        <Plus size={24} color={colors.white} />
-      </Pressable>
+        {/* Glow halo behind the FAB — opacity animated via native driver */}
+        <Animated.View style={[s.fabGlow, { opacity: glowOpacity }]} pointerEvents="none" />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="New trip"
+          onPress={() => setCreating(true)}
+          onPressIn={pressScale.onPressIn}
+          onPressOut={pressScale.onPressOut}
+        >
+          <GlassTintPlate radius={999} style={s.fabPlate}>
+            <Plus size={24} color={colors.white} />
+          </GlassTintPlate>
+        </Pressable>
+      </Animated.View>
 
       <NewTripSheet
         // Key-remount per open so the fields reset (web parity).
@@ -325,22 +379,29 @@ const s = StyleSheet.create({
   },
   ctaText: { fontSize: 14, fontFamily: font.semibold, color: colors.white },
 
-  fab: {
+  // Outer wrapper: carries position + breathing transform.
+  fabWrapper: {
     position: 'absolute',
     right: 24,
     bottom: 24,
     width: 56,
     height: 56,
-    borderRadius: 999,
-    backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',
-    // FAB orange glow — one of the two allowed shadows.
-    shadowColor: colors.orange,
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 8,
   },
-  fabPressed: { backgroundColor: colors.orangePress, transform: [{ scale: 0.95 }] },
+  // Glow halo: slightly larger circle behind the FAB, orange, opacity-pulsed.
+  fabGlow: {
+    position: 'absolute',
+    width: 72,
+    height: 72,
+    borderRadius: 999,
+    backgroundColor: colors.orange,
+  },
+  // GlassTintPlate inner: size + centering (placement keys are on fabWrapper).
+  fabPlate: {
+    width: 56,
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
