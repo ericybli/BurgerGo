@@ -24,7 +24,7 @@ export async function PATCH(
     assertListInTrip(tripId, listId);
     const { name } = renameSchema.parse(body);
     await renamePhotoListAction(tripId, listId, name);
-  });
+  }, { tripId });
 }
 
 /** Delete a photography list and all its photos (rows + on-disk bytes). */
@@ -35,5 +35,5 @@ export async function DELETE(
   const { tripId, listId } = await ctx.params;
   return restWrite(req, async () => {
     await deletePhotoListAction(tripId, listId);
-  });
+  }, { tripId });
 }

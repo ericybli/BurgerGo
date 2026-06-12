@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '@/src/db/client';
 import { env } from '@/src/env';
@@ -6,6 +5,7 @@ import { getTrip } from '@/src/db/repos/trips';
 import { getSettings } from '@/src/db/repos/settings';
 import { listByTrip as listExpensesForTrip } from '@/src/db/repos/expenses';
 import { listTargets as listTargetsForTrip } from '@/src/db/repos/budgetTargets';
+import { restRead } from '@/src/lib/restRead';
 import { places, type Expense, type BudgetTarget } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -24,49 +24,49 @@ export interface PlaceOptionDTO {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
-  const trip = getTrip(db, tripId);
-  if (!trip) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  return restRead(req, tripId, () => {
+    const trip = getTrip(db, tripId);
+    if (!trip) throw new Error('Trip not found');
 
-  const rawExpenses = listExpensesForTrip(db, tripId);
+    const rawExpenses = listExpensesForTrip(db, tripId);
 
-  // Batch-resolve linked place names in one query (avoid N+1).
-  const placeIds = rawExpenses
-    .map((e) => e.linkedPlaceId)
-    .filter((id): id is string => id !== null);
+    // Batch-resolve linked place names in one query (avoid N+1).
+    const placeIds = rawExpenses
+      .map((e) => e.linkedPlaceId)
+      .filter((id): id is string => id !== null);
 
-  const nameMap = new Map<string, string>();
-  if (placeIds.length > 0) {
-    const rows = db
+    const nameMap = new Map<string, string>();
+    if (placeIds.length > 0) {
+      const rows = db
+        .select({ id: places.id, name: places.name })
+        .from(places)
+        .where(inArray(places.id, placeIds))
+        .all();
+      for (const row of rows) nameMap.set(row.id, row.name);
+    }
+
+    const expenses: ExpenseDTO[] = rawExpenses.map((e) => ({
+      ...e,
+      placeName: e.linkedPlaceId ? (nameMap.get(e.linkedPlaceId) ?? null) : null,
+    }));
+
+    const targets: TargetDTO[] = listTargetsForTrip(db, tripId);
+
+    // Slim place options for the expense picker — returned here so the Budget tab
+    // doesn't have to fetch the full (heavy) /places payload just for {id,name}.
+    const placeOptions: PlaceOptionDTO[] = db
       .select({ id: places.id, name: places.name })
       .from(places)
-      .where(inArray(places.id, placeIds))
+      .where(eq(places.tripId, tripId))
       .all();
-    for (const row of rows) nameMap.set(row.id, row.name);
-  }
 
-  const expenses: ExpenseDTO[] = rawExpenses.map((e) => ({
-    ...e,
-    placeName: e.linkedPlaceId ? (nameMap.get(e.linkedPlaceId) ?? null) : null,
-  }));
+    // Global display currency (user-settable in Settings); env default until changed.
+    const currency = getSettings(db)?.currency ?? env.DEFAULT_CURRENCY;
 
-  const targets: TargetDTO[] = listTargetsForTrip(db, tripId);
-
-  // Slim place options for the expense picker — returned here so the Budget tab
-  // doesn't have to fetch the full (heavy) /places payload just for {id,name}.
-  const placeOptions: PlaceOptionDTO[] = db
-    .select({ id: places.id, name: places.name })
-    .from(places)
-    .where(eq(places.tripId, tripId))
-    .all();
-
-  // Global display currency (user-settable in Settings); env default until changed.
-  const currency = getSettings(db)?.currency ?? env.DEFAULT_CURRENCY;
-
-  return NextResponse.json({ expenses, targets, places: placeOptions, currency });
+    return { expenses, targets, places: placeOptions, currency };
+  });
 }

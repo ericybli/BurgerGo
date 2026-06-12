@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/src/env';
 import { fetchReverseGeocode, fetchForwardGeocode } from '@/src/lib/google/server';
+import { getPrincipal } from '@/src/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,6 +12,10 @@ export const dynamic = 'force-dynamic';
  * Forward takes precedence when an `address` param is present.
  */
 export async function GET(req: Request) {
+  const principal = await getPrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   const url = new URL(req.url);
   const address = url.searchParams.get('address');
 

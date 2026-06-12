@@ -25,7 +25,7 @@ export async function PATCH(
     assertListInTrip(tripId, listId);
     const { name } = renameSchema.parse(body);
     await renameSavedListAction(tripId, listId, name);
-  });
+  }, { tripId });
 }
 
 /** Delete a saved-place list. Member places become loose (never deleted). */
@@ -37,5 +37,5 @@ export async function DELETE(
   return restWrite(req, async () => {
     assertListInTrip(tripId, listId);
     await deleteSavedListAction(tripId, listId);
-  });
+  }, { tripId });
 }

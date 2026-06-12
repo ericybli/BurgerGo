@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { trips, places, photos } from '@/src/db/schema';
 import { getPhoto } from '@/src/db/repos/photos';
 
@@ -59,14 +60,11 @@ describe('DELETE /api/photos/p/[photoId]', () => {
     expect(res.status).toBe(404);
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await DELETE(del(), ctx('photo-1'));
-    expect(noKey.status).toBe(401);
-    const withKey = await DELETE(
-      new Request('http://x/api/photos/p/photo-1', { method: 'DELETE', headers: { 'x-api-key': 'secret' } }),
-      ctx('photo-1'),
-    );
-    expect(withKey.status).toBe(200);
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await DELETE(del(), ctx('photo-1'));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await DELETE(del(), ctx('photo-1'));
+    expect(withAuth.status).toBe(200);
   });
 });

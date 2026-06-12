@@ -5,6 +5,7 @@ import { now } from '@/src/lib/clock';
 import { getCachedDetails, upsertDetails } from '@/src/db/repos/placeCache';
 import { fetchPlaceDetails, type CategoryGuess } from '@/src/lib/google/server';
 import { fetchAndStoreGooglePhoto } from '@/src/lib/google/photo';
+import { getPrincipal } from '@/src/lib/authz';
 import type { PlaceDetailsCacheRow } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -36,6 +37,10 @@ function toResponse(row: PlaceDetailsCacheRow, cached: boolean): DetailsResponse
 }
 
 export async function GET(req: Request) {
+  const principal = await getPrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   const url = new URL(req.url);
   const placeId = url.searchParams.get('placeId');
   const sessionToken = url.searchParams.get('sessionToken') ?? undefined;

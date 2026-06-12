@@ -57,6 +57,6 @@ describe('GET /api/trips/[tripId]', () => {
   it('returns 404 for an unknown trip', async () => {
     const res = await GET(new Request('http://x/api/trips/nope'), ctx('nope'));
     expect(res.status).toBe(404);
-    await expect(res.json()).resolves.toEqual({ error: 'not_found' });
+    await expect(res.json()).resolves.toMatchObject({ error: 'not_found' });
   });
 });

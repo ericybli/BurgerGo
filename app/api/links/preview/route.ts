@@ -7,6 +7,7 @@ import { env } from '@/src/env';
 import { newId } from '@/src/db/ids';
 import { isHttpUrl, isBlockedAddress } from '@/src/lib/linkPreview';
 import { writeLinkThumb } from '@/src/lib/links/thumbPipeline';
+import { getPrincipal } from '@/src/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -126,6 +127,10 @@ async function safeFetch(initialUrl: string): Promise<Response | null> {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const principal = await getPrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   let body: { url?: unknown; tripId?: unknown };
   try {
     body = await req.json();

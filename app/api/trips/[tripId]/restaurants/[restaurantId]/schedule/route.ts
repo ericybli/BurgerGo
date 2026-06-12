@@ -10,13 +10,13 @@ const schema = z.object({
 });
 
 /** Schedule a restaurant onto a day (creates a linked plan place), or unschedule it. */
-export async function POST(req: Request, ctx: { params: Promise<{ restaurantId: string }> }) {
-  const { restaurantId } = await ctx.params;
+export async function POST(req: Request, ctx: { params: Promise<{ tripId: string; restaurantId: string }> }) {
+  const { tripId, restaurantId } = await ctx.params;
   return restWrite(req, async (body) => {
     const { dayDate } = schema.parse(body);
     if (dayDate === null) {
       return { restaurant: await unscheduleRestaurantAction(restaurantId) };
     }
     return scheduleRestaurantToDayAction(restaurantId, dayDate);
-  });
+  }, { tripId });
 }

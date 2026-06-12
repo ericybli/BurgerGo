@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { now } from '@/src/lib/clock';
 import { getTrip } from '@/src/db/repos/trips';
 import { listAllForTrip } from '@/src/db/repos/places';
+import { restRead } from '@/src/lib/restRead';
 import {
   isForecastRange,
   priorYearDate,
@@ -50,28 +50,28 @@ function resolveCoords(tripId: string, date: string): { lat: number; lng: number
  */
 export async function GET(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await ctx.params;
-  if (!getTrip(db, tripId)) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-  const date = new URL(req.url).searchParams.get('date');
-  if (!date || !DATE_RE.test(date)) {
-    return NextResponse.json({ error: 'bad_request' }, { status: 400 });
-  }
+  return restRead(req, tripId, async () => {
+    if (!getTrip(db, tripId)) throw new Error('Trip not found');
+    const date = new URL(req.url).searchParams.get('date');
+    if (!date || !DATE_RE.test(date)) {
+      throw new Error('bad_request');
+    }
 
-  const coords = resolveCoords(tripId, date);
-  if (!coords) return NextResponse.json({ weather: null });
+    const coords = resolveCoords(tripId, date);
+    if (!coords) return { weather: null };
 
-  const forecast = isForecastRange(date, todayInTz());
-  const source: WeatherSource = forecast ? 'forecast' : 'normal';
-  const url = forecast
-    ? forecastUrl(coords.lat, coords.lng, date)
-    : archiveUrl(coords.lat, coords.lng, priorYearDate(date));
+    const forecast = isForecastRange(date, todayInTz());
+    const source: WeatherSource = forecast ? 'forecast' : 'normal';
+    const url = forecast
+      ? forecastUrl(coords.lat, coords.lng, date)
+      : archiveUrl(coords.lat, coords.lng, priorYearDate(date));
 
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-    if (!res.ok) return NextResponse.json({ weather: null });
-    return NextResponse.json({ weather: normalizeDaily(await res.json(), date, source) });
-  } catch {
-    return NextResponse.json({ weather: null });
-  }
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) return { weather: null };
+      return { weather: normalizeDaily(await res.json(), date, source) };
+    } catch {
+      return { weather: null };
+    }
+  });
 }

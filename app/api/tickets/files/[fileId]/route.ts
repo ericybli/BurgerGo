@@ -49,7 +49,10 @@ export async function GET(
 /** Delete one attachment (row + bytes), mirroring the web UI's per-file remove. */
 export async function DELETE(req: Request, ctx: { params: Promise<{ fileId: string }> }) {
   const { fileId } = await ctx.params;
+  // Resolve the file's trip for the membership check; unknown ids skip the
+  // check and 404 inside the action instead.
+  const tripId = getTicketFile(db, fileId)?.tripId;
   return restWrite(req, async () => {
     await deleteTicketFileAction(fileId);
-  });
+  }, tripId ? { tripId } : {});
 }

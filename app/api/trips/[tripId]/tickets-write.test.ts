@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { trips, tickets, ticketFiles } from '@/src/db/schema';
 import { addTicket, addTicketFile, getTicket, getTicketFile } from '@/src/db/repos/tickets';
 
@@ -132,11 +133,11 @@ describe('tickets write API', () => {
     expect(missing.status).toBe(404);
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await CREATE_TICKET(req({ title: 'x' }), P({ tripId: 't1' }));
-    expect(noKey.status).toBe(401);
-    const withKey = await CREATE_TICKET(req({ title: 'x' }, 'secret'), P({ tripId: 't1' }));
-    expect(withKey.status).toBe(200);
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await CREATE_TICKET(req({ title: 'x' }), P({ tripId: 't1' }));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await CREATE_TICKET(req({ title: 'x' }), P({ tripId: 't1' }));
+    expect(withAuth.status).toBe(200);
   });
 });

@@ -6,7 +6,8 @@ import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
 import { listRestaurants, addRestaurant } from '@/src/db/repos/restaurants';
 import { fetchForwardGeocode } from '@/src/lib/google/server';
-import { isWriteAuthorized } from '@/src/lib/apiKey';
+import { getPrincipal, requireTripMember } from '@/src/lib/authz';
+import { restRead } from '@/src/lib/restRead';
 import { places, placeDetailsCache, photos as photosTable, type Restaurant } from '@/src/db/schema';
 
 export const dynamic = 'force-dynamic';
@@ -25,84 +26,84 @@ export interface RestaurantDTO extends Restaurant {
 }
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
-  const trip = getTrip(db, tripId);
-  if (!trip) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
+  return restRead(req, tripId, () => {
+    const trip = getTrip(db, tripId);
+    if (!trip) throw new Error('Trip not found');
 
-  const rows = listRestaurants(db, tripId);
+    const rows = listRestaurants(db, tripId);
 
-  // Batch-resolve dayDate for all linked places in one query (avoids N+1).
-  const linkedIds = rows
-    .map((r) => r.linkedPlaceId)
-    .filter((id): id is string => id !== null);
+    // Batch-resolve dayDate for all linked places in one query (avoids N+1).
+    const linkedIds = rows
+      .map((r) => r.linkedPlaceId)
+      .filter((id): id is string => id !== null);
 
-  const dayMap = new Map<string, string | null>();
-  if (linkedIds.length > 0) {
-    const placeRows = db
-      .select({ id: places.id, dayDate: places.dayDate })
-      .from(places)
-      .where(inArray(places.id, linkedIds))
-      .all();
-    for (const p of placeRows) {
-      dayMap.set(p.id, p.dayDate ?? null);
+    const dayMap = new Map<string, string | null>();
+    if (linkedIds.length > 0) {
+      const placeRows = db
+        .select({ id: places.id, dayDate: places.dayDate })
+        .from(places)
+        .where(inArray(places.id, linkedIds))
+        .all();
+      for (const p of placeRows) {
+        dayMap.set(p.id, p.dayDate ?? null);
+      }
     }
-  }
 
-  // Batch-resolve the cached Google photo path by googlePlaceId (one query).
-  const googleIds = rows
-    .map((r) => r.googlePlaceId)
-    .filter((id): id is string => id !== null);
-  const photoMap = new Map<string, string | null>();
-  if (googleIds.length > 0) {
-    const cacheRows = db
-      .select({
-        googlePlaceId: placeDetailsCache.googlePlaceId,
-        photoLocalPath: placeDetailsCache.photoLocalPath,
-      })
-      .from(placeDetailsCache)
-      .where(inArray(placeDetailsCache.googlePlaceId, googleIds))
-      .all();
-    for (const row of cacheRows) {
-      photoMap.set(row.googlePlaceId, row.photoLocalPath ?? null);
+    // Batch-resolve the cached Google photo path by googlePlaceId (one query).
+    const googleIds = rows
+      .map((r) => r.googlePlaceId)
+      .filter((id): id is string => id !== null);
+    const photoMap = new Map<string, string | null>();
+    if (googleIds.length > 0) {
+      const cacheRows = db
+        .select({
+          googlePlaceId: placeDetailsCache.googlePlaceId,
+          photoLocalPath: placeDetailsCache.photoLocalPath,
+        })
+        .from(placeDetailsCache)
+        .where(inArray(placeDetailsCache.googlePlaceId, googleIds))
+        .all();
+      for (const row of cacheRows) {
+        photoMap.set(row.googlePlaceId, row.photoLocalPath ?? null);
+      }
     }
-  }
 
-  // Batch-fetch personal photos (owner_type='restaurant') for all restaurants.
-  const photosByOwner = new Map<string, { id: string; width: number | null; height: number | null }[]>();
-  const restIds = rows.map((r) => r.id);
-  if (restIds.length > 0) {
-    const photoRows = db
-      .select({
-        id: photosTable.id,
-        ownerId: photosTable.ownerId,
-        width: photosTable.width,
-        height: photosTable.height,
-        orderIndex: photosTable.orderIndex,
-      })
-      .from(photosTable)
-      .where(and(eq(photosTable.ownerType, 'restaurant'), inArray(photosTable.ownerId, restIds)))
-      .orderBy(asc(photosTable.orderIndex))
-      .all();
-    for (const row of photoRows) {
-      const list = photosByOwner.get(row.ownerId) ?? [];
-      list.push({ id: row.id, width: row.width, height: row.height });
-      photosByOwner.set(row.ownerId, list);
+    // Batch-fetch personal photos (owner_type='restaurant') for all restaurants.
+    const photosByOwner = new Map<string, { id: string; width: number | null; height: number | null }[]>();
+    const restIds = rows.map((r) => r.id);
+    if (restIds.length > 0) {
+      const photoRows = db
+        .select({
+          id: photosTable.id,
+          ownerId: photosTable.ownerId,
+          width: photosTable.width,
+          height: photosTable.height,
+          orderIndex: photosTable.orderIndex,
+        })
+        .from(photosTable)
+        .where(and(eq(photosTable.ownerType, 'restaurant'), inArray(photosTable.ownerId, restIds)))
+        .orderBy(asc(photosTable.orderIndex))
+        .all();
+      for (const row of photoRows) {
+        const list = photosByOwner.get(row.ownerId) ?? [];
+        list.push({ id: row.id, width: row.width, height: row.height });
+        photosByOwner.set(row.ownerId, list);
+      }
     }
-  }
 
-  const restaurantsResult: RestaurantDTO[] = rows.map((r) => ({
-    ...r,
-    scheduledDayDate: r.linkedPlaceId ? (dayMap.get(r.linkedPlaceId) ?? null) : null,
-    photoPath: r.googlePlaceId ? (photoMap.get(r.googlePlaceId) ?? null) : null,
-    photos: photosByOwner.get(r.id) ?? [],
-  }));
+    const restaurantsResult: RestaurantDTO[] = rows.map((r) => ({
+      ...r,
+      scheduledDayDate: r.linkedPlaceId ? (dayMap.get(r.linkedPlaceId) ?? null) : null,
+      photoPath: r.googlePlaceId ? (photoMap.get(r.googlePlaceId) ?? null) : null,
+      photos: photosByOwner.get(r.id) ?? [],
+    }));
 
-  return NextResponse.json({ restaurants: restaurantsResult });
+    return { restaurants: restaurantsResult };
+  });
 }
 
 const createRestaurantSchema = z.object({
@@ -120,16 +121,22 @@ const createRestaurantSchema = z.object({
  * Create a restaurant for a trip — the write side used by the BurgerGo MCP.
  * Best-effort forward-geocodes the address so the restaurant pins on the map.
  * `about` + `notes` fold into the notes field (restaurants have no AI-summary
- * field). Photos are attached separately via POST /api/photos. Protected by
- * isWriteAuthorized (x-api-key when configured).
+ * field). Photos are attached separately via POST /api/photos. Requires a
+ * principal (session or x-api-key) + trip membership.
  */
 export async function POST(
   req: Request,
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
-  if (!isWriteAuthorized(req)) {
+  const principal = await getPrincipal(req);
+  if (!principal) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+  try {
+    requireTripMember(principal, tripId);
+  } catch {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
   const trip = getTrip(db, tripId);
   if (!trip) return NextResponse.json({ error: 'not_found' }, { status: 404 });

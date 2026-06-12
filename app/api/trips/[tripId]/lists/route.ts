@@ -12,5 +12,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ tripId: string
   return restWrite(req, async (body) => {
     const { name } = createSchema.parse(body);
     return { list: await addSavedListAction(tripId, name) };
-  });
+  }, { tripId });
 }
