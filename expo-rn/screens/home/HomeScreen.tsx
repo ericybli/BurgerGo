@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Plus, Settings as SettingsIcon } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassBar } from '../../components/ui/glass';
 import type { RootStackParamList } from '../../navigation/types';
 import { api, type Trip } from '../../lib/api';
 import { useOnline } from '../../lib/online';
@@ -222,8 +223,9 @@ export function HomeScreen({ navigation }: Props) {
   return (
     <View style={s.root}>
       {/* Web (home)/layout.tsx header: 38px logo + display wordmark left,
-          36px surface settings chip right — drawn in-page, not in a nav bar. */}
-      <View style={[s.header, { paddingTop: insets.top + 6 }]}>
+          36px surface settings chip right — drawn in-page, not in a nav bar.
+          Fixed above the scroller, so it gets the glass-bar treatment (Task 5). */}
+      <GlassBar style={[s.header, { paddingTop: insets.top + 6 }]}>
         <View style={s.headerTitle}>
           <Image source={MASCOT} style={s.headerLogo} resizeMode="contain" />
           <Text style={s.headerText}>BurgerGo</Text>
@@ -237,7 +239,7 @@ export function HomeScreen({ navigation }: Props) {
         >
           <SettingsIcon size={18} color={colors.ink} />
         </Pressable>
-      </View>
+      </GlassBar>
       {content}
 
       {/* Orange New-trip FAB (the one allowed extra shadow). Always enabled —
@@ -294,7 +296,7 @@ const s = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingBottom: 10,
-    backgroundColor: colors.bg,
+    // No solid bg — the GlassBar material is the surface (liquid-glass Task 5).
   },
   headerTitle: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   settingsChip: {

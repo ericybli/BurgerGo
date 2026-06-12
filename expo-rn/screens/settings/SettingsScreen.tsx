@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useOnline } from '../../lib/online';
 import { CURRENCIES } from '../../lib/currency';
 import { AI_MODELS, DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT } from '../../lib/aiDefaults';
@@ -29,6 +30,8 @@ const SAVE_ERROR = "Couldn't save — please try again.";
 
 export function SettingsScreen() {
   const online = useOnline();
+  // Transparent glass stack header — content starts below it (Task 5).
+  const headerHeight = useHeaderHeight();
   const [loaded, setLoaded] = useState(false);
   const [currency, setCurrency] = useState('USD');
   // Map pin clustering: on by default (null/undefined/true → true); only false turns it off.
@@ -163,7 +166,7 @@ export function SettingsScreen() {
   const clusterDisabled = !online || mapBusy;
 
   return (
-    <Screen scroll>
+    <Screen scroll topInset={headerHeight + 8}>
       {/* Card 0 — Profile (account, avatar, sign-out) */}
       <ProfileCard online={online} />
 

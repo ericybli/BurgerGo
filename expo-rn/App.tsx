@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -18,6 +18,7 @@ import { TripHeaderRight, TripHeaderTitle } from './navigation/TripHeader';
 import { HomeScreen } from './screens/home/HomeScreen';
 import { SettingsScreen } from './screens/settings/SettingsScreen';
 import { OfflineBanner } from './components/OfflineBanner';
+import { GlassBar } from './components/ui/glass';
 import { DataSourceDot } from './components/DataSourceDot';
 import { colors, font } from './lib/theme';
 import { initPhotoCache } from './lib/offlineStore';
@@ -90,6 +91,10 @@ export default function App() {
               component={TripScreen}
               options={({ route, navigation }) => ({
                 title: route.params.name,
+                // Glass top chrome (liquid-glass handoff): transparent native bar
+                // over a GlassBar plate; screens pad themselves via useHeaderHeight.
+                headerTransparent: true,
+                headerBackground: () => <GlassBar style={StyleSheet.absoluteFill} />,
                 // Web TripHeader: tappable trip name (opens RenameSheet) over a
                 // "Sep 4 – Sep 12" caption; Sparkles chip opens the AI import.
                 headerTitle: () => (
@@ -105,7 +110,15 @@ export default function App() {
                 headerRight: () => <TripHeaderRight tripId={route.params.tripId} />,
               })}
             />
-            <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
+            <Stack.Screen
+              name="Settings"
+              component={SettingsScreen}
+              options={{
+                title: 'Settings',
+                headerTransparent: true,
+                headerBackground: () => <GlassBar style={StyleSheet.absoluteFill} />,
+              }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
         <DataSourceDot />

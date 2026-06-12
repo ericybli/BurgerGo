@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Animated, DeviceEventEmitter, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { api, type Restaurant } from '../../lib/api';
 import { useTrip } from '../../navigation/TripContext';
 import { useOnline } from '../../lib/online';
@@ -55,6 +56,8 @@ function FadeUpRow({ index, children }: { index: number; children: ReactNode }) 
 export function EatsScreen() {
   const { tripId } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5) — in-page chrome starts below it.
+  const headerHeight = useHeaderHeight();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [filter, setFilter] = useState<EatsFilter>('all');
   // form: undefined = closed; null = add mode; Restaurant = edit mode.
@@ -103,7 +106,7 @@ export function EatsScreen() {
   }
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: headerHeight }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Eats</Text>
         <Pressable

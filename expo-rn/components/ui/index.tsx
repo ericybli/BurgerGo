@@ -39,18 +39,26 @@ export function Screen({
   scroll = false,
   contentStyle,
   bottomInset = 40,
+  topInset,
 }: {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
   /** Scroll-content bottom padding; tab screens pass ~150 to clear the floating glass tab bar. */
   bottomInset?: number;
+  /** Scroll-content top padding; screens under a transparent glass header pass headerHeight + 8. */
+  topInset?: number;
 }) {
   if (scroll) {
     return (
       <ScrollView
         style={s.screen}
-        contentContainerStyle={[s.scrollContent, { paddingBottom: bottomInset }, contentStyle]}
+        contentContainerStyle={[
+          s.scrollContent,
+          { paddingBottom: bottomInset },
+          topInset !== undefined && { paddingTop: topInset },
+          contentStyle,
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         {children}

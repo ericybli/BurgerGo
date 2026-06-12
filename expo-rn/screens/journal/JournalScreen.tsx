@@ -17,6 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import {
   api,
   photoUrl,
@@ -61,6 +62,8 @@ const TAB_OPTIONS: { value: Tab; label: string }[] = [
 export function JournalScreen() {
   const { tripId } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5) — in-page chrome starts below it.
+  const headerHeight = useHeaderHeight();
   const [tab, setTab] = useState<Tab>('entries');
   const [state, setState] = useState<State>({ status: 'loading' });
 
@@ -114,21 +117,25 @@ export function JournalScreen() {
   if (reading) {
     const fresh = entries.find((e) => e.id === reading.id) ?? reading;
     return (
-      <EntryReader
-        entry={fresh}
-        online={online}
-        onBack={() => setReading(null)}
-        onEdit={() => {
-          // Web parity: the reader unmounts first, then the sheet opens.
-          setReading(null);
-          setEntrySheet({ entry: fresh });
-        }}
-        onDelete={async () => {
-          await api.journal.deleteEntry(tripId, fresh.id);
-          setReading(null);
-          load();
-        }}
-      />
+      // Same top inset as the list view — the reader's back row must clear the
+      // transparent glass stack header too.
+      <View style={[js.root, { paddingTop: headerHeight }]}>
+        <EntryReader
+          entry={fresh}
+          online={online}
+          onBack={() => setReading(null)}
+          onEdit={() => {
+            // Web parity: the reader unmounts first, then the sheet opens.
+            setReading(null);
+            setEntrySheet({ entry: fresh });
+          }}
+          onDelete={async () => {
+            await api.journal.deleteEntry(tripId, fresh.id);
+            setReading(null);
+            load();
+          }}
+        />
+      </View>
     );
   }
 
@@ -140,7 +147,7 @@ export function JournalScreen() {
       : null;
 
   return (
-    <View style={js.root}>
+    <View style={[js.root, { paddingTop: headerHeight }]}>
       <View style={js.tabsWrap}>
         <SegmentedControl options={TAB_OPTIONS} value={tab} onChange={setTab} />
       </View>

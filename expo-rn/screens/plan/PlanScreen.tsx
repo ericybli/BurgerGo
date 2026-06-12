@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import {
   api,
   photoUrl,
@@ -46,6 +47,9 @@ type DayPicker = { mode: 'move' | 'copy' | 'promote'; place: Place } | null;
 export function PlanScreen() {
   const { tripId, days, startDate, endDate } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5): the sticky in-page chrome starts
+  // below it; the map/list area keeps its place under that chrome.
+  const headerHeight = useHeaderHeight();
 
   // One day is always selected (web has no "All days" list view); the map adds
   // an "all days" overlay state of its own (selectedDate=null on the map).
@@ -321,7 +325,7 @@ export function PlanScreen() {
   const addDayDate = bucket === 'saved' ? null : date;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: headerHeight }]}>
       {mutationError ? (
         <Text accessibilityRole="alert" style={styles.errorBanner}>
           {mutationError}
