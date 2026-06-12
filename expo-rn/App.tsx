@@ -18,6 +18,7 @@ import { TripHeaderRight, TripHeaderTitle } from './navigation/TripHeader';
 import { HomeScreen } from './screens/home/HomeScreen';
 import { SettingsScreen } from './screens/settings/SettingsScreen';
 import { OfflineBanner } from './components/OfflineBanner';
+import { DataSourceDot } from './components/DataSourceDot';
 import { colors, font } from './lib/theme';
 import { initPhotoCache } from './lib/offlineStore';
 import { authClient, getWasSignedIn, setWasSignedIn } from './lib/auth';
@@ -107,6 +108,7 @@ export default function App() {
             <Stack.Screen name="Settings" component={SettingsScreen} options={{ title: 'Settings' }} />
           </Stack.Navigator>
         </NavigationContainer>
+        <DataSourceDot />
       </View>
     </SafeAreaProvider>
   );

@@ -5,6 +5,7 @@
  */
 import { cacheJson, localPhotoUri, readCachedJson } from '../offlineStore';
 import { sessionCookie } from '../auth';
+import { reportDataSource } from '../dataSource';
 export { API_BASE } from './base';
 import { API_BASE } from './base';
 
@@ -30,10 +31,14 @@ export async function getJson<T>(path: string): Promise<T> {
     if (!res.ok) throw new Error(`HTTP ${res.status} for GET ${path}`);
     const data = (await res.json()) as T;
     void cacheJson(path, data);
+    reportDataSource('live');
     return data;
   } catch (err) {
     const hit = await readCachedJson<T>(path);
-    if (hit) return hit.data;
+    if (hit) {
+      reportDataSource('cache');
+      return hit.data;
+    }
     throw err;
   }
 }
