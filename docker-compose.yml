@@ -25,6 +25,16 @@ services:
       GOOGLE_MAPS_SERVER_KEY: ${GOOGLE_MAPS_SERVER_KEY:-}
       # Server-only (NOT a build arg / not NEXT_PUBLIC). Powers AI place summaries.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Auth (Better Auth + Google OAuth). All server-only. BETTER_AUTH_SECRET is
+      # REQUIRED in production — better-auth hard-fails on the default secret.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Owner of all pre-auth trips (entrypoint seed) — see scripts/seed-owner.ts.
+      BURGERGO_OWNER_EMAIL: ${BURGERGO_OWNER_EMAIL:-}
+      # Machine bypass for MCP/scripts — auth now fails closed without it.
+      BURGERGO_API_KEY: ${BURGERGO_API_KEY:-}
       DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
       DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-en}
       TZ: ${TZ:-UTC}

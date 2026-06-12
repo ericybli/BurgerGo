@@ -73,7 +73,8 @@ export function ProfileCard() {
 
   async function signOut() {
     await authClient.signOut();
-    router.push(withBase('/login'));
+    // App Router's push already applies basePath — no withBase here.
+    router.push('/login');
     router.refresh();
   }
 

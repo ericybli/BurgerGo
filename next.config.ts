@@ -40,11 +40,12 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['better-sqlite3', 'undici'],
   // CORS for the whole API so browser-based native clients (e.g. Expo web on
-  // localhost) can call it cross-origin. The API is intentionally open (an
-  // optional x-api-key guards writes via BURGERGO_API_KEY), so `*` does not
-  // change its security posture. `source` is basePath-relative — Next prefixes
-  // it automatically, and these headers also apply to the auto-generated
-  // OPTIONS preflight responses for route handlers.
+  // localhost) can call it cross-origin. Every route requires a session or
+  // x-api-key; `*` stays safe because there is no Allow-Credentials header, so
+  // browsers never attach cookies cross-origin — cross-origin callers must
+  // present explicit credentials (Cookie/key header) themselves. `source` is
+  // basePath-relative — Next prefixes it automatically, and these headers also
+  // apply to the auto-generated OPTIONS preflight responses for route handlers.
   async headers() {
     return [
       {
