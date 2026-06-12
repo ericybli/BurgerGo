@@ -23,6 +23,7 @@ import { DataSourceDot } from './components/DataSourceDot';
 import { colors, font } from './lib/theme';
 import { initPhotoCache } from './lib/offlineStore';
 import { authClient, getWasSignedIn, setWasSignedIn } from './lib/auth';
+import { WRITE_KEY } from './lib/api/client';
 import { LoginScreen } from './screens/auth/LoginScreen';
 
 // Photo-cache index loads once per app launch (photoUrl checks it synchronously).
@@ -54,7 +55,9 @@ export default function App() {
   // Cream splash field while fonts load (Atlas splash recipe).
   if (!fontsLoaded || isPending || offlineGrace === null)
     return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
-  if (!session && !offlineGrace) {
+  // WRITE_KEY = dev-only machine key (expo-web debugging): API calls
+  // authenticate via x-api-key, so the session gate is skipped too.
+  if (!session && !offlineGrace && !WRITE_KEY) {
     return (
       <SafeAreaProvider>
         <LoginScreen />

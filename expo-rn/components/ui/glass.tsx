@@ -91,13 +91,13 @@ export function GlassPlate({
     <View style={[s.plateShadow, { borderRadius: radius }, outer]}>
       {/* INNER: clips the glass layers (and children) to the radius. */}
       <View style={[s.clip, { borderRadius: radius }, inner]}>
-        <BlurView intensity={BLUR_INTENSITY} tint="light" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={BLUR_INTENSITY} tint="light" style={s2.glaze} />
         <LinearGradient
           colors={[white(TINT + 0.22 + boost), white(TINT - 0.06 + boost), white(TINT + 0.1 + boost)]}
           locations={[0, 0.48, 1]}
           start={{ x: 0.1, y: 0 }}
           end={{ x: 0.9, y: 1 }}
-          style={StyleSheet.absoluteFill}
+          style={s2.glaze}
         />
         {children}
         <View pointerEvents="none" style={[s.plateEdge, { borderRadius: radius }]} />
@@ -123,8 +123,8 @@ export function GlassTintPlate({
   return (
     <View style={[s.tintShadow, { borderRadius: radius }, outer]}>
       <View style={[s.clip, { borderRadius: radius }, inner]}>
-        <BlurView intensity={BLUR_INTENSITY * 0.7} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: color }]} />
+        <BlurView intensity={BLUR_INTENSITY * 0.7} tint="light" style={s2.glaze} />
+        <View style={[s2.glaze, { backgroundColor: color }]} />
         {children}
         <View pointerEvents="none" style={[s.tintEdge, { borderRadius: radius }]} />
       </View>
@@ -143,12 +143,12 @@ export function GlassBar({
   // No shadow → single overflow-hidden view is fine.
   return (
     <View style={[s.bar, style]}>
-      <BlurView intensity={BLUR_INTENSITY} tint="light" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={BLUR_INTENSITY} tint="light" style={s2.glaze} />
       <LinearGradient
         colors={[white(TINT + 0.3), white(TINT - 0.1)]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 1 }}
-        style={StyleSheet.absoluteFill}
+        style={s2.glaze}
       />
       {children}
       <View pointerEvents="none" style={s.barHairline} />
@@ -176,6 +176,13 @@ const s = StyleSheet.create({
   },
   clip: {
     overflow: 'hidden',
+    zIndex: 0,
+    // When sizing keys (height/width) land on the OUTER via splitStyle, the
+    // inner must stretch to fill it — otherwise the glass layers hug the
+    // content (a 20px icon inside a 40px button left the bottom half unglazed
+    // and the icon top-pinned). flexGrow is inert when the outer is
+    // content-sized, so auto-sized plates (label pills, sheets) are unaffected.
+    flexGrow: 1,
   },
   // Hairline frame with brighter top edge = the specular catch from the CSS
   // inset shadows. Drawn over children so the edge reads even at the rim.
@@ -193,6 +200,7 @@ const s = StyleSheet.create({
   },
   bar: {
     overflow: 'hidden',
+    zIndex: 0,
   },
   barHairline: {
     position: 'absolute',
@@ -202,4 +210,11 @@ const s = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: 'rgba(27,31,28,0.10)',
   },
+});
+
+// Glaze layers sit BELOW children: on web, absolutely-positioned siblings
+// otherwise paint above static children (CSS paint order), hiding icons/text.
+// zIndex -1 needs the parent (clip/bar, zIndex 0) to be a stacking context.
+const s2 = StyleSheet.create({
+  glaze: { ...StyleSheet.absoluteFillObject, zIndex: -1 },
 });

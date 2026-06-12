@@ -9,13 +9,21 @@ import { reportDataSource } from '../dataSource';
 export { API_BASE } from './base';
 import { API_BASE } from './base';
 
-/** Optional write key; sent as `x-api-key` when non-empty. */
-export const WRITE_KEY: string = '';
+/**
+ * Dev-only machine key for expo-web debugging, where the browser can't carry
+ * the cross-origin session cookie: set EXPO_PUBLIC_API_KEY to the backend's
+ * BURGERGO_API_KEY and every request authenticates as the machine principal.
+ * Unset in real builds (EAS env does not define it).
+ */
+export const WRITE_KEY: string = process.env.EXPO_PUBLIC_API_KEY || '';
 
-/** Session cookie for every backend call (native; web debug rides browser cookies). */
+/** Auth headers for every backend call: session cookie (native) and/or dev key. */
 function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
   const cookie = sessionCookie();
-  return cookie ? { Cookie: cookie } : {};
+  if (cookie) headers.Cookie = cookie;
+  if (WRITE_KEY) headers['x-api-key'] = WRITE_KEY;
+  return headers;
 }
 
 type PhotoSize = 'thumb' | 'card' | 'full';
@@ -45,7 +53,6 @@ export async function getJson<T>(path: string): Promise<T> {
 
 export async function writeJson<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = { 'content-type': 'application/json', ...authHeaders() };
-  if (WRITE_KEY) headers['x-api-key'] = WRITE_KEY;
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
@@ -74,7 +81,6 @@ export async function postForm<T>(
     form.append(fileField, { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
   }
   const headers: Record<string, string> = { ...authHeaders() };
-  if (WRITE_KEY) headers['x-api-key'] = WRITE_KEY;
   const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: form });
   if (!res.ok) {
     let code = `HTTP ${res.status}`;
