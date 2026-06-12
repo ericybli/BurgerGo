@@ -23,6 +23,7 @@ void import('@/src/env').then(({ env }) => {
   mkdirSync(dirname(env.DATABASE_PATH), { recursive: true });
   const sqlite = new Database(env.DATABASE_PATH);
   sqlite.pragma('journal_mode = WAL');
+  sqlite.pragma('foreign_keys = ON');
   try {
     // `{ schema }` matches makeTestDb(), so this is exactly TestDb['db'] — the
     // Db type every repo (incl. seedOwners) takes. No cast needed.
