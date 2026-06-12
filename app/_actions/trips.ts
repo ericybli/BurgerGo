@@ -5,7 +5,10 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
 import { createTrip, renameTrip, getTrip, updateTripDates, setCover, deleteTrip, type Trip } from '@/src/db/repos/trips';
 import { shiftDayDates, unscheduleDay } from '@/src/db/repos/places';
+import { ensureOwner } from '@/src/db/repos/tripMembers';
 import { addDays, diffDays } from '@/src/lib/days';
+import { requireUserAction } from '@/src/lib/authz';
+import { env } from '@/src/env';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
@@ -34,8 +37,13 @@ function asObject(input: FormData | Record<string, unknown>) {
 export async function createTripAction(
   input: FormData | { name: string; startDate: string; endDate: string },
 ): Promise<Trip> {
+  const principal = await requireUserAction();
   const data = createSchema.parse(asObject(input));
   const trip = createTrip(db, data);
+  // The creator owns the trip. Machine creates (scripts/MCP) fall back to the
+  // configured owner email; if even that is unset the seed script will adopt it.
+  const ownerEmail = principal.kind === 'user' ? principal.email : env.BURGERGO_OWNER_EMAIL;
+  if (ownerEmail) ensureOwner(db, trip.id, ownerEmail);
   revalidatePath('/');
   return trip;
 }

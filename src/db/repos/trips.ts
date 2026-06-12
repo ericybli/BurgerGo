@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { TestDb } from '@/src/db/testDb';
 import { trips } from '@/src/db/schema';
 import { tripStatus } from '@/src/lib/days';
 import { newId } from '@/src/db/ids';
 import { now } from '@/src/lib/clock';
+import { tripIdsForUser } from '@/src/db/repos/tripMembers';
 
 export type Trip = typeof trips.$inferSelect;
 
@@ -13,12 +14,8 @@ export interface TimeCtx {
   tz: string;
 }
 
-/**
- * All trips, Active-first, then by startDate ascending (stable on id).
- * Active = today ∈ [startDate, endDate] in the given timezone.
- */
-export function getTrips(db: Db, ctx: TimeCtx): Trip[] {
-  const rows = db.select().from(trips).all();
+/** Sort shared by getTrips / getTripsForUser: Active first, then startDate, then id. */
+function sortTrips(rows: Trip[], ctx: TimeCtx): Trip[] {
   const status = (t: Trip) =>
     tripStatus({ startDate: t.startDate, endDate: t.endDate }, ctx.tz);
   return rows.slice().sort((a, b) => {
@@ -28,6 +25,22 @@ export function getTrips(db: Db, ctx: TimeCtx): Trip[] {
     if (a.startDate !== b.startDate) return a.startDate < b.startDate ? -1 : 1;
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
   });
+}
+
+/**
+ * All trips, Active-first, then by startDate ascending (stable on id).
+ * Active = today ∈ [startDate, endDate] in the given timezone.
+ */
+export function getTrips(db: Db, ctx: TimeCtx): Trip[] {
+  return sortTrips(db.select().from(trips).all(), ctx);
+}
+
+/** Trips visible to a user = claimed memberships only, same ordering as getTrips. */
+export function getTripsForUser(db: Db, userId: string, ctx: TimeCtx): Trip[] {
+  const ids = tripIdsForUser(db, userId);
+  if (ids.length === 0) return [];
+  const rows = db.select().from(trips).where(inArray(trips.id, ids)).all();
+  return sortTrips(rows, ctx);
 }
 
 /** One trip by id, or undefined. */
