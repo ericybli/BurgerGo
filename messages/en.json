@@ -3,6 +3,12 @@
     "name": "BurgerGo",
     "tagline": "Your personal travel companion"
   },
+  "login": {
+    "tagline": "Your personal travel-planning assistant.",
+    "continueWithGoogle": "Continue with Google",
+    "connecting": "Connecting…",
+    "error": "Sign-in failed — please try again."
+  },
   "home": {
     "title": "BurgerGo",
     "settings": "Settings",
