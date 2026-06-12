@@ -19,9 +19,11 @@
  *     {type:'REGION', lat, lng, zoom} on idle — RN persists for remounts
  *     {type:'ERROR'}                 Maps JS failed to load
  *
- * The pin DOM is a 1:1 port of markerDom.ts (white disc, 2px day-color ring,
- * glyph, stop badge, time pill) hosted in an OverlayView subclass; walk legs
- * are circle-symbol dotted lines; drive/transit solid. fitBounds runs ONCE
+ * The pin DOM is the markerDom.ts layout gone liquid-glass (glass disc with a
+ * 2px day-color ring, glyph, stop badge, glass time pill) hosted in an
+ * OverlayView subclass, with a staggered drop-in entrance per SET_DATA; route
+ * legs are dotted circle-symbol lines (walk dots tighter than drive/transit)
+ * crawling via one shared interval. fitBounds runs ONCE
  * per distinct fitKey — the initial key (and camera) are baked in from the
  * persisted values so a WebView remount restores the view without refitting.
  */
@@ -50,6 +52,48 @@ export function buildMapHtml(opts: {
   html, body { height: 100%; margin: 0; padding: 0; background: #F4F5F2; overflow: hidden; }
   #map { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
   button:focus { outline: none; }
+
+  /* ---- Liquid glass (docs/handoff/liquid-glass/lg-styles.css, 1:1 — this is
+     real CSS, so saturate() works here unlike the RN approximation). ---- */
+  :root { --lg-blur: 4px; --lg-tint: 0.5; --lg-sat: 1.85; }
+  .lg-glass {
+    position: relative;
+    background: linear-gradient(155deg,
+      rgba(255, 255, 255, calc(var(--lg-tint) + 0.22)) 0%,
+      rgba(255, 255, 255, calc(var(--lg-tint) - 0.06)) 48%,
+      rgba(255, 255, 255, calc(var(--lg-tint) + 0.10)) 100%);
+    -webkit-backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat));
+    backdrop-filter: blur(var(--lg-blur)) saturate(var(--lg-sat));
+    box-shadow:
+      0 10px 30px rgba(27, 31, 28, 0.14),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 1px 0 0 rgba(255, 255, 255, 0.45),
+      inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+    border: 0.5px solid rgba(255, 255, 255, 0.65);
+  }
+  /* corner specular bloom */
+  .lg-glass::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 70% at 18% -18%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 55%),
+      radial-gradient(90% 50% at 86% 112%, rgba(255, 255, 255, 0.30) 0%, rgba(255, 255, 255, 0) 50%);
+  }
+  @supports not (backdrop-filter: blur(1px)) {
+    .lg-glass { background: rgba(255, 255, 255, 0.92); }
+  }
+
+  /* Pin drop-in (#5): base state = fully visible; entrance = transition from
+     .lg-pre, removed one double-rAF after DOM insert (never frame-0 keyframes). */
+  .lg-pre { opacity: 0; transform: translateY(-14px) scale(0.55); }
+  .lg-pin { transition: opacity .48s cubic-bezier(.34,1.55,.64,1), transform .48s cubic-bezier(.34,1.55,.64,1); }
+  @media (prefers-reduced-motion: reduce) {
+    .lg-pin { transition: none; }
+    .lg-pin.lg-pre { opacity: 1; transform: none; }
+  }
 </style>
 </head>
 <body>
@@ -68,6 +112,37 @@ var lastFitKey = INIT_FIT_KEY || '';
 var poiEnabled = false;
 var DomOverlay = null;             /* OverlayView subclass, defined on init */
 var pending = [];                  /* RN messages that beat map creation */
+
+/* ---- Route dash crawl (#6): one shared interval marches every dotted
+   polyline's symbol offset. Lines are rebuilt per SET_DATA; the interval
+   only runs while dotted lines exist (and never under reduced motion). ---- */
+var dashLines = [];                /* [{line, repeat}], cleared per SET_DATA */
+var dashTimer = null;              /* single interval — never duplicated */
+var dashTick = 0;
+var REDUCED_MOTION = !!(
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+);
+
+function stepDash() {
+  dashTick = (dashTick + 1) % 77; /* 7 × 11 — both repeat lengths wrap cleanly */
+  for (var i = 0; i < dashLines.length; i++) {
+    var d = dashLines[i];
+    var icons = d.line.get('icons');
+    if (!icons || !icons[0]) continue;
+    icons[0].offset = (dashTick % d.repeat) + 'px';
+    d.line.set('icons', icons);
+  }
+}
+
+function syncDashTimer() {
+  if (REDUCED_MOTION) return; /* static dots */
+  if (dashLines.length > 0) {
+    if (dashTimer == null) dashTimer = setInterval(stepDash, 80);
+  } else if (dashTimer != null) {
+    clearInterval(dashTimer);
+    dashTimer = null;
+  }
+}
 
 function post(msg) {
   if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
@@ -108,17 +183,23 @@ function handleMessage(msg) {
   }
 }
 
-/* Clear + redraw all overlays; fit ONCE per distinct fitKey. */
+/* Clear + redraw all overlays; fit ONCE per distinct fitKey. RN only sends
+   SET_DATA when the overlay state actually changes (camera moves don't), so
+   the rebuild — and the pin drop-in entrance — replays on real data changes
+   only (day toggles, layer toggles, edits). */
 function applyData(msg) {
   var i;
   for (i = 0; i < overlays.length; i++) overlays[i].setMap(null);
   overlays = [];
+  dashLines = [];
 
   var segs = msg.segs || [];
   for (i = 0; i < segs.length; i++) addSeg(segs[i]);
 
   var pins = msg.pins || [];
-  for (i = 0; i < pins.length; i++) addPin(pins[i]);
+  for (i = 0; i < pins.length; i++) addPin(pins[i], i);
+
+  syncDashTimer();
 
   if (msg.fitKey && msg.fitKey !== lastFitKey) {
     lastFitKey = msg.fitKey;
@@ -131,35 +212,36 @@ function applyData(msg) {
   }
 }
 
-/* Visible route line (walk = circle-symbol dots; drive/transit solid) plus a
-   WIDE invisible hit line so a finger tap reliably lands → LEG_TAP. */
+/* Visible route line — liquid-glass spec: ALL modes are dotted circle-symbol
+   lines (walk dots pack tighter than drive/transit so the mode stays readable
+   at a glance) with the day color, crawling via the shared dash interval —
+   plus a WIDE invisible hit line so a finger tap reliably lands → LEG_TAP. */
 function addSeg(seg) {
   if (!seg.path || seg.path.length < 2) return;
-  var isWalk = seg.mode === 'walk';
-  var lineOpts = {
+  var repeat = seg.mode === 'walk' ? 7 : 11;
+  var line = new google.maps.Polyline({
     path: seg.path,
     strokeColor: seg.color,
-    strokeOpacity: isWalk ? 0 : 0.9,
+    strokeOpacity: 0,
     strokeWeight: 3,
     clickable: false,
     map: map,
-  };
-  if (isWalk) {
-    lineOpts.icons = [
+    icons: [
       {
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
-          fillColor: seg.color,
-          fillOpacity: 0.9,
-          strokeOpacity: 0,
           scale: 1.6,
+          strokeOpacity: 1,
+          strokeColor: seg.color,
+          strokeWeight: 2,
         },
         offset: '0',
-        repeat: '10px',
+        repeat: repeat + 'px',
       },
-    ];
-  }
-  overlays.push(new google.maps.Polyline(lineOpts));
+    ],
+  });
+  overlays.push(line);
+  dashLines.push({ line: line, repeat: repeat });
 
   var hit = new google.maps.Polyline({
     path: seg.path,
@@ -174,8 +256,8 @@ function addSeg(seg) {
   overlays.push(hit);
 }
 
-function addPin(pin) {
-  var el = buildPinEl(pin, function () {
+function addPin(pin, idx) {
+  var el = buildPinEl(pin, idx, function () {
     post({ type: 'PIN_TAP', key: pin.key });
   });
   var ov = new DomOverlay(pin.lat, pin.lng, el, 'overlayMouseTarget');
@@ -202,19 +284,27 @@ function setUserLoc(msg) {
    the WebView, so the badge/pill fall back to the system UI font). ---- */
 var PIN_FONT = "system-ui, -apple-system, 'Helvetica Neue', sans-serif";
 
-function buildPinEl(pin, onClick) {
+function buildPinEl(pin, idx, onClick) {
   var isDay = pin.label != null;
   var tone = pin.color;
   var size = isDay ? 34 : 28;
 
+  /* Drop-in entrance on the zero-size anchor (its transform-origin IS the
+     lat/lng point, so the scale blooms from the pin tip); .lg-pre is removed
+     in DomOverlay.onAdd, staggered via per-pin transition-delay (cap 30). */
   var el = document.createElement('button');
   el.type = 'button';
+  el.className = 'lg-pin lg-pre';
   el.setAttribute('aria-label', pin.name || '');
   el.style.cssText =
     'position:absolute;width:0;height:0;padding:0;border:0;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent';
+  el.style.transitionDelay = ((idx % 30) * 55) + 'ms';
 
-  /* Atlas pin: white disc, 2px day-color ring, category glyph centered. */
+  /* Atlas pin gone liquid: glass disc (.lg-glass gradient + blur replaces the
+     solid white bg + lift shadow); the inline 2px day-color ring overrides the
+     glass hairline border, so per-day identity survives (ring + glyph color). */
   var disc = document.createElement('span');
+  disc.className = 'lg-glass';
   disc.style.cssText = [
     'position:absolute',
     'left:0',
@@ -226,11 +316,9 @@ function buildPinEl(pin, onClick) {
     'justify-content:center',
     'border:2px solid ' + tone,
     'border-radius:9999px',
-    'box-shadow:0 2px 6px rgba(27,31,28,0.18)',
     'line-height:1',
     'width:' + size + 'px',
     'height:' + size + 'px',
-    'background-color:#fff',
     'color:' + tone,
   ].join(';');
 
@@ -271,9 +359,11 @@ function buildPinEl(pin, onClick) {
   el.appendChild(disc);
 
   if (isDay && pin.scheduledTime) {
-    /* Time chip under the pin: white pill, hairline border, tabular digits. */
+    /* Time chip under the pin: glass pill (.lg-glass supplies the bg, hairline
+       border and lift), ink tabular digits. */
     var time = document.createElement('span');
     time.textContent = pin.scheduledTime;
+    time.className = 'lg-glass';
     time.setAttribute('aria-hidden', 'true');
     time.style.cssText = [
       'position:absolute',
@@ -282,8 +372,6 @@ function buildPinEl(pin, onClick) {
       'transform:translateX(-50%)',
       'padding:1px 6px',
       'border-radius:6px',
-      'border:1px solid #E9EBE6',
-      'background:#fff',
       'color:#1B1F1C',
       'font-size:10px',
       'font-weight:700',
@@ -291,7 +379,6 @@ function buildPinEl(pin, onClick) {
       'font-variant-numeric:tabular-nums',
       'line-height:1.2',
       'white-space:nowrap',
-      'box-shadow:0 1px 3px rgba(27,31,28,0.12)',
     ].join(';');
     el.appendChild(time);
   }
@@ -331,6 +418,18 @@ window.__bgInit = function () {
     onAdd() {
       var panes = this.getPanes();
       if (panes) panes[this.pane].appendChild(this.el);
+      /* Pin drop-in: release the .lg-pre entrance state one double-rAF AFTER
+         the element is in the DOM, so the .lg-pin transition actually runs
+         (handoff pitfall: never hidden-frame-0 keyframes). User dot has no
+         .lg-pre — the check makes this a no-op for it. */
+      var el = this.el;
+      if (el.classList && el.classList.contains('lg-pre')) {
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () {
+            el.classList.remove('lg-pre');
+          });
+        });
+      }
     }
     draw() {
       var proj = this.getProjection();

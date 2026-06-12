@@ -16,6 +16,7 @@ import { BackHandler, Modal, Platform, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { colors, font } from '../../lib/theme';
+import { GlassTintPlate } from '../../components/ui/glass';
 import type { LatLng } from '../../lib/legView';
 import type { PlanMapProps } from './PlanMap.types';
 import type { MapSeg } from './map/mapData';
@@ -147,8 +148,11 @@ export default function PlanMap(props: PlanMapProps) {
         )}
 
         {!props.online ? (
-          <View style={s.offlinePill} pointerEvents="none">
-            <Text style={s.offlinePillText}>Offline — cached map</Text>
+          /* Dark tinted glass keeps the ink identity (white text readable). */
+          <View style={s.offlinePillWrap} pointerEvents="none">
+            <GlassTintPlate radius={999} color="rgba(27,31,28,0.78)" style={s.offlinePill}>
+              <Text style={s.offlinePillText}>Offline — cached map</Text>
+            </GlassTintPlate>
           </View>
         ) : null}
 
@@ -238,15 +242,15 @@ const s = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   mapBox: { flex: 1, overflow: 'hidden' },
   fullscreenRoot: { flex: 1, backgroundColor: colors.bg },
-  offlinePill: {
+  offlinePillWrap: {
     position: 'absolute',
     top: 12,
     alignSelf: 'center',
-    backgroundColor: 'rgba(27, 31, 28, 0.82)',
-    borderRadius: 999,
+    zIndex: 5,
+  },
+  offlinePill: {
     paddingHorizontal: 12,
     paddingVertical: 5,
-    zIndex: 5,
   },
   offlinePillText: { fontSize: 11.5, fontFamily: font.medium, color: colors.white },
 });

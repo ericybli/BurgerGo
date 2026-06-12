@@ -1,17 +1,18 @@
 /**
  * Floating chip for a tapped route segment (bottom-center, above the bottom
  * controls): "{from} → {to}" + "🚗 5 min · 3.2 mi" (formatLeg; "—" when the
- * leg is uncomputed), with a ✕ close button. Hairline border, translucent bg.
+ * leg is uncomputed), with a ✕ close button. Liquid-glass plate.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, font, type } from '../../../lib/theme';
+import { GlassPlate } from '../../../components/ui/glass';
 import { formatLeg } from '../../../lib/legView';
 import type { MapSeg } from './mapData';
 
 export function LegChip({ seg, onClose }: { seg: MapSeg; onClose: () => void }) {
   return (
     <View style={s.host} pointerEvents="box-none">
-      <View style={s.chip}>
+      <GlassPlate radius={14} style={s.chip}>
         <View style={s.textCol}>
           <Text style={s.route} numberOfLines={1}>
             {seg.fromName} → {seg.toName}
@@ -26,7 +27,7 @@ export function LegChip({ seg, onClose }: { seg: MapSeg; onClose: () => void }) 
         >
           <Text style={s.closeText}>✕</Text>
         </Pressable>
-      </View>
+      </GlassPlate>
     </View>
   );
 }
@@ -40,22 +41,14 @@ const s = StyleSheet.create({
     alignItems: 'center',
     zIndex: 3,
   },
+  // Bg/border/shadow come from the glass plate.
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     maxWidth: '100%',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: 'rgba(255,255,255,0.95)',
     paddingHorizontal: 12,
     paddingVertical: 8,
-    shadowColor: '#1B1F1C',
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 3,
   },
   textCol: { flexShrink: 1 },
   route: { ...type.caption, color: colors.sub },
