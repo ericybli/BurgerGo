@@ -18,11 +18,20 @@ import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 
-/** blur(4px) ≈ intensity 20 on iOS BlurView (user-tuned: thin clear glass, not frost). */
-const BLUR_INTENSITY = 20;
-const TINT = 0.5; // --lg-tint
+/** blur(4px) ≈ intensity 16 (user-tuned: thin CLEAR glass, not frost). */
+const BLUR_INTENSITY = 16;
+const TINT = 0.5; // --lg-tint (the CSS recipe's white-tint opacity)
+/**
+ * RN compensation: the CSS recipe pairs its white tint with saturate(1.85),
+ * which punches the backdrop's color back through the white. RN has no
+ * saturate, and BlurView's material adds its own whiteness — so the glaze
+ * runs this much lighter than the CSS stops to land at the same perceived
+ * translucency (user feedback 2026-06-12: "再透一点").
+ */
+const RN_TINT_OFFSET = -0.30;
 
-const white = (alpha: number) => `rgba(255,255,255,${Math.min(1, Math.max(0, alpha)).toFixed(2)})`;
+const white = (alpha: number) =>
+  `rgba(255,255,255,${Math.min(1, Math.max(0, alpha + RN_TINT_OFFSET)).toFixed(2)})`;
 
 /** Style keys that must live on the OUTER (shadow) view: placement + sizing. */
 const OUTER_KEYS = new Set([
@@ -91,7 +100,7 @@ export function GlassPlate({
     <View style={[s.plateShadow, { borderRadius: radius }, outer]}>
       {/* INNER: clips the glass layers (and children) to the radius. */}
       <View style={[s.clip, { borderRadius: radius }, inner]}>
-        <BlurView intensity={BLUR_INTENSITY} tint="light" style={s2.glaze} />
+        <BlurView intensity={BLUR_INTENSITY} tint="systemUltraThinMaterialLight" style={s2.glaze} />
         <LinearGradient
           colors={[white(TINT + 0.22 + boost), white(TINT - 0.06 + boost), white(TINT + 0.1 + boost)]}
           locations={[0, 0.48, 1]}
@@ -123,7 +132,7 @@ export function GlassTintPlate({
   return (
     <View style={[s.tintShadow, { borderRadius: radius }, outer]}>
       <View style={[s.clip, { borderRadius: radius }, inner]}>
-        <BlurView intensity={BLUR_INTENSITY * 0.7} tint="light" style={s2.glaze} />
+        <BlurView intensity={BLUR_INTENSITY * 0.7} tint="systemUltraThinMaterialLight" style={s2.glaze} />
         <View style={[s2.glaze, { backgroundColor: color }]} />
         {children}
         <View pointerEvents="none" style={[s.tintEdge, { borderRadius: radius }]} />
@@ -143,7 +152,7 @@ export function GlassBar({
   // No shadow → single overflow-hidden view is fine.
   return (
     <View style={[s.bar, style]}>
-      <BlurView intensity={BLUR_INTENSITY} tint="light" style={s2.glaze} />
+      <BlurView intensity={BLUR_INTENSITY} tint="systemUltraThinMaterialLight" style={s2.glaze} />
       <LinearGradient
         colors={[white(TINT + 0.3), white(TINT - 0.1)]}
         start={{ x: 0, y: 0 }}
