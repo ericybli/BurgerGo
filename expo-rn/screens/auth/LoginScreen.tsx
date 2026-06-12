@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { authClient, setWasSignedIn } from '../../lib/auth';
+import { authClient } from '../../lib/auth';
 import { colors, font, type } from '../../lib/theme';
 import { Button } from '../../components/ui';
 
@@ -16,11 +16,10 @@ export function LoginScreen() {
       provider: 'google',
       callbackURL: '/',
     });
-    if (err) {
-      setError(true);
-    } else {
-      await setWasSignedIn(true);
-    }
+    // No latch write on success: a cancelled browser sheet also resolves
+    // error-free. App.tsx sets wasSignedIn authoritatively once a real
+    // session appears.
+    if (err) setError(true);
     setBusy(false);
   }
 
