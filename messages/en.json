@@ -541,6 +541,14 @@
     "deleteListConfirm": "Delete list? Places stay",
     "emptyListHint": "No places in this list yet."
   },
+  "profile": {
+    "title": "Profile",
+    "save": "Save",
+    "saved": "Saved ✓",
+    "saveError": "Couldn't save — please try again.",
+    "changeAvatar": "Change avatar",
+    "signOut": "Sign out"
+  },
   "tickets": {
     "title": "Tickets",
     "add": "Add ticket",
