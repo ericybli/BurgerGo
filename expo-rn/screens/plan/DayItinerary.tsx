@@ -1,10 +1,11 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LayoutGrid, Rows3 } from 'lucide-react-native';
 import type { Place, TravelMode } from '../../lib/api';
 import { colors, font } from '../../lib/theme';
 import { Button, EmptyState, Sheet } from '../../components/ui';
+import { useEnter } from '../../components/ui/motion';
 import { categoryLabel, formatDayItinerary, legFor, type LegLookup } from './planShared';
 import { PlaceCard, type PlaceDensity } from './PlaceCard';
 import { LegConnector } from './LegConnector';
@@ -20,6 +21,18 @@ export function reorderIds(ids: string[], from: number, to: number): string[] {
   if (moved === undefined) return ids;
   next.splice(to, 0, moved);
   return next;
+}
+
+/**
+ * Itinerary stagger (handoff #1): each visible row enters translateY(18)→0 +
+ * fade, delay i×45ms (capped after 12 rows so long days don't crawl). Replays
+ * on day change because the wrapper is keyed by the day's date (useEnter is
+ * mount-only by design); reduce-motion renders the final state directly
+ * inside useEnter.
+ */
+function StaggerIn({ index, children }: { index: number; children: ReactNode }) {
+  const enter = useEnter(Math.min(index, 12) * 45, 18);
+  return <Animated.View style={enter}>{children}</Animated.View>;
 }
 
 type DayItineraryProps = {
@@ -202,31 +215,38 @@ export function DayItinerary({
             return (
               <Fragment key={stop.id}>
                 {prev ? (
-                  <LegConnector
-                    leg={legFor(legs, prev.id, stop.id, legMode)}
-                    mode={legMode}
-                    disabled={disabled}
-                    online={online}
-                    onModeChange={(m) => onLegModeChange(stop, m)}
-                  />
+                  // Wrapper keys carry the day's date so a day switch remounts
+                  // the rows and replays the entrance (list keying — the
+                  // stop.id Fragment key — is unchanged).
+                  <StaggerIn key={`leg-${dayDate}`} index={i * 2 - 1}>
+                    <LegConnector
+                      leg={legFor(legs, prev.id, stop.id, legMode)}
+                      mode={legMode}
+                      disabled={disabled}
+                      online={online}
+                      onModeChange={(m) => onLegModeChange(stop, m)}
+                    />
+                  </StaggerIn>
                 ) : null}
-                <PlaceCard
-                  place={stop}
-                  pinNumber={stop.orderIndex + 1}
-                  pinColor={dayColor}
-                  density={density}
-                  disabled={disabled}
-                  isFirst={i === 0}
-                  isLast={i === stops.length - 1}
-                  onTap={() => onTapPlace(stop)}
-                  onView={() => onViewPlace(stop)}
-                  onMoveUp={() => move(stop, 'up')}
-                  onMoveDown={() => move(stop, 'down')}
-                  onMoveToSaved={() => onMoveToSaved(stop)}
-                  onMoveToDay={() => onMoveToDay(stop)}
-                  onCopyToDay={() => onCopyToDay(stop)}
-                  onDelete={() => onDelete(stop)}
-                />
+                <StaggerIn key={`stop-${dayDate}`} index={i * 2}>
+                  <PlaceCard
+                    place={stop}
+                    pinNumber={stop.orderIndex + 1}
+                    pinColor={dayColor}
+                    density={density}
+                    disabled={disabled}
+                    isFirst={i === 0}
+                    isLast={i === stops.length - 1}
+                    onTap={() => onTapPlace(stop)}
+                    onView={() => onViewPlace(stop)}
+                    onMoveUp={() => move(stop, 'up')}
+                    onMoveDown={() => move(stop, 'down')}
+                    onMoveToSaved={() => onMoveToSaved(stop)}
+                    onMoveToDay={() => onMoveToDay(stop)}
+                    onCopyToDay={() => onCopyToDay(stop)}
+                    onDelete={() => onDelete(stop)}
+                  />
+                </StaggerIn>
               </Fragment>
             );
           })}

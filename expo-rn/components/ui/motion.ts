@@ -55,6 +55,47 @@ export function useEnter(delayMs = 0, fromY = 18) {
   };
 }
 
+/**
+ * View cross-fade (handoff #9): opacity 0→1 (300ms timing) + scale 0.985→1
+ * spring, re-run whenever `key` changes. Skips the initial mount (content
+ * starts fully visible — only switches animate), so the wrapped view never
+ * has a hidden frame-0 (handoff pitfall #1). Reduce-motion: snap to final.
+ */
+export function useCrossFade(key: unknown) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    let cancelled = false;
+    opacity.setValue(0);
+    scale.setValue(0.985);
+    const snap = () => {
+      opacity.setValue(1);
+      scale.setValue(1);
+    };
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) return snap();
+        Animated.parallel([
+          Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+          springy(scale, 1),
+        ]).start();
+      })
+      .catch(snap);
+    return () => {
+      cancelled = true;
+    };
+    // Re-run on the switch key only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+  return { opacity, transform: [{ scale }] };
+}
+
 /** Press feedback: scale 0.94 down, springy release (handoff #10). */
 export function usePressScale() {
   const v = useRef(new Animated.Value(1)).current;

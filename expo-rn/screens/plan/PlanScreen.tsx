@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useHeaderHeight } from '@react-navigation/elements';
 import {
@@ -16,6 +16,7 @@ import { useOnline } from '../../lib/online';
 import { colors, font, CATEGORIES } from '../../lib/theme';
 import { DEFAULT_DAY_MODE, dayColor } from '../../lib/legView';
 import { ErrorState, Loading, SegmentedControl, Sheet } from '../../components/ui';
+import { useCrossFade } from '../../components/ui/motion';
 import { indexLegsByMode } from './planShared';
 import { generateSummary, placeDetails, setLegMode, setPlaceList } from './planApi';
 import { TripOverview } from './TripOverview';
@@ -71,6 +72,11 @@ export function PlanScreen() {
   const [dayPicker, setDayPicker] = useState<DayPicker>(null);
 
   const mountedRef = useRef(true);
+
+  // List↔Map cross-fade (handoff #9): the content area's wrapper re-fades on
+  // view switches. Mount/unmount semantics below are untouched — the map's
+  // own viewport persistence (PlanMap persist refs) behaves exactly as before.
+  const viewFade = useCrossFade(view);
 
   const fetchData = useCallback(async () => {
     try {
@@ -376,7 +382,7 @@ export function PlanScreen() {
         ) : null}
       </View>
 
-      <View style={{ flex: 1 }}>
+      <Animated.View style={[{ flex: 1 }, viewFade]}>
         {state.status === 'loading' ? (
           <Loading label="Loading your plan…" />
         ) : state.status === 'error' ? (
@@ -456,7 +462,7 @@ export function PlanScreen() {
             )}
           </ScrollView>
         )}
-      </View>
+      </Animated.View>
 
       {/* Read card */}
       <Sheet visible={viewingLive !== null} onClose={() => setViewing(null)}>
