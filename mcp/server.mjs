@@ -23,9 +23,11 @@ import { z } from 'zod';
 const BASE_URL = (process.env.BURGERGO_BASE_URL || 'https://eric.month2month.com/burgergo').replace(/\/+$/, '');
 const API_KEY = process.env.BURGERGO_API_KEY || '';
 
-/** GET JSON from the BurgerGo API. */
+/** GET JSON from the BurgerGo API (key required since auth: reads 401 without it). */
 async function apiGet(path) {
-  const res = await fetch(`${BASE_URL}${path}`, { headers: { accept: 'application/json' } });
+  const headers = { accept: 'application/json' };
+  if (API_KEY) headers['x-api-key'] = API_KEY;
+  const res = await fetch(`${BASE_URL}${path}`, { headers });
   if (!res.ok) throw new Error(`GET ${path} → ${res.status}`);
   return res.json();
 }
@@ -55,7 +57,8 @@ async function uploadPhoto({ tripId, ownerType, ownerId, imageUrl }) {
   fd.set('tripId', tripId);
   fd.set('ownerType', ownerType);
   fd.set('ownerId', ownerId);
-  const res = await fetch(`${BASE_URL}/api/photos`, { method: 'POST', body: fd });
+  const photoHeaders = API_KEY ? { 'x-api-key': API_KEY } : {};
+  const res = await fetch(`${BASE_URL}/api/photos`, { method: 'POST', headers: photoHeaders, body: fd });
   return res.ok ? 'photo uploaded' : `photo failed (${res.status})`;
 }
 
