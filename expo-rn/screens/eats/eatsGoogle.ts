@@ -11,6 +11,7 @@
  */
 import { useCallback, useRef, useState } from 'react';
 import { api, API_BASE, photoUrl, type AutocompletePrediction, type Restaurant } from '../../lib/api';
+import { sessionCookie } from '../../lib/auth';
 
 const enc = encodeURIComponent;
 
@@ -37,8 +38,10 @@ export type PlaceDetailsFlat = {
 
 async function fetchDetailsFlat(placeId: string, sessionToken: string): Promise<PlaceDetailsFlat | null> {
   try {
+    const cookie = sessionCookie();
     const res = await fetch(
       `${API_BASE}/api/google/details?placeId=${enc(placeId)}&sessionToken=${enc(sessionToken)}`,
+      cookie ? { headers: { Cookie: cookie } } : undefined,
     );
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<PlaceDetailsFlat>;
@@ -109,7 +112,11 @@ export async function forwardGeocode(address: string): Promise<GeocodeResult | n
   const trimmed = address.trim();
   if (!trimmed) return null;
   try {
-    const res = await fetch(`${API_BASE}/api/google/geocode?address=${enc(trimmed)}`);
+    const cookie = sessionCookie();
+    const res = await fetch(
+      `${API_BASE}/api/google/geocode?address=${enc(trimmed)}`,
+      cookie ? { headers: { Cookie: cookie } } : undefined,
+    );
     if (!res.ok) return null;
     const data = (await res.json()) as {
       lat: number | null;

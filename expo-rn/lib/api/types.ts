@@ -359,3 +359,23 @@ export type Settings = {
   aiPrompt: string | null;
   aiModel: string | null;
 };
+
+// --- Account / trip members --------------------------------------------------
+
+export interface Me {
+  id: string;
+  name: string;
+  email: string;
+  /** Relative avatar path (`/api/avatars/<id>?v=…`) or null. */
+  image: string | null;
+}
+
+export interface TripMemberView {
+  id: string;
+  tripId: string;
+  userId: string | null;
+  invitedEmail: string;
+  role: 'owner' | 'member';
+  name: string | null;
+  image: string | null;
+}

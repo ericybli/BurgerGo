@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
 import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { getTrip } from '@/src/db/repos/trips';
+import { listMembers } from '@/src/db/repos/tripMembers';
 import { deriveDays } from '@/src/lib/days';
 import {
   renameTripAction,
@@ -12,20 +12,21 @@ import {
   deleteTripAction,
 } from '@/app/_actions/trips';
 import { restWrite } from '@/src/lib/restWrite';
+import { restRead } from '@/src/lib/restRead';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(
-  _req: Request,
+  req: Request,
   ctx: { params: Promise<{ tripId: string }> },
 ) {
   const { tripId } = await ctx.params;
-  const trip = getTrip(db, tripId);
-  if (!trip) {
-    return NextResponse.json({ error: 'not_found' }, { status: 404 });
-  }
-  const days = deriveDays(trip, env.TZ);
-  return NextResponse.json({ trip, days });
+  return restRead(req, tripId, () => {
+    const trip = getTrip(db, tripId);
+    if (!trip) throw new Error('Trip not found');
+    const days = deriveDays(trip, env.TZ);
+    return { trip, days };
+  });
 }
 
 /**
@@ -41,31 +42,45 @@ export async function GET(
  */
 export async function PATCH(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await ctx.params;
-  return restWrite(req, async (body) => {
-    const patch = (body ?? {}) as {
-      name?: string;
-      startDate?: string;
-      coverPhoto?: string | null;
-      addDay?: boolean;
-      removeDay?: boolean;
-    };
-    if (patch.addDay && patch.removeDay) {
-      throw new Error('addDay and removeDay cannot be combined');
-    }
-    let trip = getTrip(db, tripId);
-    if (!trip) throw new Error('Trip not found');
-    if (patch.name !== undefined) trip = await renameTripAction(tripId, patch.name);
-    if (patch.startDate !== undefined) trip = await shiftTripDatesAction(tripId, patch.startDate);
-    if (patch.coverPhoto !== undefined) trip = await setTripCoverAction(tripId, patch.coverPhoto);
-    if (patch.addDay) trip = await addTripDayAction(tripId);
-    if (patch.removeDay) trip = await removeTripDayAction(tripId);
-    return { trip };
-  });
+  return restWrite(
+    req,
+    async (body) => {
+      const patch = (body ?? {}) as {
+        name?: string;
+        startDate?: string;
+        coverPhoto?: string | null;
+        addDay?: boolean;
+        removeDay?: boolean;
+      };
+      if (patch.addDay && patch.removeDay) {
+        throw new Error('addDay and removeDay cannot be combined');
+      }
+      let trip = getTrip(db, tripId);
+      if (!trip) throw new Error('Trip not found');
+      if (patch.name !== undefined) trip = await renameTripAction(tripId, patch.name);
+      if (patch.startDate !== undefined) trip = await shiftTripDatesAction(tripId, patch.startDate);
+      if (patch.coverPhoto !== undefined) trip = await setTripCoverAction(tripId, patch.coverPhoto);
+      if (patch.addDay) trip = await addTripDayAction(tripId);
+      if (patch.removeDay) trip = await removeTripDayAction(tripId);
+      return { trip };
+    },
+    { tripId },
+  );
 }
 
+/** Delete a trip. Machine callers may always; users must hold the owner role. */
 export async function DELETE(req: Request, ctx: { params: Promise<{ tripId: string }> }) {
   const { tripId } = await ctx.params;
-  return restWrite(req, async () => {
-    await deleteTripAction(tripId);
-  });
+  return restWrite(
+    req,
+    async (_body, principal) => {
+      if (!getTrip(db, tripId)) throw new Error('Trip not found');
+      if (principal.kind === 'user') {
+        const me = listMembers(db, tripId).find((m) => m.userId === principal.userId);
+        if (me?.role !== 'owner') throw new Error('Only the owner can delete the trip');
+      }
+      await deleteTripAction(tripId);
+    },
+    { tripId },
+  );
 }

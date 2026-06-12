@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
-import { trips, places } from '@/src/db/schema';
+import { trips, places, user } from '@/src/db/schema';
+import { getPrincipal } from '@/src/lib/authz';
 import { getTrip } from '@/src/db/repos/trips';
 
 const testHandle = { db: makeTestDb().db };
@@ -32,6 +33,12 @@ function seedTrip(db: Db) {
   db.insert(trips).values({
     id: 't1', name: 'Trip', startDate: '2026-09-04', endDate: '2026-09-12',
     coverPhoto: null, createdAt: TS, updatedAt: TS,
+  }).run();
+  // Mirror the mocked principal so created trips get an owner row linked to it
+  // (DELETE is owner-only for user principals).
+  db.insert(user).values({
+    id: 'test-user', name: 'Test', email: 'test@example.com',
+    emailVerified: true, image: null, createdAt: TS, updatedAt: TS,
   }).run();
 }
 
@@ -132,13 +139,13 @@ describe('trip write API', () => {
     expect(res.status).toBe(404);
   });
 
-  it('patch: addDay enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 't1' }));
-    expect(noKey.status).toBe(401);
-    const withKey = await PATCH_TRIP(req({ addDay: true }, 'secret'), P({ tripId: 't1' }));
-    expect(withKey.status).toBe(200);
-    expect((await withKey.json()).trip.endDate).toBe('2026-09-13');
+  it('patch: addDay rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 't1' }));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await PATCH_TRIP(req({ addDay: true }), P({ tripId: 't1' }));
+    expect(withAuth.status).toBe(200);
+    expect((await withAuth.json()).trip.endDate).toBe('2026-09-13');
   });
 
   it('create: rejects endDate before startDate → 400', async () => {
@@ -156,11 +163,11 @@ describe('trip write API', () => {
     expect(res.status).toBe(404);
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await CREATE_TRIP(req({ name: 'x', startDate: '2026-05-01', endDate: '2026-05-02' }));
-    expect(noKey.status).toBe(401);
-    const withKey = await CREATE_TRIP(req({ name: 'x', startDate: '2026-05-01', endDate: '2026-05-02' }, 'secret'));
-    expect(withKey.status).toBe(200);
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await CREATE_TRIP(req({ name: 'x', startDate: '2026-05-01', endDate: '2026-05-02' }));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await CREATE_TRIP(req({ name: 'x', startDate: '2026-05-01', endDate: '2026-05-02' }));
+    expect(withAuth.status).toBe(200);
   });
 });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
 import { updateSettings } from '@/src/db/repos/settings';
+import { requireUserAction } from '@/src/lib/authz';
 import type { Settings } from '@/src/db/schema';
 
 const schema = z.object({
@@ -19,6 +20,7 @@ export type UpdateAiSettingsInput = z.input<typeof schema>;
  * are used.
  */
 export async function updateAiSettingsAction(input: UpdateAiSettingsInput): Promise<Settings> {
+  await requireUserAction();
   const data = schema.parse(input);
   const aiPrompt = !data.prompt || data.prompt.trim() === '' ? null : data.prompt;
   const aiModel = !data.model || data.model.trim() === '' ? null : data.model.trim();
@@ -50,6 +52,7 @@ export type UpdateMapSettingsInput = z.input<typeof mapSchema>;
  * count bubbles (every pin always renders); `true` restores clustering.
  */
 export async function updateMapSettingsAction(input: UpdateMapSettingsInput): Promise<Settings> {
+  await requireUserAction();
   const { clusterPins } = mapSchema.parse(input);
   const updated = updateSettings(db, { clusterPins });
   revalidatePath('/settings');
@@ -62,6 +65,7 @@ export async function updateMapSettingsAction(input: UpdateMapSettingsInput): Pr
  * the next visit — no cross-path revalidation needed beyond /settings.
  */
 export async function updateCurrencyAction(input: UpdateCurrencyInput): Promise<Settings> {
+  await requireUserAction();
   const { currency } = currencySchema.parse(input);
   const updated = updateSettings(db, { currency });
   revalidatePath('/settings');

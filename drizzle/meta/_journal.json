@@ -127,6 +127,13 @@
       "when": 1781052941018,
       "tag": "0017_nebulous_madame_web",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1781254021347,
+      "tag": "0018_many_bucky",
+      "breakpoints": true
     }
   ]
 }

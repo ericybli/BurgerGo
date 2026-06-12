@@ -17,6 +17,7 @@ import {
   processPhoto,
 } from '@/src/lib/photos/pipeline';
 import { newId } from '@/src/db/ids';
+import { getPrincipal, requireTripMember } from '@/src/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,10 @@ const OWNER_TYPES: readonly PhotoOwnerType[] = ['place', 'journal', 'restaurant'
 export type PhotoDTO = Photo;
 
 export async function POST(req: Request): Promise<Response> {
+  const principal = await getPrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   let form: FormData;
   try {
     form = await req.formData();
@@ -64,6 +69,12 @@ export async function POST(req: Request): Promise<Response> {
   // Owner must exist and belong to the named trip.
   const trip = getTrip(db, tripId);
   if (!trip) return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  // Caller must be a member of that trip (machine principals bypass).
+  try {
+    requireTripMember(principal, tripId);
+  } catch {
+    return NextResponse.json({ error: 'not_found' }, { status: 404 });
+  }
   const ownerTripId =
     owner === 'place'
       ? getPlace(db, ownerId)?.tripId

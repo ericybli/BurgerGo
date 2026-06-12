@@ -19,14 +19,14 @@ describe('GET /api/settings', () => {
 
   it('returns 200 with the seeded settings row', async () => {
     ensureSettings(testHandle.db, { language: 'zh', currency: 'JPY' });
-    const res = await GET();
+    const res = await GET(new Request('http://x/api/settings'));
     expect(res.status).toBe(200);
     const body = (await res.json()) as Record<string, unknown>;
     expect(body).toMatchObject({ id: 1, language: 'zh', currency: 'JPY', aiPrompt: null, aiModel: null });
   });
 
   it('returns 200 with null when settings are not yet seeded', async () => {
-    const res = await GET();
+    const res = await GET(new Request('http://x/api/settings'));
     expect(res.status).toBe(200);
     await expect(res.json()).resolves.toBeNull();
   });

@@ -37,6 +37,8 @@ RUN npm run db:generate
 RUN npm run build
 # Bundle the migrator into a self-contained JS file so node can run it in the runner (no tsx).
 RUN npm run build:migrator
+# Bundle the boot-time owner seeder the same way (entrypoint runs it after migrations).
+RUN npm run build:seeder
 
 # 3) runner — clean glibc slim image. Non-root. Only the runtime artifacts.
 FROM node:22-bookworm-slim AS runner

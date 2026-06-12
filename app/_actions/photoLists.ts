@@ -15,6 +15,7 @@ import {
   type PhotoList,
 } from '@/src/db/repos/photoLists';
 import { listByOwner, deletePhoto } from '@/src/db/repos/photos';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const listName = z.string().trim().min(1, 'Name is required').max(100);
 
@@ -24,9 +25,11 @@ function revalidate(tripId: string): void {
 
 /** Create a named photography list for a trip. */
 export async function addPhotoListAction(tripId: string, name: string): Promise<PhotoList> {
+  const principal = await requireUserAction();
   const id = z.string().min(1).parse(tripId);
   const trip = getTrip(db, id);
   if (!trip) throw new Error('Trip not found');
+  requireTripMember(principal, id);
   const row = addPhotoList(db, id, listName.parse(name));
   revalidate(id);
   return row;
@@ -34,8 +37,12 @@ export async function addPhotoListAction(tripId: string, name: string): Promise<
 
 /** Rename a photography list. */
 export async function renamePhotoListAction(tripId: string, id: string, name: string): Promise<void> {
+  const principal = await requireUserAction();
   const tId = z.string().min(1).parse(tripId);
   const lId = z.string().min(1).parse(id);
+  requireTripMember(principal, tId);
+  const list = getPhotoList(db, lId);
+  if (!list || list.tripId !== tId) throw new Error('List not found');
   renamePhotoList(db, lId, listName.parse(name));
   revalidate(tId);
 }
@@ -47,8 +54,10 @@ export async function renamePhotoListAction(tripId: string, id: string, name: st
  * then the list row.
  */
 export async function deletePhotoListAction(tripId: string, id: string): Promise<void> {
+  const principal = await requireUserAction();
   const tId = z.string().min(1).parse(tripId);
   const lId = z.string().min(1).parse(id);
+  requireTripMember(principal, tId);
   const list = getPhotoList(db, lId);
   if (!list || list.tripId !== tId) throw new Error('List not found');
 

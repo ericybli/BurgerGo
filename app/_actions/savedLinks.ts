@@ -14,6 +14,7 @@ import {
   type SavedLink,
 } from '@/src/db/repos/savedLinks';
 import { isHttpUrl } from '@/src/lib/linkPreview';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 function revalidateJournal(tripId: string): void {
   revalidatePath(`/trip/${tripId}/journal`);
@@ -35,7 +36,9 @@ const addSchema = z.object({
 export type AddLinkActionInput = z.input<typeof addSchema>;
 
 export async function addLinkAction(input: AddLinkActionInput): Promise<SavedLink> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const link = addLink(db, {
     tripId: data.tripId,
     url: data.url,
@@ -64,8 +67,10 @@ export async function updateLinkAction(
   id: string,
   patch: UpdateLinkActionPatch,
 ): Promise<SavedLink> {
+  const principal = await requireUserAction();
   const existing = getLink(db, id);
   if (!existing) throw new Error('Link not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateLink(db, id, data);
   if (!updated) throw new Error('Link not found');
@@ -76,8 +81,10 @@ export async function updateLinkAction(
 // --- deleteLinkAction -----------------------------------------------------
 
 export async function deleteLinkAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getLink(db, id);
   if (!existing) throw new Error('Link not found');
+  requireTripMember(principal, existing.tripId);
 
   // Best-effort thumbnail cleanup. Guard against a path-traversal attack via a
   // tampered `thumbnail` column: the resolved file must be strictly *under* the

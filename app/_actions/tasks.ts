@@ -10,6 +10,7 @@ import {
   getTask,
   type Task,
 } from '@/src/db/repos/tasks';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const titleField = z.string().trim().min(1, 'Title is required').max(300);
 
@@ -19,7 +20,9 @@ function revalidateTasks(tripId: string): void {
 }
 
 export async function addTaskAction(tripId: string, rawTitle: string): Promise<Task> {
+  const principal = await requireUserAction();
   const trip = z.string().min(1).parse(tripId);
+  requireTripMember(principal, trip);
   const title = titleField.parse(rawTitle);
   const task = addTask(db, trip, title);
   revalidateTasks(trip);
@@ -35,8 +38,10 @@ const updateSchema = z.object({
 export type UpdateTaskActionPatch = z.input<typeof updateSchema>;
 
 export async function updateTaskAction(id: string, patch: UpdateTaskActionPatch): Promise<Task> {
+  const principal = await requireUserAction();
   const existing = getTask(db, id);
   if (!existing) throw new Error('Task not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateTask(db, id, {
     ...(data.title !== undefined ? { title: data.title } : {}),
@@ -49,8 +54,10 @@ export async function updateTaskAction(id: string, patch: UpdateTaskActionPatch)
 }
 
 export async function deleteTaskAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getTask(db, id);
   if (!existing) throw new Error('Task not found');
+  requireTripMember(principal, existing.tripId);
   deleteTask(db, id);
   revalidateTasks(existing.tripId);
 }

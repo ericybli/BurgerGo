@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { trips } from '@/src/db/schema';
 
 const testHandle = { db: makeTestDb().db };
@@ -109,11 +110,11 @@ describe('packing write API', () => {
     expect(res.status).toBe(404);
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await CREATE_CATEGORY(req({ name: 'x' }), P({ tripId: 't1' }));
-    expect(noKey.status).toBe(401);
-    const withKey = await CREATE_CATEGORY(req({ name: 'x' }, 'secret'), P({ tripId: 't1' }));
-    expect(withKey.status).toBe(200);
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await CREATE_CATEGORY(req({ name: 'x' }), P({ tripId: 't1' }));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await CREATE_CATEGORY(req({ name: 'x' }), P({ tripId: 't1' }));
+    expect(withAuth.status).toBe(200);
   });
 });

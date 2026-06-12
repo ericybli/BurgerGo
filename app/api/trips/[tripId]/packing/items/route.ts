@@ -12,5 +12,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ tripId: string
     if (!getTrip(db, tripId)) throw new Error('Trip not found');
     const input = { ...(body as object) } as AddItemActionInput;
     return { item: await addItemAction(input) };
-  });
+  }, { tripId });
 }

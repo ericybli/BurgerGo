@@ -21,7 +21,7 @@ export async function PUT(req: Request, ctx: { params: Promise<{ tripId: string 
     if (!getTrip(db, tripId)) throw new Error('Trip not found');
     const input = { ...(body as object), tripId } as SetTargetActionInput;
     return { target: await setTargetAction(input) };
-  });
+  }, { tripId });
 }
 
 /**
@@ -37,5 +37,5 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ tripId: stri
       ? null
       : raw) as TargetCategory;
     await clearTargetAction(tripId, category);
-  });
+  }, { tripId });
 }

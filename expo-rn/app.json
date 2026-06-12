@@ -2,6 +2,7 @@
   "expo": {
     "name": "BurgerGo",
     "slug": "burgergo",
+    "scheme": "burgergo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -36,7 +37,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#F7F1E4"
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

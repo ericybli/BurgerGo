@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { env } from '@/src/env';
 import { fetchPoiDetailsRich } from '@/src/lib/google/server';
+import { getPrincipal } from '@/src/lib/authz';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,10 @@ export const dynamic = 'force-dynamic';
  * basic tier). The server key never reaches the client.
  */
 export async function GET(req: Request) {
+  const principal = await getPrincipal(req);
+  if (!principal) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
   const url = new URL(req.url);
   const placeId = url.searchParams.get('placeId');
   if (!placeId) {

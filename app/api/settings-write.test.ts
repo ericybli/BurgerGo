@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { getSettings } from '@/src/db/repos/settings';
 
 const testHandle = { db: makeTestDb().db };
@@ -63,9 +64,9 @@ describe('PATCH /api/settings', () => {
     expect(json.settings.aiPrompt).toBe('keep me');
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
     expect((await PATCH(req({ currency: 'USD' }))).status).toBe(401);
-    expect((await PATCH(req({ currency: 'USD' }, 'secret'))).status).toBe(200);
+    expect((await PATCH(req({ currency: 'USD' }))).status).toBe(200);
   });
 });

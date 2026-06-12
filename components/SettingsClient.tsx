@@ -9,6 +9,7 @@ import { APP_VERSION } from '@/src/lib/appVersion';
 import { DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT, AI_MODELS } from '@/src/lib/openai/defaults';
 import { updateAiSettingsAction, updateCurrencyAction, updateMapSettingsAction } from '@/app/_actions/settings';
 import { CURRENCIES } from '@/src/lib/currency';
+import { ProfileCard } from '@/components/ProfileCard';
 
 type SettingsRow = {
   language: string;
@@ -129,7 +130,9 @@ export function SettingsClient() {
         <h1 className="text-title text-ink">{t('settings.title')}</h1>
       </header>
 
-      <section className="mt-2 rounded-card border border-line bg-bg p-4">
+      <ProfileCard />
+
+      <section className="mt-4 rounded-card border border-line bg-bg p-4">
         <div className="flex items-center justify-between">
           <span className="text-body text-ink">{t('settings.language')}</span>
           <span className="text-label text-sub">{t('settings.languageEnglish')}</span>

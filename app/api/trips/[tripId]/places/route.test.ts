@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { trips, places, travelLegs, placeDetailsCache, photos, savedLinks, dayModes, savedLists } from '@/src/db/schema';
 
 const SEEDED_PLACE_ID = 'b';
@@ -123,7 +124,7 @@ describe('GET /api/trips/[tripId]/places', () => {
   it('returns 404 for an unknown trip', async () => {
     const res = await GET(new Request('http://x/api/trips/nope/places'), ctx('nope'));
     expect(res.status).toBe(404);
-    await expect(res.json()).resolves.toEqual({ error: 'not_found' });
+    await expect(res.json()).resolves.toMatchObject({ error: 'not_found' });
   });
 
   it('returns empty arrays for a trip with no places', async () => {
@@ -257,10 +258,10 @@ describe('POST /api/trips/[tripId]/places', () => {
     expect((await POST(postReq('trip-1', { name: '' }), ctx('trip-1'))).status).toBe(400);
   });
 
-  it('requires x-api-key when BURGERGO_API_KEY is configured', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
     expect((await POST(postReq('trip-1', { name: 'X' }), ctx('trip-1'))).status).toBe(401);
-    const ok = await POST(postReq('trip-1', { name: 'X' }, { 'x-api-key': 'secret' }), ctx('trip-1'));
+    const ok = await POST(postReq('trip-1', { name: 'X' }), ctx('trip-1'));
     expect(ok.status).toBe(201);
   });
 

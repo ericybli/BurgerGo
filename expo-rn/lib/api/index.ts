@@ -35,6 +35,8 @@ import type {
   PoiDetails,
   AutocompletePrediction,
   GooglePlaceDetails,
+  Me,
+  TripMemberView,
 } from './types';
 
 const enc = encodeURIComponent;
@@ -52,6 +54,21 @@ export const api = {
       patch: Partial<{ name: string; startDate: string; coverPhoto: string | null }>,
     ) => writeJson<{ trip: Trip }>('PATCH', `/api/trips/${tripId}`, patch),
     remove: (tripId: string) => writeJson<{ ok: true }>('DELETE', `/api/trips/${tripId}`),
+  },
+
+  // --- Account / members -----------------------------------------------------
+  me: {
+    get: () => getJson<{ user: Me }>('/api/me'),
+    updateName: (name: string) => writeJson<{ user: Me }>('PATCH', '/api/me', { name }),
+    uploadAvatar: (file: { uri: string; name: string; type: string }) =>
+      postForm<{ image: string }>('/api/me/avatar', {}, file),
+  },
+  members: {
+    list: (tripId: string) => getJson<{ members: TripMemberView[] }>(`/api/trips/${tripId}/members`),
+    invite: (tripId: string, email: string) =>
+      writeJson<{ members: TripMemberView[] }>('POST', `/api/trips/${tripId}/members`, { email }),
+    remove: (tripId: string, memberId: string) =>
+      writeJson<{ members: TripMemberView[] }>('DELETE', `/api/trips/${tripId}/members/${enc(memberId)}`),
   },
 
   // --- Plan / places -------------------------------------------------------
@@ -335,4 +352,6 @@ export type {
   GooglePlaceDetails,
   ImportPreviewItem,
   ImportCreateItem,
+  Me,
+  TripMemberView,
 } from './types';

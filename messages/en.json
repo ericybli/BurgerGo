@@ -3,6 +3,12 @@
     "name": "BurgerGo",
     "tagline": "Your personal travel companion"
   },
+  "login": {
+    "tagline": "Your personal travel-planning assistant.",
+    "continueWithGoogle": "Continue with Google",
+    "connecting": "Connecting…",
+    "error": "Sign-in failed — please try again."
+  },
   "home": {
     "title": "BurgerGo",
     "settings": "Settings",
@@ -534,6 +540,26 @@
     "deleteList": "Delete list",
     "deleteListConfirm": "Delete list? Places stay",
     "emptyListHint": "No places in this list yet."
+  },
+  "profile": {
+    "title": "Profile",
+    "save": "Save",
+    "saved": "Saved ✓",
+    "saveError": "Couldn't save — please try again.",
+    "changeAvatar": "Change avatar",
+    "signOut": "Sign out"
+  },
+  "members": {
+    "title": "Members",
+    "you": "(you)",
+    "pending": "Invite pending",
+    "owner": "Owner",
+    "remove": "Remove",
+    "leave": "Leave",
+    "invite": "Invite",
+    "emailPlaceholder": "friend@example.com",
+    "hint": "Invited people see and edit this trip after signing in with that Google account.",
+    "error": "Couldn't update members — please try again."
   },
   "tickets": {
     "title": "Tickets",

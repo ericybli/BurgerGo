@@ -15,11 +15,15 @@
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
     "gen:icons": "tsx scripts/gen-icons.ts",
-    "build:migrator": "esbuild scripts/migrate.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/migrate.js --external:better-sqlite3 --tsconfig=tsconfig.json"
+    "build:migrator": "esbuild scripts/migrate.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/migrate.js --external:better-sqlite3 --tsconfig=tsconfig.json",
+    "build:seeder": "esbuild scripts/seed-owner.ts --bundle --platform=node --target=node22 --format=esm --outfile=scripts/seed-owner.js --external:better-sqlite3 --tsconfig=tsconfig.json"
   },
   "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.6.17",
+    "@better-auth/expo": "^1.6.17",
     "@serwist/next": "^9",
     "@types/supercluster": "^7.1.3",
+    "better-auth": "^1.6.17",
     "better-sqlite3": "^11",
     "drizzle-orm": "^0.36",
     "lucide-react": "^1.17.0",
@@ -38,6 +42,7 @@
     "zod": "^3"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6",
     "@testing-library/react": "^16",
     "@testing-library/user-event": "^14",

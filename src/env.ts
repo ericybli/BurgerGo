@@ -14,6 +14,29 @@ const envSchema = z.object({
   GOOGLE_MAPS_SERVER_KEY: z.string().min(1).optional(),
   // Server-only OpenAI key for AI place summaries; optional (feature degrades to off).
   OPENAI_API_KEY: z.string().min(1).optional(),
+  // --- Auth (Better Auth + Google OAuth). All optional so tests/CI run with
+  // zero env; the login flow degrades to an error until they're set. The
+  // `'' → undefined` preprocess matches docker-compose's `${VAR:-}` idiom,
+  // which passes an EMPTY STRING (not unset) when the server .env lacks a
+  // value — without it the zod optional/default would reject '' and crash boot.
+  BETTER_AUTH_SECRET: z.preprocess((v) => (v === '' ? undefined : v), z.string().min(1).optional()),
+  // Public origin (+ sub-path) the auth endpoints live under, e.g.
+  // https://eric.month2month.com/burgergo — unset in dev = http://localhost:3000.
+  BETTER_AUTH_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().min(1).default('http://localhost:3000'),
+  ),
+  GOOGLE_CLIENT_ID: z.string().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().default(''),
+  // Existing trips are seeded to this email's membership at boot (scripts/seed-owner.ts).
+  BURGERGO_OWNER_EMAIL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .email()
+      .transform((s) => s.toLowerCase())
+      .optional(),
+  ),
   // In-app map engine: 'mapbox' uses Mapbox GL (with NEXT_PUBLIC_MAPBOX_TOKEN);
   // anything else uses Google Maps. Both NEXT_PUBLIC_* are inlined at build and
   // must be passed as Docker build-args (see Dockerfile / docker-compose.yml).

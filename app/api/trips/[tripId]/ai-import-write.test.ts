@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeTestDb } from '@/src/db/testDb';
+import { getPrincipal } from '@/src/lib/authz';
 import { trips } from '@/src/db/schema';
 import { listAllForTrip } from '@/src/db/repos/places';
 import { listByTrip as listRestaurants } from '@/src/db/repos/restaurants';
@@ -119,12 +120,12 @@ describe('ai-import create API', () => {
     expect(listRestaurants(testHandle.db, 't1')).toHaveLength(0);
   });
 
-  it('enforces the write key when BURGERGO_API_KEY is set', async () => {
-    process.env.BURGERGO_API_KEY = 'secret';
-    const noKey = await CREATE(req({ items: [] }), P({ tripId: 't1' }));
-    expect(noKey.status).toBe(401);
-    const withKey = await CREATE(req({ items: [] }, 'secret'), P({ tripId: 't1' }));
-    expect(withKey.status).toBe(200);
-    expect(await withKey.json()).toEqual({ restaurants: 0, places: 0 });
+  it('rejects unauthenticated requests with 401', async () => {
+    vi.mocked(getPrincipal).mockResolvedValueOnce(null);
+    const noAuth = await CREATE(req({ items: [] }), P({ tripId: 't1' }));
+    expect(noAuth.status).toBe(401);
+    const withAuth = await CREATE(req({ items: [] }), P({ tripId: 't1' }));
+    expect(withAuth.status).toBe(200);
+    expect(await withAuth.json()).toEqual({ restaurants: 0, places: 0 });
   });
 });

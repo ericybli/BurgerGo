@@ -15,6 +15,7 @@ import {
   type PackingCategory,
   type PackingItem,
 } from '@/src/db/repos/packing';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const nameField = z.string().trim().min(1, 'Name is required').max(100);
 const quantityField = z.number().int().min(1).max(9999);
@@ -26,7 +27,9 @@ function revalidatePacking(tripId: string): void {
 // --- Categories -----------------------------------------------------------
 
 export async function addCategoryAction(tripId: string, rawName: string): Promise<PackingCategory> {
+  const principal = await requireUserAction();
   const trip = z.string().min(1).parse(tripId);
+  requireTripMember(principal, trip);
   const name = nameField.parse(rawName);
   const cat = addCategory(db, trip, name);
   revalidatePacking(trip);
@@ -34,8 +37,10 @@ export async function addCategoryAction(tripId: string, rawName: string): Promis
 }
 
 export async function renameCategoryAction(id: string, rawName: string): Promise<PackingCategory> {
+  const principal = await requireUserAction();
   const existing = getCategory(db, id);
   if (!existing) throw new Error('Category not found');
+  requireTripMember(principal, existing.tripId);
   const name = nameField.parse(rawName);
   const updated = renameCategory(db, id, name);
   if (!updated) throw new Error('Category not found');
@@ -44,8 +49,10 @@ export async function renameCategoryAction(id: string, rawName: string): Promise
 }
 
 export async function deleteCategoryAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getCategory(db, id);
   if (!existing) throw new Error('Category not found');
+  requireTripMember(principal, existing.tripId);
   deleteCategory(db, id);
   revalidatePacking(existing.tripId);
 }
@@ -61,9 +68,11 @@ const addItemSchema = z.object({
 export type AddItemActionInput = z.input<typeof addItemSchema>;
 
 export async function addItemAction(input: AddItemActionInput): Promise<PackingItem> {
+  const principal = await requireUserAction();
   const data = addItemSchema.parse(input);
   const cat = getCategory(db, data.categoryId);
   if (!cat) throw new Error('Category not found');
+  requireTripMember(principal, cat.tripId);
   const item = addItem(db, {
     categoryId: data.categoryId,
     name: data.name,
@@ -85,10 +94,12 @@ export async function updateItemAction(
   id: string,
   patch: UpdateItemActionPatch,
 ): Promise<PackingItem> {
+  const principal = await requireUserAction();
   const item = getItem(db, id);
   if (!item) throw new Error('Item not found');
   const cat = getCategory(db, item.categoryId);
   if (!cat) throw new Error('Category not found');
+  requireTripMember(principal, cat.tripId);
   const data = updateItemSchema.parse(patch);
   const updated = updateItem(db, id, data);
   if (!updated) throw new Error('Item not found');
@@ -97,9 +108,12 @@ export async function updateItemAction(
 }
 
 export async function deleteItemAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const item = getItem(db, id);
   if (!item) throw new Error('Item not found');
   const cat = getCategory(db, item.categoryId);
+  if (!cat) throw new Error('Category not found');
+  requireTripMember(principal, cat.tripId);
   deleteItem(db, id);
-  if (cat) revalidatePacking(cat.tripId);
+  revalidatePacking(cat.tripId);
 }

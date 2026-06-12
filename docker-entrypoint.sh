@@ -8,5 +8,8 @@ set -e
 echo "burgergo: applying database migrations..."
 node ./scripts/migrate.js
 
+echo "burgergo: seeding trip owners..."
+node ./scripts/seed-owner.js
+
 echo "burgergo: starting server..."
 exec "$@"

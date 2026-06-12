@@ -22,9 +22,11 @@ import {
   shiftTripDatesAction,
   addTripDayAction,
   removeTripDayAction,
+  deleteTripAction,
 } from '@/app/_actions/trips';
 import { getTrip } from '@/src/db/repos/trips';
 import { addPlace, getPlace } from '@/src/db/repos/places';
+import { user } from '@/src/db/schema';
 
 describe('createTripAction', () => {
   beforeEach(() => {
@@ -130,5 +132,35 @@ describe('addTripDayAction / removeTripDayAction', () => {
   it('removeTripDay refuses to remove the only day', async () => {
     const trip = await createTripAction({ name: 'T', startDate: '2026-05-01', endDate: '2026-05-01' });
     await expect(removeTripDayAction(trip.id)).rejects.toThrow();
+  });
+});
+
+describe('deleteTripAction', () => {
+  beforeEach(() => {
+    testHandle.db = makeTestDb().db;
+    revalidatePath.mockClear();
+    // createTripAction's ensureOwner links the owner row's userId only when a
+    // `user` row for the principal's email exists — seed the mocked test user.
+    const ts = new Date('2026-06-08T12:00:00.000Z');
+    testHandle.db.insert(user).values({
+      id: 'test-user', name: 'Test', email: 'test@example.com',
+      emailVerified: true, image: null, createdAt: ts, updatedAt: ts,
+    }).run();
+  });
+
+  it('rejects a non-owner member (owner still can delete)', async () => {
+    // Trip created by the mocked test-user (test@example.com) → they are owner.
+    const trip = await createTripAction({ name: 'T', startDate: '2026-01-01', endDate: '2026-01-02' });
+    // Make the CALLER a different, non-owner user for the next call. The global
+    // mock no-ops requireTripMember, so the owner-role check is what must reject.
+    const { requireUserAction } = await import('@/src/lib/authz');
+    vi.mocked(requireUserAction).mockResolvedValueOnce({
+      kind: 'user', userId: 'other-user', email: 'other@example.com', name: 'O', image: null,
+    });
+    await expect(deleteTripAction(trip.id)).rejects.toThrow(/owner/i);
+    expect(getTrip(testHandle.db, trip.id)).toBeDefined();
+    // The owner (default mocked principal) can delete.
+    await deleteTripAction(trip.id);
+    expect(getTrip(testHandle.db, trip.id)).toBeUndefined();
   });
 });

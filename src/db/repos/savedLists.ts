@@ -8,6 +8,11 @@ type Db = TestDb['db'];
 
 export type { SavedListRow };
 
+/** One saved list by id, or undefined. */
+export function getList(db: Db, id: string): SavedListRow | undefined {
+  return db.select().from(savedLists).where(eq(savedLists.id, id)).get();
+}
+
 /** All of a trip's saved lists, in display order. */
 export function listByTrip(db: Db, tripId: string): SavedListRow[] {
   return db

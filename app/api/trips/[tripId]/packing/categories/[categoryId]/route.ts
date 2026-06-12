@@ -7,18 +7,18 @@ export const dynamic = 'force-dynamic';
 const renameSchema = z.object({ name: z.string() });
 
 /** Rename a packing category. PATCH { name }. */
-export async function PATCH(req: Request, ctx: { params: Promise<{ categoryId: string }> }) {
-  const { categoryId } = await ctx.params;
+export async function PATCH(req: Request, ctx: { params: Promise<{ tripId: string; categoryId: string }> }) {
+  const { tripId, categoryId } = await ctx.params;
   return restWrite(req, async (body) => {
     const { name } = renameSchema.parse(body);
     return { category: await renameCategoryAction(categoryId, name) };
-  });
+  }, { tripId });
 }
 
 /** Delete a packing category (its items cascade). */
-export async function DELETE(req: Request, ctx: { params: Promise<{ categoryId: string }> }) {
-  const { categoryId } = await ctx.params;
+export async function DELETE(req: Request, ctx: { params: Promise<{ tripId: string; categoryId: string }> }) {
+  const { tripId, categoryId } = await ctx.params;
   return restWrite(req, async () => {
     await deleteCategoryAction(categoryId);
-  });
+  }, { tripId });
 }

@@ -20,5 +20,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ tripId: string
   return restWrite(req, async (body) => {
     const { images, text } = extractSchema.parse(body);
     return await extractImportItemsAction({ tripId, images, text });
-  });
+  }, { tripId });
 }

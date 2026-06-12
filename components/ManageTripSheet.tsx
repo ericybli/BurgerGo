@@ -14,6 +14,7 @@ import {
   removeTripDayAction,
   setTripCoverAction,
 } from '@/app/_actions/trips';
+import { MembersSection } from '@/components/MembersSection';
 
 type ManageTripSheetProps = {
   trip: Trip;
@@ -221,6 +222,8 @@ export function ManageTripSheet({ trip, onClose, onChanged }: ManageTripSheetPro
             </button>
           ) : null}
         </div>
+
+        <MembersSection tripId={current.id} />
 
         <button
           type="button"

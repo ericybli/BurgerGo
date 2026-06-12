@@ -17,6 +17,7 @@ import {
 import { getCachedDetails, upsertDetails } from '@/src/db/repos/placeCache';
 import { fetchPoiDetailsRich } from '@/src/lib/google/server';
 import { fetchAndStoreGooglePhoto } from '@/src/lib/google/photo';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 import type { Place } from '@/src/db/repos/places';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
@@ -38,8 +39,10 @@ function revalidateEats(tripId: string): void {
 export async function refreshRestaurantGoogleAction(
   restaurantId: string,
 ): Promise<Restaurant | null> {
+  const principal = await requireUserAction();
   const r = getRestaurant(db, restaurantId);
   if (!r?.googlePlaceId || !env.GOOGLE_MAPS_SERVER_KEY) return null;
+  requireTripMember(principal, r.tripId);
   try {
     const d = await fetchPoiDetailsRich({
       placeId: r.googlePlaceId,
@@ -107,7 +110,9 @@ const addSchema = z.object({
 export type AddRestaurantActionInput = z.input<typeof addSchema>;
 
 export async function addRestaurantAction(input: AddRestaurantActionInput): Promise<Restaurant> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const r = addRestaurant(db, {
     tripId: data.tripId,
     name: data.name,
@@ -152,8 +157,10 @@ export async function updateRestaurantAction(
   id: string,
   patch: UpdateRestaurantActionPatch,
 ): Promise<Restaurant> {
+  const principal = await requireUserAction();
   const existing = getRestaurant(db, id);
   if (!existing) throw new Error('Restaurant not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateRestaurant(db, id, data);
   if (!updated) throw new Error('Restaurant not found');
@@ -173,8 +180,10 @@ export async function updateRestaurantAction(
 // --- deleteRestaurantAction -----------------------------------------------
 
 export async function deleteRestaurantAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getRestaurant(db, id);
   if (!existing) throw new Error('Restaurant not found');
+  requireTripMember(principal, existing.tripId);
   deleteRestaurant(db, id);
   revalidateEats(existing.tripId);
 }
@@ -185,8 +194,10 @@ export async function scheduleRestaurantToDayAction(
   id: string,
   dayDate: string,
 ): Promise<{ restaurant: Restaurant; place: Place }> {
+  const principal = await requireUserAction();
   const existing = getRestaurant(db, id);
   if (!existing) throw new Error('Restaurant not found');
+  requireTripMember(principal, existing.tripId);
   const parsedDay = dateStr.parse(dayDate);
   const result = scheduleRestaurantToDay(db, id, parsedDay);
   revalidateEats(existing.tripId);
@@ -197,8 +208,10 @@ export async function scheduleRestaurantToDayAction(
 // --- unscheduleRestaurantAction -------------------------------------------
 
 export async function unscheduleRestaurantAction(id: string): Promise<Restaurant> {
+  const principal = await requireUserAction();
   const existing = getRestaurant(db, id);
   if (!existing) throw new Error('Restaurant not found');
+  requireTripMember(principal, existing.tripId);
   const updated = unscheduleRestaurant(db, id);
   if (!updated) throw new Error('Restaurant not found');
   revalidateEats(existing.tripId);

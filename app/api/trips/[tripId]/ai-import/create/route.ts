@@ -17,5 +17,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ tripId: string
   return restWrite(req, async (body) => {
     const { items } = createSchema.parse(body);
     return await createImportItemsAction({ tripId, items: items as ImportCreateItem[] });
-  });
+  }, { tripId });
 }

@@ -1,15 +1,21 @@
 /**
- * Core HTTP client for the hosted BurgerGo backend. Reads are public JSON GET
- * routes; writes are REST mirrors of the web app's Server Actions (open unless
- * the server sets BURGERGO_API_KEY — then set WRITE_KEY to the same value).
+ * Core HTTP client for the hosted BurgerGo backend. Every call carries the
+ * Better Auth session cookie (authHeaders); the server requires a session on
+ * all JSON routes. Photo/media GETs are tokenless and bypass this client.
  */
 import { cacheJson, localPhotoUri, readCachedJson } from '../offlineStore';
-
-export const API_BASE =
-  process.env.EXPO_PUBLIC_API_BASE || 'https://eric.month2month.com/burgergo';
+import { sessionCookie } from '../auth';
+export { API_BASE } from './base';
+import { API_BASE } from './base';
 
 /** Optional write key; sent as `x-api-key` when non-empty. */
 export const WRITE_KEY: string = '';
+
+/** Session cookie for every backend call (native; web debug rides browser cookies). */
+function authHeaders(): Record<string, string> {
+  const cookie = sessionCookie();
+  return cookie ? { Cookie: cookie } : {};
+}
 
 type PhotoSize = 'thumb' | 'card' | 'full';
 
@@ -20,7 +26,7 @@ type PhotoSize = 'thumb' | 'card' | 'full';
  */
 export async function getJson<T>(path: string): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE}${path}`);
+    const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
     if (!res.ok) throw new Error(`HTTP ${res.status} for GET ${path}`);
     const data = (await res.json()) as T;
     void cacheJson(path, data);
@@ -33,7 +39,7 @@ export async function getJson<T>(path: string): Promise<T> {
 }
 
 export async function writeJson<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const headers: Record<string, string> = { 'content-type': 'application/json', ...authHeaders() };
   if (WRITE_KEY) headers['x-api-key'] = WRITE_KEY;
   const res = await fetch(`${API_BASE}${path}`, {
     method,
@@ -62,7 +68,7 @@ export async function postForm<T>(
     // RN FormData accepts the {uri,name,type} shape for file parts.
     form.append(fileField, { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
   }
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = { ...authHeaders() };
   if (WRITE_KEY) headers['x-api-key'] = WRITE_KEY;
   const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: form });
   if (!res.ok) {
@@ -92,4 +98,6 @@ export const photoUrl = {
   place: (placeId: string, size: PhotoSize = 'card') =>
     photo(`${API_BASE}/api/photos/${placeId}/${size}`),
   linkThumb: (linkId: string) => photo(`${API_BASE}/api/links/thumb/${linkId}`),
+  /** User avatar; `imagePath` is the relative path stored on user.image. */
+  avatar: (imagePath: string) => photo(`${API_BASE}${imagePath}`),
 };

@@ -15,5 +15,5 @@ export async function POST(req: Request, ctx: { params: Promise<{ tripId: string
     if (!getTrip(db, tripId)) throw new Error('Trip not found');
     const { name } = createSchema.parse(body);
     return { category: await addCategoryAction(tripId, name) };
-  });
+  }, { tripId });
 }
