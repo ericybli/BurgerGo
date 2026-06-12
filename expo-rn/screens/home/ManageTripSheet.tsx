@@ -23,6 +23,7 @@ import { api, photoUrl, type Trip } from '../../lib/api';
 import { colors, font, radius, type } from '../../lib/theme';
 import { Button, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
 import { addTripDay, removeTripDay } from './homeApi';
+import { MembersSection } from './MembersSection';
 import { diffDays, formatDayCount } from './tripDates';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -30,7 +31,7 @@ const SAVED = 'Saved ✓';
 const SAVE_ERROR = "Couldn't save — please try again.";
 
 /** Inline pill button: teal outline (info ops) or solid orange (add = create). */
-function PillButton({
+export function PillButton({
   label,
   onPress,
   disabled,
@@ -297,6 +298,9 @@ export function ManageTripSheet({
             ) : null}
           </View>
 
+          {/* Members */}
+          <MembersSection tripId={current.id} online={online} />
+
           {/* RN extra: delete (two-tap confirm) — web Home has no delete UI. */}
           <View style={s.deleteWrap}>
             <Button
@@ -315,7 +319,7 @@ export function ManageTripSheet({
 }
 
 /** Bare input matching the kit Field's control recipe (incl. its accent focus border), without its label/margins. */
-function Input(props: TextInputProps) {
+export function Input(props: TextInputProps) {
   const [focused, setFocused] = useState(false);
   return (
     <TextInput
