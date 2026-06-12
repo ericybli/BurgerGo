@@ -17,6 +17,7 @@ import {
   listFilesForTicket,
   type Ticket,
 } from '@/src/db/repos/tickets';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const timeStr = z.string().regex(/^\d{2}:\d{2}$/, 'Use HH:MM');
@@ -43,8 +44,10 @@ function isUnderUploads(absPath: string): boolean {
 }
 
 export async function addTicketAction(input: AddTicketActionInput): Promise<Ticket> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
   if (!getTrip(db, data.tripId)) throw new Error('Trip not found');
+  requireTripMember(principal, data.tripId);
   const row = addTicket(db, {
     tripId: data.tripId,
     title: data.title,
@@ -71,8 +74,10 @@ export async function updateTicketAction(
   id: string,
   patch: UpdateTicketActionPatch,
 ): Promise<Ticket> {
+  const principal = await requireUserAction();
   const existing = getTicket(db, id);
   if (!existing) throw new Error('Ticket not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateTicket(db, id, data);
   if (!updated) throw new Error('Ticket not found');
@@ -82,8 +87,10 @@ export async function updateTicketAction(
 
 /** Delete a ticket + every attachment's bytes on disk (rows cascade). */
 export async function deleteTicketAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getTicket(db, id);
   if (!existing) throw new Error('Ticket not found');
+  requireTripMember(principal, existing.tripId);
   for (const f of listFilesForTicket(db, id)) {
     const abs = join(env.UPLOADS_DIR, f.path);
     if (isUnderUploads(abs)) await rm(abs, { force: true });
@@ -97,8 +104,10 @@ export async function deleteTicketAction(id: string): Promise<void> {
 
 /** Delete one attachment (row + bytes). */
 export async function deleteTicketFileAction(fileId: string): Promise<void> {
+  const principal = await requireUserAction();
   const file = getTicketFile(db, fileId);
   if (!file) throw new Error('File not found');
+  requireTripMember(principal, file.tripId);
   const abs = join(env.UPLOADS_DIR, file.path);
   if (isUnderUploads(abs)) await rm(abs, { force: true });
   deleteTicketFile(db, fileId);

@@ -22,6 +22,7 @@ import { getSettings } from '@/src/db/repos/settings';
 import { env } from '@/src/env';
 import { getOrFetchLeg } from '@/src/lib/google/getOrFetchLeg';
 import { generatePlaceSummary } from '@/src/lib/openai/server';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 import type { TravelLeg, DayMode } from '@/src/db/schema';
 import type { TravelMode } from '@/src/lib/googleMapsUrl';
 
@@ -57,7 +58,9 @@ const addSchema = z.object({
 export type AddPlaceActionInput = z.input<typeof addSchema>;
 
 export async function addPlaceAction(input: AddPlaceActionInput): Promise<Place> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const place = addPlace(db, {
     tripId: data.tripId,
     dayDate: data.dayDate ?? null,
@@ -98,8 +101,10 @@ export async function updatePlaceAction(
   id: string,
   patch: UpdatePlaceActionPatch,
 ): Promise<Place> {
+  const principal = await requireUserAction();
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const coordsTouched =
     Object.prototype.hasOwnProperty.call(patch, 'lat') ||
@@ -116,8 +121,10 @@ export async function updatePlaceAction(
 // --- deletePlaceAction ----------------------------------------------------
 
 export async function deletePlaceAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   invalidateLegsTouchingPlace(db, id);
   deletePlace(db, id);
   revalidatePlan(existing.tripId);
@@ -130,7 +137,9 @@ export async function reorderDayAction(
   dayDate: string,
   ids: string[],
 ): Promise<void> {
+  const principal = await requireUserAction();
   const parsedTrip = z.string().min(1).parse(tripId);
+  requireTripMember(principal, parsedTrip);
   const parsedDay = dateStr.parse(dayDate);
   const parsedIds = z.array(z.string().min(1)).parse(ids);
   // Reordering changes adjacency ⇒ every leg touching a place in this day is stale.
@@ -144,8 +153,10 @@ export async function reorderDayAction(
 // --- promoteToDayAction ---------------------------------------------------
 
 export async function promoteToDayAction(id: string, dayDate: string): Promise<Place> {
+  const principal = await requireUserAction();
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   const parsedDay = dateStr.parse(dayDate);
   invalidateLegsTouchingPlace(db, id);
   const updated = promoteToDay(db, id, parsedDay);
@@ -163,8 +174,10 @@ export async function promoteToDayAction(id: string, dayDate: string): Promise<P
  * original (not duplicated). Returns the new place.
  */
 export async function copyPlaceToDayAction(id: string, dayDate: string): Promise<Place> {
+  const principal = await requireUserAction();
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   const parsedDay = dateStr.parse(dayDate);
   const copy = addPlace(db, {
     tripId: existing.tripId,
@@ -188,8 +201,10 @@ export async function copyPlaceToDayAction(id: string, dayDate: string): Promise
 // --- moveToSavedAction ----------------------------------------------------
 
 export async function moveToSavedAction(id: string): Promise<Place> {
+  const principal = await requireUserAction();
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   invalidateLegsTouchingPlace(db, id);
   const updated = moveToSaved(db, id);
   if (!updated) throw new Error('Place not found');
@@ -200,9 +215,11 @@ export async function moveToSavedAction(id: string): Promise<Place> {
 // --- generatePlaceSummaryAction -------------------------------------------
 
 export async function generatePlaceSummaryAction(placeId: string): Promise<Place | null> {
+  const principal = await requireUserAction();
   const id = z.string().min(1).parse(placeId);
   const place = getPlace(db, id);
   if (!place) throw new Error('Place not found');
+  requireTripMember(principal, place.tripId);
   const trip = getTrip(db, place.tripId);
   if (!trip) throw new Error('Trip not found');
 
@@ -237,7 +254,9 @@ export async function recomputeDayLegsAction(
   dayDate: string,
   defaultMode: TravelMode,
 ): Promise<TravelLeg[]> {
+  const principal = await requireUserAction();
   const parsedTrip = z.string().min(1).parse(tripId);
+  requireTripMember(principal, parsedTrip);
   const parsedDay = dateStr.parse(dayDate);
   const ordered = listByDay(db, parsedTrip, parsedDay);
   if (ordered.length < 2) return [];
@@ -293,10 +312,12 @@ export async function setLegModeAction(
   placeId: string,
   mode: TravelMode | null,
 ): Promise<Place> {
+  const principal = await requireUserAction();
   const id = z.string().min(1).parse(placeId);
   const parsedMode = mode === null ? null : travelMode.parse(mode);
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   const updated = updatePlace(db, id, { legMode: parsedMode });
   if (!updated) throw new Error('Place not found');
   revalidatePath(`/trip/${existing.tripId}/plan`);
@@ -315,11 +336,13 @@ export async function setDayModeAction(
   dayDate: string,
   mode: TravelMode,
 ): Promise<DayMode> {
+  const principal = await requireUserAction();
   const parsedTrip = z.string().min(1).parse(tripId);
   const parsedDay = dateStr.parse(dayDate);
   const parsedMode = travelMode.parse(mode);
   const trip = getTrip(db, parsedTrip);
   if (!trip) throw new Error('Trip not found');
+  requireTripMember(principal, parsedTrip);
   const row = setDayMode(db, parsedTrip, parsedDay, parsedMode);
   revalidatePath(`/trip/${parsedTrip}/plan`);
   return row;
@@ -336,11 +359,13 @@ export async function setDayTitleAction(
   dayDate: string,
   title: string | null,
 ): Promise<void> {
+  const principal = await requireUserAction();
   const parsedTrip = z.string().min(1).parse(tripId);
   const parsedDay = dateStr.parse(dayDate);
   const parsedTitle = z.string().max(200).nullable().parse(title);
   const trip = getTrip(db, parsedTrip);
   if (!trip) throw new Error('Trip not found');
+  requireTripMember(principal, parsedTrip);
   setDayTitle(db, parsedTrip, parsedDay, parsedTitle);
   revalidatePath(`/trip/${parsedTrip}/plan`);
 }
@@ -352,10 +377,12 @@ export async function setDayTitleAction(
  * "loose"). Only meaningful for Saved-bucket places. Online-only.
  */
 export async function setPlaceListAction(placeId: string, listId: string | null): Promise<Place> {
+  const principal = await requireUserAction();
   const id = z.string().min(1).parse(placeId);
   const parsedListId = listId === null ? null : z.string().min(1).parse(listId);
   const existing = getPlace(db, id);
   if (!existing) throw new Error('Place not found');
+  requireTripMember(principal, existing.tripId);
   const updated = updatePlace(db, id, { listId: parsedListId });
   if (!updated) throw new Error('Place not found');
   revalidatePath(`/trip/${existing.tripId}/plan`);

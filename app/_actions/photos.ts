@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { getPhoto, deletePhoto } from '@/src/db/repos/photos';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const photoId = z.string().min(1);
 
@@ -15,9 +16,11 @@ const photoId = z.string().min(1);
  * and revalidate the owning trip's Plan tab. Online-only (a Server Action).
  */
 export async function deletePhotoAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const parsed = photoId.parse(id);
   const existing = getPhoto(db, parsed);
   if (!existing) throw new Error('Photo not found');
+  requireTripMember(principal, existing.tripId);
 
   // Guard against a path-traversal attack via a tampered DB `path` column.
   // Must be strictly *under* the uploads root — never the root itself (an empty

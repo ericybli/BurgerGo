@@ -10,6 +10,7 @@ import { addPlace, type Place } from '@/src/db/repos/places';
 import { addRestaurant } from '@/src/db/repos/restaurants';
 import { extractPlaces } from '@/src/lib/openai/server';
 import { resolvePlaceByName, type ResolvedPlace } from '@/src/lib/google/resolvePlace';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 /** Valid place categories (schema enum); anything else coerces to 'other'. */
 const CATEGORIES: ReadonlyArray<Place['category']> = [
@@ -49,9 +50,11 @@ export async function extractImportItemsAction(input: {
   images: string[];
   text: string;
 }): Promise<{ items: ImportPreviewItem[] }> {
+  const principal = await requireUserAction();
   const tripId = z.string().min(1).parse(input.tripId);
   const trip = getTrip(db, tripId);
   if (!trip) throw new Error('Trip not found');
+  requireTripMember(principal, tripId);
 
   const text = (input.text ?? '').slice(0, 20000);
   const images = (input.images ?? [])
@@ -123,9 +126,11 @@ export async function createImportItemsAction(input: {
   tripId: string;
   items: ImportCreateItem[];
 }): Promise<{ restaurants: number; places: number }> {
+  const principal = await requireUserAction();
   const tripId = z.string().min(1).parse(input.tripId);
   const trip = getTrip(db, tripId);
   if (!trip) throw new Error('Trip not found');
+  requireTripMember(principal, tripId);
   const items = z.array(createItemSchema).parse(input.items ?? []);
 
   let restaurants = 0;

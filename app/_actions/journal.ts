@@ -14,6 +14,7 @@ import {
   type JournalEntry,
 } from '@/src/db/repos/journalEntries';
 import { listByOwner, deletePhoto } from '@/src/db/repos/photos';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const title = z.string().trim().min(1, 'Title is required');
@@ -35,7 +36,9 @@ const addSchema = z.object({
 export type AddEntryActionInput = z.input<typeof addSchema>;
 
 export async function addEntryAction(input: AddEntryActionInput): Promise<JournalEntry> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const entry = addEntry(db, {
     tripId: data.tripId,
     title: data.title,
@@ -60,8 +63,10 @@ export async function updateEntryAction(
   id: string,
   patch: UpdateEntryActionPatch,
 ): Promise<JournalEntry> {
+  const principal = await requireUserAction();
   const existing = getEntry(db, id);
   if (!existing) throw new Error('Entry not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateEntry(db, id, data);
   if (!updated) throw new Error('Entry not found');
@@ -78,8 +83,10 @@ export async function updateEntryAction(
  * revalidate. Online-only (a Server Action). Mirrors deletePhotoAction's guard.
  */
 export async function deleteEntryAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getEntry(db, id);
   if (!existing) throw new Error('Entry not found');
+  requireTripMember(principal, existing.tripId);
 
   const root = resolve(env.UPLOADS_DIR);
   const galleryPhotos = listByOwner(db, 'journal', id);

@@ -10,6 +10,7 @@ import {
   getExpense,
   type Expense,
 } from '@/src/db/repos/expenses';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 const amount = z
@@ -38,7 +39,9 @@ const addSchema = z.object({
 export type AddExpenseActionInput = z.input<typeof addSchema>;
 
 export async function addExpenseAction(input: AddExpenseActionInput): Promise<Expense> {
+  const principal = await requireUserAction();
   const data = addSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const expense = addExpense(db, {
     tripId: data.tripId,
     amount: data.amount,
@@ -67,8 +70,10 @@ export async function updateExpenseAction(
   id: string,
   patch: UpdateExpenseActionPatch,
 ): Promise<Expense> {
+  const principal = await requireUserAction();
   const existing = getExpense(db, id);
   if (!existing) throw new Error('Expense not found');
+  requireTripMember(principal, existing.tripId);
   const data = updateSchema.parse(patch);
   const updated = updateExpense(db, id, data);
   if (!updated) throw new Error('Expense not found');
@@ -79,8 +84,10 @@ export async function updateExpenseAction(
 // --- deleteExpenseAction --------------------------------------------------
 
 export async function deleteExpenseAction(id: string): Promise<void> {
+  const principal = await requireUserAction();
   const existing = getExpense(db, id);
   if (!existing) throw new Error('Expense not found');
+  requireTripMember(principal, existing.tripId);
   deleteExpense(db, id);
   revalidateBudget(existing.tripId);
 }

@@ -9,6 +9,7 @@ import {
   type BudgetTarget,
   type TargetCategory,
 } from '@/src/db/repos/budgetTargets';
+import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const category = z.enum([
   'food', 'lodging', 'transport', 'activities', 'shopping', 'other',
@@ -34,7 +35,9 @@ const setSchema = z.object({
 export type SetTargetActionInput = z.input<typeof setSchema>;
 
 export async function setTargetAction(input: SetTargetActionInput): Promise<BudgetTarget> {
+  const principal = await requireUserAction();
   const data = setSchema.parse(input);
+  requireTripMember(principal, data.tripId);
   const target = setTarget(db, data.tripId, data.category, data.plannedAmount);
   revalidateBudget(data.tripId);
   return target;
@@ -46,8 +49,10 @@ export async function clearTargetAction(
   tripId: string,
   category: TargetCategory,
 ): Promise<void> {
+  const principal = await requireUserAction();
   const parsedTrip = z.string().min(1).parse(tripId);
   const parsedCategory = targetCategory.parse(category);
+  requireTripMember(principal, parsedTrip);
   deleteTarget(db, parsedTrip, parsedCategory);
   revalidateBudget(parsedTrip);
 }
