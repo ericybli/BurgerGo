@@ -7,6 +7,7 @@ import { db } from '@/src/db/client';
 import { env } from '@/src/env';
 import { user } from '@/src/db/schema';
 import { getPrincipal } from '@/src/lib/authz';
+import { now } from '@/src/lib/clock';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
 
   const imagePath = `/api/avatars/${principal.userId}?v=${Date.now()}`;
   db.update(user)
-    .set({ image: imagePath, updatedAt: new Date() })
+    .set({ image: imagePath, updatedAt: new Date(now()) })
     .where(eq(user.id, principal.userId))
     .run();
   return NextResponse.json({ image: imagePath }, { status: 201 });

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '@/src/db/client';
 import { user } from '@/src/db/schema';
 import { getPrincipal } from '@/src/lib/authz';
+import { now } from '@/src/lib/clock';
 import { restWrite } from '@/src/lib/restWrite';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,7 @@ export async function PATCH(req: Request) {
     if (principal.kind !== 'user') throw new Error('User not found');
     const { name } = z.object({ name: z.string().trim().min(1).max(120) }).parse(body);
     db.update(user)
-      .set({ name, updatedAt: new Date() })
+      .set({ name, updatedAt: new Date(now()) })
       .where(eq(user.id, principal.userId))
       .run();
     const row = db.select().from(user).where(eq(user.id, principal.userId)).get()!;
