@@ -16,9 +16,11 @@ import { BackHandler, Modal, Platform, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Location from 'expo-location';
 import { colors, font } from '../../lib/theme';
+import { GlassTintPlate } from '../../components/ui/glass';
 import type { LatLng } from '../../lib/legView';
 import type { PlanMapProps } from './PlanMap.types';
 import type { MapSeg } from './map/mapData';
+import { tabBarSpace } from '../../navigation/GlassTabBar';
 import { useMapShell } from './map/useMapShell';
 import type { MapCanvasHandle } from './map/canvasTypes';
 import { NativeCanvas, type NativeCanvasPersist } from './map/NativeCanvas';
@@ -97,6 +99,10 @@ export default function PlanMap(props: PlanMapProps) {
   }
 
   const showLegend = props.bucket === 'days' && shell.legend.length > 0 && !fullscreen;
+  const showRouteLinks = props.bucket === 'days' && !fullscreen && shell.routeLinks.length > 0;
+  // Inline with no route-links row below, the canvas runs underneath the
+  // floating glass tab bar — lift the bottom-anchored map controls above it.
+  const chromeRaised = !fullscreen && !showRouteLinks;
 
   const handleLegTap = (seg: MapSeg) => {
     legTapAtRef.current = Date.now();
@@ -142,8 +148,11 @@ export default function PlanMap(props: PlanMapProps) {
         )}
 
         {!props.online ? (
-          <View style={s.offlinePill} pointerEvents="none">
-            <Text style={s.offlinePillText}>Offline — cached map</Text>
+          /* Dark tinted glass keeps the ink identity (white text readable). */
+          <View style={s.offlinePillWrap} pointerEvents="none">
+            <GlassTintPlate radius={999} color="rgba(27,31,28,0.78)" style={s.offlinePill}>
+              <Text style={s.offlinePillText}>Offline — cached map</Text>
+            </GlassTintPlate>
           </View>
         ) : null}
 
@@ -172,6 +181,7 @@ export default function PlanMap(props: PlanMapProps) {
           poiSupported={shell.poiSupported}
           poiEnabled={shell.poiEnabled}
           onTogglePoi={shell.togglePoi}
+          raised={chromeRaised}
         />
 
         {tappedLeg ? <LegChip seg={tappedLeg} onClose={() => setTappedLeg(null)} /> : null}
@@ -217,7 +227,13 @@ export default function PlanMap(props: PlanMapProps) {
         </View>
       </Modal>
 
-      {props.bucket === 'days' && !fullscreen ? <RouteLinks links={shell.routeLinks} /> : null}
+      {/* The route-links row sits in flow below the map; clear the floating
+          glass tab bar so the links stay tappable (visual only). */}
+      {showRouteLinks ? (
+        <View style={{ marginBottom: tabBarSpace(insets.bottom) - 12 }}>
+          <RouteLinks links={shell.routeLinks} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -226,15 +242,15 @@ const s = StyleSheet.create({
   fill: { flex: 1, backgroundColor: colors.bg },
   mapBox: { flex: 1, overflow: 'hidden' },
   fullscreenRoot: { flex: 1, backgroundColor: colors.bg },
-  offlinePill: {
+  offlinePillWrap: {
     position: 'absolute',
     top: 12,
     alignSelf: 'center',
-    backgroundColor: 'rgba(27, 31, 28, 0.82)',
-    borderRadius: 999,
+    zIndex: 5,
+  },
+  offlinePill: {
     paddingHorizontal: 12,
     paddingVertical: 5,
-    zIndex: 5,
   },
   offlinePillText: { fontSize: 11.5, fontFamily: font.medium, color: colors.white },
 });

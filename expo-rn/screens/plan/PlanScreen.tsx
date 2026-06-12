@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, DeviceEventEmitter, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import {
   api,
   photoUrl,
@@ -15,6 +16,7 @@ import { useOnline } from '../../lib/online';
 import { colors, font, CATEGORIES } from '../../lib/theme';
 import { DEFAULT_DAY_MODE, dayColor } from '../../lib/legView';
 import { ErrorState, Loading, SegmentedControl, Sheet } from '../../components/ui';
+import { useCrossFade } from '../../components/ui/motion';
 import { indexLegsByMode } from './planShared';
 import { generateSummary, placeDetails, setLegMode, setPlaceList } from './planApi';
 import { TripOverview } from './TripOverview';
@@ -46,6 +48,9 @@ type DayPicker = { mode: 'move' | 'copy' | 'promote'; place: Place } | null;
 export function PlanScreen() {
   const { tripId, days, startDate, endDate } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5): the sticky in-page chrome starts
+  // below it; the map/list area keeps its place under that chrome.
+  const headerHeight = useHeaderHeight();
 
   // One day is always selected (web has no "All days" list view); the map adds
   // an "all days" overlay state of its own (selectedDate=null on the map).
@@ -67,6 +72,11 @@ export function PlanScreen() {
   const [dayPicker, setDayPicker] = useState<DayPicker>(null);
 
   const mountedRef = useRef(true);
+
+  // List↔Map cross-fade (handoff #9): the content area's wrapper re-fades on
+  // view switches. Mount/unmount semantics below are untouched — the map's
+  // own viewport persistence (PlanMap persist refs) behaves exactly as before.
+  const viewFade = useCrossFade(view);
 
   const fetchData = useCallback(async () => {
     try {
@@ -321,7 +331,7 @@ export function PlanScreen() {
   const addDayDate = bucket === 'saved' ? null : date;
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: headerHeight }]}>
       {mutationError ? (
         <Text accessibilityRole="alert" style={styles.errorBanner}>
           {mutationError}
@@ -372,7 +382,7 @@ export function PlanScreen() {
         ) : null}
       </View>
 
-      <View style={{ flex: 1 }}>
+      <Animated.View style={[{ flex: 1 }, viewFade]}>
         {state.status === 'loading' ? (
           <Loading label="Loading your plan…" />
         ) : state.status === 'error' ? (
@@ -452,7 +462,7 @@ export function PlanScreen() {
             )}
           </ScrollView>
         )}
-      </View>
+      </Animated.View>
 
       {/* Read card */}
       <Sheet visible={viewingLive !== null} onClose={() => setViewing(null)}>
@@ -574,5 +584,6 @@ const styles = StyleSheet.create({
   header: { backgroundColor: colors.bg, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
   headerListBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
   togglesRow: { flexDirection: 'row', gap: 8 },
-  listContent: { padding: 16, paddingBottom: 40 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  listContent: { padding: 16, paddingBottom: 150 },
 });

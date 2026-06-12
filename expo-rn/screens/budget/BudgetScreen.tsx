@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import {
   api,
   type BudgetCategory,
@@ -65,6 +66,8 @@ const CATEGORY_OPTIONS = BUDGET_CATEGORIES.map((c) => ({
 export function BudgetScreen() {
   const { tripId } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5) — scroll content starts below it.
+  const headerHeight = useHeaderHeight();
   const [state, setState] = useState<State>({ status: 'loading' });
   const [grouping, setGrouping] = useState<Grouping>('day');
   const [expenseForm, setExpenseForm] = useState<{ expense: Expense | null } | null>(null);
@@ -121,7 +124,10 @@ export function BudgetScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <ScrollView contentContainerStyle={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[styles.list, { paddingTop: headerHeight + 16 }]}
+        keyboardShouldPersistTaps="handled"
+      >
         <SummaryCard
           overall={overall}
           categoryRows={categoryRows}
@@ -753,7 +759,8 @@ function SetBudgetForm({
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 16, paddingBottom: 40, gap: 16 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { padding: 16, paddingBottom: 150, gap: 16 },
 
   // Summary card: white, 1px line border, radius 16, px-4 py-3.5 — no shadow.
   summary: {

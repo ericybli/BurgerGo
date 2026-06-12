@@ -1,9 +1,9 @@
 /**
  * Floating Atlas controls over the map canvas (shared by both platforms):
  * Layers pill + menu (top-left, days bucket), fullscreen (top-right),
- * satellite pill (bottom-left), locate + POI toggle (bottom-right). These keep
- * the web's translucent bg + soft lift shadow (they sit over imagery — the one
- * allowed shadow exception besides pins).
+ * satellite pill (bottom-left), locate + POI toggle (bottom-right). All of
+ * them are liquid-glass plates (they float over imagery — chrome is always
+ * glass); the active POI state is teal tinted glass.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
@@ -14,6 +14,7 @@ import {
   Minimize,
 } from 'lucide-react-native';
 import { colors, font } from '../../../lib/theme';
+import { GlassPlate, GlassTintPlate } from '../../../components/ui/glass';
 
 export function MapChrome({
   showLayers,
@@ -34,6 +35,7 @@ export function MapChrome({
   poiSupported,
   poiEnabled,
   onTogglePoi,
+  raised = false,
 }: {
   /** Layers button renders in the days bucket only. */
   showLayers: boolean;
@@ -54,6 +56,12 @@ export function MapChrome({
   poiSupported: boolean;
   poiEnabled: boolean;
   onTogglePoi: () => void;
+  /**
+   * Lift the bottom-anchored controls +90 when the canvas runs underneath the
+   * floating glass tab bar (visual only — inline, non-fullscreen, no route
+   * links row below the map).
+   */
+  raised?: boolean;
 }) {
   return (
     <>
@@ -63,17 +71,19 @@ export function MapChrome({
             onPress={onToggleLayersMenu}
             accessibilityLabel="Layers"
             accessibilityState={{ expanded: layersOpen }}
-            style={({ pressed }) => [s.layersBtn, pressed && s.pressed]}
+            style={({ pressed }) => (pressed ? s.pressed : null)}
           >
-            <Layers size={16} strokeWidth={1.75} color={colors.ink} />
-            <Text style={s.layersText}>Layers</Text>
+            <GlassPlate radius={999} style={s.layersBtn}>
+              <Layers size={16} strokeWidth={1.75} color={colors.ink} />
+              <Text style={s.layersText}>Layers</Text>
+            </GlassPlate>
           </Pressable>
           {layersOpen ? (
-            <View style={s.layersMenu}>
+            <GlassPlate radius={14} strength="sheet" style={s.layersMenu}>
               <LayerRow label="Routes" value={showRoutes} onToggle={onToggleRoutes} />
               <LayerRow label="Saved places" value={showSaved} onToggle={onToggleSaved} />
               <LayerRow label="Restaurants" value={showRestaurants} onToggle={onToggleRestaurants} />
-            </View>
+            </GlassPlate>
           ) : null}
         </View>
       ) : null}
@@ -81,30 +91,46 @@ export function MapChrome({
       <Pressable
         onPress={onToggleFullscreen}
         accessibilityLabel={fullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-        style={({ pressed }) => [s.roundBtn, s.fullscreenBtn, pressed && s.pressed]}
+        style={({ pressed }) => [s.float, s.fullscreenBtn, pressed ? s.pressed : null]}
       >
-        {fullscreen ? (
-          <Minimize size={20} strokeWidth={1.75} color={colors.ink} />
-        ) : (
-          <Maximize size={20} strokeWidth={1.75} color={colors.ink} />
-        )}
+        <GlassPlate radius={999} style={s.roundBtn}>
+          {fullscreen ? (
+            <Minimize size={20} strokeWidth={1.75} color={colors.ink} />
+          ) : (
+            <Maximize size={20} strokeWidth={1.75} color={colors.ink} />
+          )}
+        </GlassPlate>
       </Pressable>
 
       <Pressable
         onPress={onToggleSatellite}
         accessibilityLabel="Toggle map style"
-        style={({ pressed }) => [s.satelliteBtn, pressed && s.pressed]}
+        style={({ pressed }) => [
+          s.float,
+          s.satelliteBtn,
+          raised && s.satelliteBtnRaised,
+          pressed ? s.pressed : null,
+        ]}
       >
-        <Text style={s.satelliteText}>{satellite ? 'Map' : 'Satellite'}</Text>
+        <GlassPlate radius={999} style={s.satellitePill}>
+          <Text style={s.satelliteText}>{satellite ? 'Map' : 'Satellite'}</Text>
+        </GlassPlate>
       </Pressable>
 
       <Pressable
         onPress={onLocate}
         disabled={locating}
         accessibilityLabel="Show my location"
-        style={({ pressed }) => [s.roundBtn, s.locateBtn, pressed && s.pressed]}
+        style={({ pressed }) => [
+          s.float,
+          s.locateBtn,
+          raised && s.locateBtnRaised,
+          pressed ? s.pressed : null,
+        ]}
       >
-        <LocateFixed size={18} strokeWidth={2} color={locating ? colors.faint : colors.ink} />
+        <GlassPlate radius={999} style={s.roundBtn}>
+          <LocateFixed size={18} strokeWidth={2} color={locating ? colors.faint : colors.ink} />
+        </GlassPlate>
       </Pressable>
 
       {poiSupported ? (
@@ -113,13 +139,22 @@ export function MapChrome({
           accessibilityLabel="Toggle map landmarks"
           accessibilityState={{ selected: poiEnabled }}
           style={({ pressed }) => [
-            s.roundBtn,
+            s.float,
             s.poiBtn,
-            poiEnabled && s.poiBtnOn,
-            pressed && s.pressed,
+            raised && s.poiBtnRaised,
+            pressed ? s.pressed : null,
           ]}
         >
-          <Landmark size={18} strokeWidth={2} color={poiEnabled ? colors.white : colors.ink} />
+          {poiEnabled ? (
+            /* Active = teal tinted glass (handoff: accent state keeps color). */
+            <GlassTintPlate radius={999} color="rgba(51,103,122,0.85)" style={s.roundBtn}>
+              <Landmark size={18} strokeWidth={2} color={colors.white} />
+            </GlassTintPlate>
+          ) : (
+            <GlassPlate radius={999} style={s.roundBtn}>
+              <Landmark size={18} strokeWidth={2} color={colors.ink} />
+            </GlassPlate>
+          )}
         </Pressable>
       ) : null}
     </>
@@ -150,16 +185,11 @@ function LayerRow({
   );
 }
 
-const lift = {
-  shadowColor: '#1B1F1C',
-  shadowOpacity: 0.12,
-  shadowRadius: 4,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 3,
-} as const;
-
 const s = StyleSheet.create({
   pressed: { opacity: 0.8 },
+
+  /** Absolute anchors live on the Pressables; the glass plates fill inside. */
+  float: { position: 'absolute', zIndex: 2 },
 
   layersWrap: { position: 'absolute', left: 12, top: 12, zIndex: 3 },
   layersBtn: {
@@ -168,18 +198,12 @@ const s = StyleSheet.create({
     gap: 6,
     height: 40,
     paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    ...lift,
   },
   layersText: { fontSize: 12.5, fontFamily: font.semibold, color: colors.ink },
   layersMenu: {
     marginTop: 8,
     width: 176,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.95)',
     padding: 6,
-    ...lift,
   },
   layerRow: {
     flexDirection: 'row',
@@ -205,31 +229,22 @@ const s = StyleSheet.create({
   check: { color: colors.white, fontSize: 10, lineHeight: 12, fontFamily: font.bold },
 
   roundBtn: {
-    position: 'absolute',
     width: 40,
     height: 40,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
-    ...lift,
   },
   fullscreenBtn: { right: 12, top: 12 },
   locateBtn: { right: 12, bottom: 36 },
+  locateBtnRaised: { bottom: 126 },
   poiBtn: { right: 12, bottom: 88 },
-  poiBtnOn: { backgroundColor: colors.accent },
+  poiBtnRaised: { bottom: 178 },
 
-  satelliteBtn: {
-    position: 'absolute',
-    left: 12,
-    bottom: 36,
+  satelliteBtnRaised: { bottom: 126 },
+  satelliteBtn: { left: 12, bottom: 36 },
+  satellitePill: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    zIndex: 2,
-    ...lift,
   },
   satelliteText: { fontSize: 12.5, fontFamily: font.semibold, color: colors.ink },
 });

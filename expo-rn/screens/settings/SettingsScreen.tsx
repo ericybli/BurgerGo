@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Image, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useOnline } from '../../lib/online';
 import { CURRENCIES } from '../../lib/currency';
 import { AI_MODELS, DEFAULT_AI_MODEL, DEFAULT_AI_PROMPT } from '../../lib/aiDefaults';
@@ -15,7 +16,13 @@ import { Button, Card, Field, Loading, OfflineHint, Screen, Select } from '../..
 import { loadSettings, patchSettings } from './settingsApi';
 import { ProfileCard } from './ProfileCard';
 import { downloadAllForOffline, type SyncProgress } from '../../lib/offlineSync';
-import { getOfflineMeta, type OfflineMeta } from '../../lib/offlineStore';
+import {
+  clearJsonCache,
+  clearPhotoCache,
+  getOfflineMeta,
+  setOfflineMeta,
+  type OfflineMeta,
+} from '../../lib/offlineStore';
 
 type Status = 'idle' | 'saved' | 'error';
 
@@ -23,6 +30,8 @@ const SAVE_ERROR = "Couldn't save — please try again.";
 
 export function SettingsScreen() {
   const online = useOnline();
+  // Transparent glass stack header — content starts below it (Task 5).
+  const headerHeight = useHeaderHeight();
   const [loaded, setLoaded] = useState(false);
   const [currency, setCurrency] = useState('USD');
   // Map pin clustering: on by default (null/undefined/true → true); only false turns it off.
@@ -38,9 +47,17 @@ export function SettingsScreen() {
   const [syncing, setSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
   const [syncError, setSyncError] = useState(false);
+  const [clearArmed, setClearArmed] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
+  const [clearError, setClearError] = useState(false);
   useEffect(() => {
     void getOfflineMeta().then(setOfflineMetaState);
   }, []);
+  useEffect(() => {
+    if (!clearArmed) return;
+    const t = setTimeout(() => setClearArmed(false), 3000);
+    return () => clearTimeout(t);
+  }, [clearArmed]);
   const [mapBusy, setMapBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
 
@@ -119,6 +136,26 @@ export function SettingsScreen() {
     }
   }
 
+  async function handleClearOffline() {
+    if (!clearArmed) {
+      setClearArmed(true);
+      return;
+    }
+    setClearArmed(false);
+    setClearBusy(true);
+    setClearError(false);
+    try {
+      await clearJsonCache();
+      await clearPhotoCache();
+      await setOfflineMeta(null);
+      setOfflineMetaState(null);
+    } catch {
+      setClearError(true);
+    } finally {
+      setClearBusy(false);
+    }
+  }
+
   /** Local-only: clears the fields; the user must still hit Save to persist. */
   function resetAi() {
     setAiPrompt('');
@@ -129,7 +166,7 @@ export function SettingsScreen() {
   const clusterDisabled = !online || mapBusy;
 
   return (
-    <Screen scroll>
+    <Screen scroll topInset={headerHeight + 8}>
       {/* Card 0 — Profile (account, avatar, sign-out) */}
       <ProfileCard online={online} />
 
@@ -302,6 +339,31 @@ export function SettingsScreen() {
           }}
           style={styles.offlineBtn}
         />
+        {offlineMeta ? (
+          <>
+            <Pressable
+              accessibilityRole="button"
+              disabled={syncing || clearBusy}
+              onPress={() => void handleClearOffline()}
+              style={({ pressed }) => [
+                styles.clearBtn,
+                pressed && !syncing && !clearBusy && { opacity: 0.6 },
+                (syncing || clearBusy) && { opacity: 0.4 },
+              ]}
+            >
+              <Text style={styles.clearBtnText}>
+                {clearBusy
+                  ? 'Clearing…'
+                  : clearArmed
+                    ? 'Sure? Clear offline data'
+                    : 'Clear offline data'}
+              </Text>
+            </Pressable>
+            {clearError ? (
+              <Text style={styles.offlineError}>Couldn't clear — please try again.</Text>
+            ) : null}
+          </>
+        ) : null}
         {!online ? <OfflineHint /> : null}
         <View style={styles.divider} />
         <Text style={styles.cardTitle}>Your data</Text>
@@ -336,6 +398,8 @@ const styles = StyleSheet.create({
   offlineStatus: { ...type.caption, color: colors.sub, marginTop: 10 },
   offlineError: { ...type.caption, color: colors.danger, marginTop: 6 },
   offlineBtn: { marginTop: 12 },
+  clearBtn: { marginTop: 12, alignSelf: 'center' },
+  clearBtnText: { ...type.caption, color: colors.danger },
   status: { ...type.caption, marginTop: 10, color: colors.faint },
   cardSpace: { marginTop: 16 },
   cardTitle: { ...type.heading, color: colors.ink },

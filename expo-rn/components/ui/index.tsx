@@ -8,13 +8,16 @@
  *   faint text (never opacity — it washes orange to pink)
  * - segmented control = surface track (3px padding) + white thumb w/ subtle
  *   shadow + ink text; inactive = sub text (web EatsClient)
- * - bottom sheet = white panel, top radius 22, 40×4 drag handle, ink scrim
+ * - bottom sheet = floating glass panel (GlassPlate strength="sheet", radius 26,
+ *   inset 8 from edges), 40×4 drag handle, animated ink scrim (handoff #11)
  * - text buttons: accent teal = info/nav, danger = destructive
  */
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
+  Animated,
   FlatList,
   Image,
   KeyboardAvoidingView,
@@ -31,6 +34,8 @@ import {
   type StyleProp,
 } from 'react-native';
 import { colors, font, radius, type } from '../../lib/theme';
+import { GlassPlate } from './glass';
+import { springy, usePressScale } from './motion';
 
 // --- Screen container -------------------------------------------------------
 
@@ -38,16 +43,27 @@ export function Screen({
   children,
   scroll = false,
   contentStyle,
+  bottomInset = 40,
+  topInset,
 }: {
   children: ReactNode;
   scroll?: boolean;
   contentStyle?: StyleProp<ViewStyle>;
+  /** Scroll-content bottom padding; tab screens pass ~150 to clear the floating glass tab bar. */
+  bottomInset?: number;
+  /** Scroll-content top padding; screens under a transparent glass header pass headerHeight + 8. */
+  topInset?: number;
 }) {
   if (scroll) {
     return (
       <ScrollView
         style={s.screen}
-        contentContainerStyle={[s.scrollContent, contentStyle]}
+        contentContainerStyle={[
+          s.scrollContent,
+          { paddingBottom: bottomInset },
+          topInset !== undefined && { paddingTop: topInset },
+          contentStyle,
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         {children}
@@ -78,9 +94,12 @@ export function Button({
 }) {
   const isDisabled = disabled || busy;
   const solid = variant === 'primary' || variant === 'danger';
+  const press = usePressScale();
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={isDisabled}
       style={({ pressed }) => [
         s.btn,
@@ -97,18 +116,21 @@ export function Button({
         style,
       ]}
     >
-      <Text
-        style={[
-          s.btnText,
-          solid && s.btnTextLight,
-          variant === 'secondary' && s.btnTextDark,
-          variant === 'ghost' && s.btnTextDangerGhost,
-          variant === 'text' && s.btnTextAccent,
-          isDisabled && solid && s.btnTextDisabled,
-        ]}
-      >
-        {busy ? '…' : title}
-      </Text>
+      {/* Press feedback (handoff #10): content dips to 0.94, springy release. */}
+      <Animated.View style={press.style}>
+        <Text
+          style={[
+            s.btnText,
+            solid && s.btnTextLight,
+            variant === 'secondary' && s.btnTextDark,
+            variant === 'ghost' && s.btnTextDangerGhost,
+            variant === 'text' && s.btnTextAccent,
+            isDisabled && solid && s.btnTextDisabled,
+          ]}
+        >
+          {busy ? '…' : title}
+        </Text>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -195,9 +217,12 @@ export function IconButton({
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  const press = usePressScale();
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={disabled}
       accessibilityLabel={accessibilityLabel}
       hitSlop={6}
@@ -209,7 +234,7 @@ export function IconButton({
         style,
       ]}
     >
-      {children}
+      <Animated.View style={press.style}>{children}</Animated.View>
     </Pressable>
   );
 }
@@ -378,9 +403,48 @@ export function Sheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  // Entrance (handoff #11): backdrop fades 0→1 over 240ms; panel rises
+  // translateY(46)→0 + fades with an overshoot spring. Closing stays INSTANT
+  // (Modal unmounts on onClose — no exit animation).
+  const backdrop = useRef(new Animated.Value(0)).current;
+  const panel = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!visible) {
+      // Reset the pre-state so a re-open without a remount replays the entrance.
+      backdrop.setValue(0);
+      panel.setValue(0);
+      return;
+    }
+    let cancelled = false;
+    // Read reduce-motion directly: useReduceMotion()'s first render is always
+    // `false` while the async query resolves (motion.ts pitfall).
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) {
+          backdrop.setValue(1);
+          panel.setValue(1);
+          return;
+        }
+        Animated.timing(backdrop, { toValue: 1, duration: 240, useNativeDriver: true }).start();
+        springy(panel, 1).start();
+      })
+      // A rejected query must never strand the sheet at opacity 0.
+      .catch(() => {
+        if (!cancelled) {
+          backdrop.setValue(1);
+          panel.setValue(1);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, backdrop, panel]);
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
       <View style={s.sheetRoot}>
+        <Animated.View pointerEvents="none" style={[s.sheetBackdrop, { opacity: backdrop }]} />
         {/* Tap outside the sheet to dismiss. */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <KeyboardAvoidingView
@@ -388,7 +452,16 @@ export function Sheet({
           style={s.sheetKav}
           pointerEvents="box-none"
         >
-          {children}
+          <Animated.View
+            style={{
+              opacity: panel,
+              transform: [
+                { translateY: panel.interpolate({ inputRange: [0, 1], outputRange: [46, 0] }) },
+              ],
+            }}
+          >
+            {children}
+          </Animated.View>
         </KeyboardAvoidingView>
       </View>
     </Modal>
@@ -396,8 +469,9 @@ export function Sheet({
 }
 
 /**
- * Atlas sheet panel: white, top radius 22, drag handle. Use as the direct
- * child of <Sheet>; put scrollable content inside.
+ * Liquid-glass sheet panel: floating GlassPlate (strength "sheet" for dense
+ * content readability), radius 26, inset 8 from the screen edges, drag handle.
+ * Use as the direct child of <Sheet>; put scrollable content inside.
  */
 export function SheetPanel({
   children,
@@ -409,11 +483,11 @@ export function SheetPanel({
   style?: StyleProp<ViewStyle>;
 }) {
   return (
-    <View style={[s.sheetPanel, style]}>
+    <GlassPlate strength="sheet" radius={26} style={[s.sheetPanel, style]}>
       <View style={s.sheetHandle} />
       {title ? <Text style={s.sheetTitle}>{title}</Text> : null}
       {children}
-    </View>
+    </GlassPlate>
   );
 }
 
@@ -490,10 +564,14 @@ const s = StyleSheet.create({
 
   offline: { marginTop: 10, fontSize: 13, color: colors.faint, fontStyle: 'italic', fontFamily: font.regular },
 
-  sheetRoot: { flex: 1, justifyContent: 'flex-end', backgroundColor: colors.scrim },
+  sheetRoot: { flex: 1, justifyContent: 'flex-end' },
+  // Handoff #11 backdrop (animated layer; scrim color no longer on sheetRoot).
+  sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(27,31,28,0.30)' },
   sheetKav: { justifyContent: 'flex-end' },
+  // Placement (margins) goes to GlassPlate's outer shadow view; padding to the
+  // inner clipped view (see glass.tsx splitStyle).
   sheetPanel: {
-    backgroundColor: colors.bg, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet,
+    marginHorizontal: 8, marginBottom: 8,
     paddingHorizontal: 16, paddingTop: 8, paddingBottom: 28,
   },
   sheetHandle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 10 },

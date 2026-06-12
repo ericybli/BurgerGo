@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { FileText, Image as ImageIcon } from 'lucide-react-native';
 import { api, type Ticket } from '../../lib/api';
 import { useTrip } from '../../navigation/TripContext';
@@ -37,6 +38,8 @@ const sortKey = (t: Ticket) => `${t.date ?? '9999-99-99'}T${t.time ?? '99:99'}`;
 export function TicketsScreen() {
   const { tripId } = useTrip();
   const online = useOnline();
+  // Transparent glass stack header (Task 5) — scroll content starts below it.
+  const headerHeight = useHeaderHeight();
   const [state, setState] = useState<LoadState>({ status: 'loading' });
   const [sheet, setSheet] = useState<{ ticket: Ticket | null } | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
@@ -98,7 +101,11 @@ export function TicketsScreen() {
   return (
     <View style={styles.root}>
       <ScrollView
-        contentContainerStyle={[styles.list, tickets.length === 0 && { flexGrow: 1 }]}
+        contentContainerStyle={[
+          styles.list,
+          { paddingTop: headerHeight + 16 },
+          tickets.length === 0 && { flexGrow: 1 },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.headerRow}>
@@ -292,7 +299,8 @@ function FadeUp({ delayIndex, children }: { delayIndex: number; children: ReactN
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  list: { padding: 16, paddingBottom: 40, gap: 12 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { padding: 16, paddingBottom: 150, gap: 12 },
 
   // Web EmptyState recipe: px-6 py-16 centered; mascot mb-6 h-28 w-28 opacity-90;
   // subtext mt-2 max-w-xs; CTA mt-6.

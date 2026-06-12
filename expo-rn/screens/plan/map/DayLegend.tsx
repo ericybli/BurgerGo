@@ -1,12 +1,15 @@
 /**
  * Horizontal day-filter chips above the map (days bucket only): "All days" +
- * one chip per dated day group (7px color dot + "Day N"). Active = ink bg +
- * white text + white dot; inactive = hairline border + day-color dot.
+ * one chip per dated day group (7px color dot + "Day N"). Inactive chips are
+ * liquid-glass pills (day-color dot); the ACTIVE chip drops the glass for a
+ * solid ink pill + white text/dot (handoff stacking rule: active = no glass).
  * Tapping a day shows ONLY that day (onSelectDate(date)); "All days" shows all
  * (onSelectDate(null)) — kept in sync with the list via the shared selection.
  */
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, font } from '../../../lib/theme';
+import { GlassPlate } from '../../../components/ui/glass';
 import type { LegendEntry } from './useMapShell';
 
 export function DayLegend({
@@ -26,36 +29,43 @@ export function DayLegend({
       contentContainerStyle={s.row}
       style={s.host}
     >
-      <Pressable
-        onPress={() => onSelectDate(null)}
-        accessibilityState={{ selected: allVisible }}
-        style={({ pressed }) => [
-          s.chip,
-          allVisible && s.chipActive,
-          // Web: active:scale-95 + hover:bg-surface (inactive chips only).
-          pressed && s.chipPressed,
-          pressed && !allVisible && s.chipPressedInactive,
-        ]}
-      >
+      <LegendChip active={allVisible} onPress={() => onSelectDate(null)}>
         <Text style={[s.text, allVisible && s.textActive]}>All days</Text>
-      </Pressable>
+      </LegendChip>
       {entries.map((e) => (
-        <Pressable
-          key={e.date}
-          onPress={() => onSelectDate(e.date)}
-          accessibilityState={{ selected: e.visible }}
-          style={({ pressed }) => [
-            s.chip,
-            e.visible && s.chipActive,
-            pressed && s.chipPressed,
-            pressed && !e.visible && s.chipPressedInactive,
-          ]}
-        >
+        <LegendChip key={e.date} active={e.visible} onPress={() => onSelectDate(e.date)}>
           <View style={[s.dot, { backgroundColor: e.visible ? colors.white : e.color }]} />
           <Text style={[s.text, e.visible && s.textActive]}>Day {e.dayNumber}</Text>
-        </Pressable>
+        </LegendChip>
       ))}
     </ScrollView>
+  );
+}
+
+function LegendChip({
+  active,
+  onPress,
+  children,
+}: {
+  active: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityState={{ selected: active }}
+      // Web: active:scale-95.
+      style={({ pressed }) => (pressed ? s.chipPressed : null)}
+    >
+      {active ? (
+        <View style={[s.chip, s.chipActive]}>{children}</View>
+      ) : (
+        <GlassPlate radius={999} style={s.chip}>
+          {children}
+        </GlassPlate>
+      )}
+    </Pressable>
   );
 }
 
@@ -66,16 +76,11 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bg,
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  chipActive: { backgroundColor: colors.ink, borderColor: colors.ink },
+  chipActive: { backgroundColor: colors.ink, borderRadius: 999 },
   chipPressed: { transform: [{ scale: 0.95 }] },
-  chipPressedInactive: { backgroundColor: colors.surface },
   dot: { width: 7, height: 7, borderRadius: 999 },
   text: { fontSize: 12, fontFamily: font.semibold, color: colors.sub },
   textActive: { color: colors.white },

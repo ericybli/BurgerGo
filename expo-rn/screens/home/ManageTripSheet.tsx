@@ -9,6 +9,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import {
+  Animated,
   Image,
   Pressable,
   ScrollView,
@@ -22,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { api, photoUrl, type Trip } from '../../lib/api';
 import { colors, font, radius, type } from '../../lib/theme';
 import { Button, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
+import { usePressScale } from '../../components/ui/motion';
 import { addTripDay, removeTripDay } from './homeApi';
 import { MembersSection } from './MembersSection';
 import { diffDays, formatDayCount } from './tripDates';
@@ -42,10 +44,14 @@ export function PillButton({
   disabled?: boolean;
   tone?: 'accent' | 'orange' | 'danger';
 }) {
+  // Press feedback (handoff #10): content dips to 0.94, springy release.
+  const press = usePressScale();
   if (tone === 'orange') {
     return (
       <Pressable
         onPress={onPress}
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
         disabled={disabled}
         accessibilityRole="button"
         style={({ pressed }) => [
@@ -54,7 +60,9 @@ export function PillButton({
           disabled && s.pillOrangeDisabled,
         ]}
       >
-        <Text style={[s.pillOrangeText, disabled && { color: colors.faint }]}>{label}</Text>
+        <Animated.View style={press.style}>
+          <Text style={[s.pillOrangeText, disabled && { color: colors.faint }]}>{label}</Text>
+        </Animated.View>
       </Pressable>
     );
   }
@@ -62,6 +70,8 @@ export function PillButton({
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={press.onPressIn}
+      onPressOut={press.onPressOut}
       disabled={disabled}
       accessibilityRole="button"
       style={({ pressed }) => [
@@ -70,7 +80,9 @@ export function PillButton({
         disabled && { opacity: 0.4 },
       ]}
     >
-      <Text style={[s.pillText, { color: disabled ? colors.faint : text }]}>{label}</Text>
+      <Animated.View style={press.style}>
+        <Text style={[s.pillText, { color: disabled ? colors.faint : text }]}>{label}</Text>
+      </Animated.View>
     </Pressable>
   );
 }
