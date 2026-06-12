@@ -1,7 +1,7 @@
 /**
- * Core HTTP client for the hosted BurgerGo backend. Reads are public JSON GET
- * routes; writes are REST mirrors of the web app's Server Actions (open unless
- * the server sets BURGERGO_API_KEY — then set WRITE_KEY to the same value).
+ * Core HTTP client for the hosted BurgerGo backend. Every call carries the
+ * Better Auth session cookie (authHeaders); the server requires a session on
+ * all JSON routes. Photo/media GETs are tokenless and bypass this client.
  */
 import { cacheJson, localPhotoUri, readCachedJson } from '../offlineStore';
 import { sessionCookie } from '../auth';

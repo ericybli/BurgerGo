@@ -130,9 +130,13 @@ export function ProfileCard({ online }: { online: boolean }) {
     }
     setSignOutArmed(false);
     void (async () => {
-      await authClient.signOut();
-      await setWasSignedIn(false);
-      // App.tsx's useSession flips to LoginScreen — no navigation needed.
+      try {
+        await authClient.signOut();
+        await setWasSignedIn(false);
+        // App.tsx's useSession flips to LoginScreen — no navigation needed.
+      } catch {
+        if (mounted.current) setStatus('error');
+      }
     })();
   }
 
