@@ -9,7 +9,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getDataSource, subscribeDataSource } from '../lib/dataSource';
 import { getOfflineMeta } from '../lib/offlineStore';
 import { useOnline } from '../lib/online';
-import { colors, font, radius } from '../lib/theme';
+import { colors, font } from '../lib/theme';
+import { GlassPlate } from './ui/glass';
 
 export function DataSourceDot() {
   const insets = useSafeAreaInsets();
@@ -45,9 +46,9 @@ export function DataSourceDot() {
   return (
     <View pointerEvents="box-none" style={[s.wrap, { top: insets.top + 10 }]}>
       {label ? (
-        <View style={s.labelPill}>
+        <GlassPlate radius={999} style={{ paddingHorizontal: 10, paddingVertical: 4 }}>
           <Text style={s.labelText}>{label}</Text>
-        </View>
+        </GlassPlate>
       ) : null}
       <Pressable
         accessibilityRole="button"
@@ -79,15 +80,6 @@ const s = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 3,
     shadowOffset: { width: 0, height: 1 },
-  },
-  // becomes a GlassPlate in Task 3
-  labelPill: {
-    backgroundColor: 'rgba(255,255,255,0.92)',
-    borderRadius: radius.chip,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
   },
   labelText: { fontSize: 11, fontFamily: font.medium, color: colors.ink },
 });
