@@ -418,16 +418,24 @@ export function Sheet({
     let cancelled = false;
     // Read reduce-motion directly: useReduceMotion()'s first render is always
     // `false` while the async query resolves (motion.ts pitfall).
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (cancelled) return;
-      if (reduce) {
-        backdrop.setValue(1);
-        panel.setValue(1);
-        return;
-      }
-      Animated.timing(backdrop, { toValue: 1, duration: 240, useNativeDriver: true }).start();
-      springy(panel, 1).start();
-    });
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) {
+          backdrop.setValue(1);
+          panel.setValue(1);
+          return;
+        }
+        Animated.timing(backdrop, { toValue: 1, duration: 240, useNativeDriver: true }).start();
+        springy(panel, 1).start();
+      })
+      // A rejected query must never strand the sheet at opacity 0.
+      .catch(() => {
+        if (!cancelled) {
+          backdrop.setValue(1);
+          panel.setValue(1);
+        }
+      });
     return () => {
       cancelled = true;
     };

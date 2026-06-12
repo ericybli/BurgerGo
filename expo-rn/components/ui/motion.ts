@@ -34,14 +34,19 @@ export function useEnter(delayMs = 0, fromY = 18) {
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (cancelled) return;
-      if (reduce) {
-        v.setValue(1); // jump straight to the final state
-        return;
-      }
-      timer = setTimeout(() => springy(v, 1).start(), delayMs);
-    });
+    void AccessibilityInfo.isReduceMotionEnabled()
+      .then((reduce) => {
+        if (cancelled) return;
+        if (reduce) {
+          v.setValue(1); // jump straight to the final state
+          return;
+        }
+        timer = setTimeout(() => springy(v, 1).start(), delayMs);
+      })
+      // A rejected query must never strand content at opacity 0.
+      .catch(() => {
+        if (!cancelled) v.setValue(1);
+      });
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
