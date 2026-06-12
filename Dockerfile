@@ -10,7 +10,11 @@ COPY package.json package-lock.json ./
 # The slim image ships npm 10, which mis-parses an npm-11-generated lockfile
 # ("Invalid Version"). Match the npm that produced package-lock.json.
 RUN npm install -g npm@11.5.2
-RUN npm ci
+# --legacy-peer-deps: @better-auth/drizzle-adapter's peerOptional wants
+# drizzle-orm ^0.45 while the app pins ^0.36 — the adapter works fine against
+# 0.36 (exercised by the live OAuth flow), and the lockfile was produced with
+# this flag, so strict `npm ci` peer validation must be relaxed to match.
+RUN npm ci --legacy-peer-deps
 
 # 2) builder — compile the app: standalone server, static assets, icons, Serwist sw.js,
 #    and the committed/generated drizzle SQL migrations baked into /app/drizzle.
