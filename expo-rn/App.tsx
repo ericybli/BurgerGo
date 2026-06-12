@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -18,6 +20,8 @@ import { SettingsScreen } from './screens/settings/SettingsScreen';
 import { OfflineBanner } from './components/OfflineBanner';
 import { colors, font } from './lib/theme';
 import { initPhotoCache } from './lib/offlineStore';
+import { authClient, getWasSignedIn, setWasSignedIn } from './lib/auth';
+import { LoginScreen } from './screens/auth/LoginScreen';
 
 // Photo-cache index loads once per app launch (photoUrl checks it synchronously).
 void initPhotoCache();
@@ -31,8 +35,30 @@ export default function App() {
     InstrumentSans_600SemiBold,
     InstrumentSans_700Bold,
   });
+  const { data: session, isPending } = authClient.useSession();
+  // Offline grace: a previously signed-in device skips the gate when the
+  // session can't be revalidated (no network) and runs on the offline cache.
+  const [offlineGrace, setOfflineGrace] = useState<boolean | null>(null);
+  useEffect(() => {
+    void (async () => {
+      const [was, net] = await Promise.all([getWasSignedIn(), NetInfo.fetch()]);
+      setOfflineGrace(was && net.isConnected === false);
+    })();
+  }, []);
+  useEffect(() => {
+    if (session) void setWasSignedIn(true);
+  }, [session]);
+
   // Cream splash field while fonts load (Atlas splash recipe).
-  if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
+  if (!fontsLoaded || isPending || offlineGrace === null)
+    return <View style={{ flex: 1, backgroundColor: colors.cream }} />;
+  if (!session && !offlineGrace) {
+    return (
+      <SafeAreaProvider>
+        <LoginScreen />
+      </SafeAreaProvider>
+    );
+  }
 
   return (
     <SafeAreaProvider>
