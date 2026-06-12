@@ -207,5 +207,6 @@ const styles = StyleSheet.create({
 
   filterWrap: { paddingHorizontal: 16, paddingBottom: 8 },
 
-  list: { paddingHorizontal: 16, paddingBottom: 40 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { paddingHorizontal: 16, paddingBottom: 150 },
 });

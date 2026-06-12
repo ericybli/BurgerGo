@@ -19,6 +19,7 @@ import { colors, font } from '../../lib/theme';
 import type { LatLng } from '../../lib/legView';
 import type { PlanMapProps } from './PlanMap.types';
 import type { MapSeg } from './map/mapData';
+import { tabBarSpace } from '../../navigation/GlassTabBar';
 import { useMapShell } from './map/useMapShell';
 import type { MapCanvasHandle } from './map/canvasTypes';
 import { NativeCanvas, type NativeCanvasPersist } from './map/NativeCanvas';
@@ -97,6 +98,10 @@ export default function PlanMap(props: PlanMapProps) {
   }
 
   const showLegend = props.bucket === 'days' && shell.legend.length > 0 && !fullscreen;
+  const showRouteLinks = props.bucket === 'days' && !fullscreen && shell.routeLinks.length > 0;
+  // Inline with no route-links row below, the canvas runs underneath the
+  // floating glass tab bar — lift the bottom-anchored map controls above it.
+  const chromeRaised = !fullscreen && !showRouteLinks;
 
   const handleLegTap = (seg: MapSeg) => {
     legTapAtRef.current = Date.now();
@@ -172,6 +177,7 @@ export default function PlanMap(props: PlanMapProps) {
           poiSupported={shell.poiSupported}
           poiEnabled={shell.poiEnabled}
           onTogglePoi={shell.togglePoi}
+          raised={chromeRaised}
         />
 
         {tappedLeg ? <LegChip seg={tappedLeg} onClose={() => setTappedLeg(null)} /> : null}
@@ -217,7 +223,13 @@ export default function PlanMap(props: PlanMapProps) {
         </View>
       </Modal>
 
-      {props.bucket === 'days' && !fullscreen ? <RouteLinks links={shell.routeLinks} /> : null}
+      {/* The route-links row sits in flow below the map; clear the floating
+          glass tab bar so the links stay tappable (visual only). */}
+      {showRouteLinks ? (
+        <View style={{ marginBottom: tabBarSpace(insets.bottom) - 12 }}>
+          <RouteLinks links={shell.routeLinks} />
+        </View>
+      ) : null}
     </View>
   );
 }

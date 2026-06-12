@@ -1,16 +1,16 @@
 /**
  * Per-trip bottom-tab navigator: Plan · Eats · Tickets · Budget · To do ·
  * Journal — mirroring the web app's BottomTabBar (Atlas Light: lucide icons,
- * faint inactive / accent active, white bar over a hairline). Trip identity
- * flows via TripProvider.
+ * faint inactive / accent active) rendered by the floating GlassTabBar
+ * (liquid-glass handoff). Trip identity flows via TripProvider.
  */
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Book, CreditCard, MapPin, SquareCheck, Ticket, Utensils } from 'lucide-react-native';
 import type { RootStackParamList, TripTabParamList } from './types';
 import { TripProvider } from './TripContext';
-import { colors, font } from '../lib/theme';
+import { GlassTabBar } from './GlassTabBar';
+import { colors } from '../lib/theme';
 import { PlanScreen } from '../screens/plan/PlanScreen';
 import { EatsScreen } from '../screens/eats/EatsScreen';
 import { TicketsScreen } from '../screens/tickets/TicketsScreen';
@@ -30,23 +30,12 @@ function tabIcon(Icon: IconCmp) {
 }
 
 export function TripScreen({ route }: NativeStackScreenProps<RootStackParamList, 'Trip'>) {
-  const insets = useSafeAreaInsets();
   return (
     <TripProvider trip={route.params}>
       <Tab.Navigator
+        tabBar={(props) => <GlassTabBar {...props} />}
         screenOptions={{
           headerShown: false,
-          tabBarActiveTintColor: colors.accent,
-          tabBarInactiveTintColor: colors.faint,
-          tabBarLabelStyle: { fontFamily: font.semibold, fontSize: 10 },
-          tabBarStyle: {
-            backgroundColor: colors.bg,
-            borderTopColor: colors.line,
-            borderTopWidth: 1,
-            height: 60 + insets.bottom,
-            paddingTop: 8,
-            paddingBottom: insets.bottom + 6,
-          },
         }}
       >
         <Tab.Screen name="Plan" component={PlanScreen} options={{ tabBarLabel: 'Plan', tabBarIcon: tabIcon(MapPin) }} />

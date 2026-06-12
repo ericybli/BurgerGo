@@ -574,5 +574,6 @@ const styles = StyleSheet.create({
   header: { backgroundColor: colors.bg, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 10 },
   headerListBorder: { borderBottomWidth: 1, borderBottomColor: colors.line },
   togglesRow: { flexDirection: 'row', gap: 8 },
-  listContent: { padding: 16, paddingBottom: 40 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  listContent: { padding: 16, paddingBottom: 150 },
 });

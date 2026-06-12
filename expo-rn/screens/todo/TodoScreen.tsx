@@ -12,7 +12,8 @@ export function TodoScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      // Bottom padding clears the floating glass tab bar (content scrolls under it).
+      contentContainerStyle={{ padding: 16, paddingBottom: 150 }}
       keyboardShouldPersistTaps="handled"
       // iOS: lift the focused add-item/add-task input above the keyboard
       // (Android resizes the window itself; no-op on web).

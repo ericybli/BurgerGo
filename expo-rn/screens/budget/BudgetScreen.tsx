@@ -753,7 +753,8 @@ function SetBudgetForm({
 }
 
 const styles = StyleSheet.create({
-  list: { padding: 16, paddingBottom: 40, gap: 16 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { padding: 16, paddingBottom: 150, gap: 16 },
 
   // Summary card: white, 1px line border, radius 16, px-4 py-3.5 — no shadow.
   summary: {

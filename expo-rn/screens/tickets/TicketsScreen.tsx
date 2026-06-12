@@ -292,7 +292,8 @@ function FadeUp({ delayIndex, children }: { delayIndex: number; children: ReactN
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  list: { padding: 16, paddingBottom: 40, gap: 12 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { padding: 16, paddingBottom: 150, gap: 12 },
 
   // Web EmptyState recipe: px-6 py-16 centered; mascot mb-6 h-28 w-28 opacity-90;
   // subtext mt-2 max-w-xs; CTA mt-6.

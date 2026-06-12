@@ -34,6 +34,7 @@ export function MapChrome({
   poiSupported,
   poiEnabled,
   onTogglePoi,
+  raised = false,
 }: {
   /** Layers button renders in the days bucket only. */
   showLayers: boolean;
@@ -54,6 +55,12 @@ export function MapChrome({
   poiSupported: boolean;
   poiEnabled: boolean;
   onTogglePoi: () => void;
+  /**
+   * Lift the bottom-anchored controls +90 when the canvas runs underneath the
+   * floating glass tab bar (visual only — inline, non-fullscreen, no route
+   * links row below the map).
+   */
+  raised?: boolean;
 }) {
   return (
     <>
@@ -93,7 +100,7 @@ export function MapChrome({
       <Pressable
         onPress={onToggleSatellite}
         accessibilityLabel="Toggle map style"
-        style={({ pressed }) => [s.satelliteBtn, pressed && s.pressed]}
+        style={({ pressed }) => [s.satelliteBtn, raised && s.satelliteBtnRaised, pressed && s.pressed]}
       >
         <Text style={s.satelliteText}>{satellite ? 'Map' : 'Satellite'}</Text>
       </Pressable>
@@ -102,7 +109,7 @@ export function MapChrome({
         onPress={onLocate}
         disabled={locating}
         accessibilityLabel="Show my location"
-        style={({ pressed }) => [s.roundBtn, s.locateBtn, pressed && s.pressed]}
+        style={({ pressed }) => [s.roundBtn, s.locateBtn, raised && s.locateBtnRaised, pressed && s.pressed]}
       >
         <LocateFixed size={18} strokeWidth={2} color={locating ? colors.faint : colors.ink} />
       </Pressable>
@@ -115,6 +122,7 @@ export function MapChrome({
           style={({ pressed }) => [
             s.roundBtn,
             s.poiBtn,
+            raised && s.poiBtnRaised,
             poiEnabled && s.poiBtnOn,
             pressed && s.pressed,
           ]}
@@ -217,9 +225,12 @@ const s = StyleSheet.create({
   },
   fullscreenBtn: { right: 12, top: 12 },
   locateBtn: { right: 12, bottom: 36 },
+  locateBtnRaised: { bottom: 126 },
   poiBtn: { right: 12, bottom: 88 },
+  poiBtnRaised: { bottom: 178 },
   poiBtnOn: { backgroundColor: colors.accent },
 
+  satelliteBtnRaised: { bottom: 126 },
   satelliteBtn: {
     position: 'absolute',
     left: 12,

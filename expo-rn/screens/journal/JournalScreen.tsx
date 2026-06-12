@@ -370,7 +370,8 @@ function LinkRow({
 const js = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   tabsWrap: { paddingHorizontal: 16, paddingTop: 10 },
-  list: { padding: 16, paddingBottom: 40, gap: 12 },
+  // Bottom padding clears the floating glass tab bar (content scrolls under it).
+  list: { padding: 16, paddingBottom: 150, gap: 12 },
   actionRow: { flexDirection: 'row', justifyContent: 'flex-end' },
 
   // Entry card — white bg + hairline border, radius 14 (no shadows).
