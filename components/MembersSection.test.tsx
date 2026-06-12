@@ -164,4 +164,23 @@ describe('MembersSection', () => {
     renderSection();
     expect(screen.queryByText(en.members.title)).not.toBeInTheDocument();
   });
+
+  it('non-owner viewer: no Remove on others, Leave on own row, Owner chip on owner row', async () => {
+    // Bob (u-bob) is a non-owner member viewing the roster.
+    listMembersAction.mockResolvedValue([OWNER, MEMBER, PENDING]);
+    mockMe('u-bob'); // me = Bob
+
+    renderSection();
+    await screen.findByText(en.members.owner); // wait for load
+
+    // Owner row: chip visible, no action button
+    expect(screen.getByText(en.members.owner)).toBeInTheDocument();
+    // No "Remove" button anywhere — Bob can't remove others
+    expect(screen.queryByRole('button', { name: en.members.remove })).not.toBeInTheDocument();
+    // Pending row: no Remove button (already covered by queryAllByRole check below)
+    const actionButtons = screen.queryAllByRole('button', { name: en.members.remove });
+    expect(actionButtons).toHaveLength(0);
+    // Own row (Bob): "Leave" button present
+    expect(screen.getByRole('button', { name: en.members.leave })).toBeInTheDocument();
+  });
 });

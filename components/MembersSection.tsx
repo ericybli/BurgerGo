@@ -22,11 +22,15 @@ export function MembersSection({ tripId }: { tripId: string }) {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    void listMembersAction(tripId).then(setMembers).catch(() => setMembers([]));
+    let cancelled = false;
+    void listMembersAction(tripId)
+      .then((v) => { if (!cancelled) setMembers(v); })
+      .catch(() => { if (!cancelled) setMembers([]); });
     void fetch(withBase('/api/me'))
       .then((r) => (r.ok ? r.json() : null))
-      .then((j: { user: { id: string } } | null) => setMeId(j?.user.id ?? null))
-      .catch(() => setMeId(null));
+      .then((j: { user: { id: string } } | null) => { if (!cancelled) setMeId(j?.user.id ?? null); })
+      .catch(() => { if (!cancelled) setMeId(null); });
+    return () => { cancelled = true; };
   }, [tripId]);
 
   const mine = members?.find((m) => m.userId != null && m.userId === meId);

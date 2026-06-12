@@ -15,13 +15,16 @@ export function ProfileCard() {
   const [me, setMe] = useState<Me | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let cancelled = false;
     void fetch(withBase('/api/me'))
       .then((r) => (r.ok ? r.json() : null))
       .then((j: { user: Me } | null) => {
+        if (cancelled) return;
         if (j?.user) {
           setMe(j.user);
           setName(j.user.name);
@@ -30,11 +33,13 @@ export function ProfileCard() {
       .catch(() => {
         // Offline or unauthenticated — stay hidden (me remains null).
       });
+    return () => { cancelled = true; };
   }, []);
 
   async function saveName() {
     setBusy(true);
-    setStatus(null);
+    setSaved(null);
+    setSaveErr(null);
     const res = await fetch(withBase('/api/me'), {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
@@ -43,8 +48,8 @@ export function ProfileCard() {
     if (res.ok) {
       const j = (await res.json()) as { user: Me };
       setMe(j.user);
-      setStatus(t('saved'));
-    } else setStatus(t('saveError'));
+      setSaved(t('saved'));
+    } else setSaveErr(t('saveError'));
     setBusy(false);
   }
 
@@ -53,15 +58,16 @@ export function ProfileCard() {
     e.target.value = '';
     if (!file) return;
     setBusy(true);
-    setStatus(null);
+    setSaved(null);
+    setSaveErr(null);
     const form = new FormData();
     form.append('image', file);
     const res = await fetch(withBase('/api/me/avatar'), { method: 'POST', body: form });
     if (res.ok) {
       const j = (await res.json()) as { image: string };
       setMe((m) => (m ? { ...m, image: j.image } : m));
-      setStatus(t('saved'));
-    } else setStatus(t('saveError'));
+      setSaved(t('saved'));
+    } else setSaveErr(t('saveError'));
     setBusy(false);
   }
 
@@ -95,6 +101,8 @@ export function ProfileCard() {
         <div className="min-w-0 flex-1">
           <div className="flex gap-2">
             <input
+              type="text"
+              aria-label={t('title')}
               value={name}
               disabled={busy}
               onChange={(e) => setName(e.target.value)}
@@ -112,7 +120,8 @@ export function ProfileCard() {
           <p className="mt-1 truncate text-caption text-sub">{me.email}</p>
         </div>
       </div>
-      {status ? <p className="mt-2 text-caption font-medium text-accent">{status}</p> : null}
+      {saved ? <p role="status" className="mt-2 text-caption font-medium text-accent">{saved}</p> : null}
+      {saveErr ? <p role="alert" className="mt-2 text-caption font-medium text-danger">{saveErr}</p> : null}
       <button
         type="button"
         onClick={() => void signOut()}
