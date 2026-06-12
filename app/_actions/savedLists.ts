@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/src/db/client';
 import { getTrip } from '@/src/db/repos/trips';
-import { addList, renameList, deleteList, type SavedListRow } from '@/src/db/repos/savedLists';
+import { addList, renameList, deleteList, getList, type SavedListRow } from '@/src/db/repos/savedLists';
 import { requireUserAction, requireTripMember } from '@/src/lib/authz';
 
 const listName = z.string().trim().min(1, 'Name is required').max(100);
@@ -29,6 +29,8 @@ export async function renameSavedListAction(tripId: string, id: string, name: st
   const tId = z.string().min(1).parse(tripId);
   const lId = z.string().min(1).parse(id);
   requireTripMember(principal, tId);
+  const list = getList(db, lId);
+  if (!list || list.tripId !== tId) throw new Error('List not found');
   renameList(db, lId, listName.parse(name));
   revalidate(tId);
 }
@@ -38,6 +40,8 @@ export async function deleteSavedListAction(tripId: string, id: string): Promise
   const tId = z.string().min(1).parse(tripId);
   const lId = z.string().min(1).parse(id);
   requireTripMember(principal, tId);
+  const list = getList(db, lId);
+  if (!list || list.tripId !== tId) throw new Error('List not found');
   deleteList(db, lId);
   revalidate(tId);
 }

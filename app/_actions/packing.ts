@@ -112,7 +112,8 @@ export async function deleteItemAction(id: string): Promise<void> {
   const item = getItem(db, id);
   if (!item) throw new Error('Item not found');
   const cat = getCategory(db, item.categoryId);
-  if (cat) requireTripMember(principal, cat.tripId);
+  if (!cat) throw new Error('Category not found');
+  requireTripMember(principal, cat.tripId);
   deleteItem(db, id);
-  if (cat) revalidatePacking(cat.tripId);
+  revalidatePacking(cat.tripId);
 }

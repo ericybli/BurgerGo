@@ -18,6 +18,10 @@ beforeEach(() => {
     id: 'trip-1', name: 'Osaka', startDate: '2026-06-05', endDate: '2026-06-07',
     coverPhoto: null, createdAt: TS, updatedAt: TS,
   }).run();
+  testHandle.db.insert(trips).values({
+    id: 'trip-2', name: 'Tokyo', startDate: '2026-07-01', endDate: '2026-07-05',
+    coverPhoto: null, createdAt: TS, updatedAt: TS,
+  }).run();
   revalidatePath.mockClear();
 });
 
@@ -40,5 +44,23 @@ describe('savedLists actions', () => {
     expect(listByTrip(testHandle.db, 'trip-1')[0]!.name).toBe('New');
     await deleteSavedListAction('trip-1', l.id);
     expect(listByTrip(testHandle.db, 'trip-1')).toEqual([]);
+  });
+
+  it('renameSavedListAction rejects cross-trip IDOR — cannot rename another trip\'s list', async () => {
+    // listB belongs to trip-2
+    const listB = await addSavedListAction('trip-2', 'Trip B List');
+    // caller supplies trip-1 (their trip) but listB.id (from trip-2)
+    await expect(renameSavedListAction('trip-1', listB.id, 'HACKED')).rejects.toThrow(/not found/i);
+    // the list name must remain unchanged
+    expect(listByTrip(testHandle.db, 'trip-2')[0]!.name).toBe('Trip B List');
+  });
+
+  it('deleteSavedListAction rejects cross-trip IDOR — cannot delete another trip\'s list', async () => {
+    // listB belongs to trip-2
+    const listB = await addSavedListAction('trip-2', 'Trip B List');
+    // caller supplies trip-1 (their trip) but listB.id (from trip-2)
+    await expect(deleteSavedListAction('trip-1', listB.id)).rejects.toThrow(/not found/i);
+    // the list must still exist
+    expect(listByTrip(testHandle.db, 'trip-2')).toHaveLength(1);
   });
 });
