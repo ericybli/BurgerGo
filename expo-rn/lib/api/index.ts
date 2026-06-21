@@ -3,7 +3,7 @@
  * REST wrappers around the web app's Server Actions. Import `{ api }` and call
  * e.g. `api.trips.list()`, `api.budget.get(tripId)`, `api.packing.addItem(...)`.
  */
-import { getJson, writeJson, postForm, photoUrl, API_BASE } from './client';
+import { getJson, writeJson, postForm, photoUrl, API_BASE, CREDENTIALS } from './client';
 import type {
   ImportPreviewItem,
   ImportCreateItem,
@@ -315,7 +315,7 @@ export const api = {
   },
 };
 
-export { API_BASE, photoUrl };
+export { API_BASE, photoUrl, CREDENTIALS };
 export type {
   Trip,
   Place,

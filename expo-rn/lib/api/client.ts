@@ -3,11 +3,22 @@
  * Better Auth session cookie (authHeaders); the server requires a session on
  * all JSON routes. Photo/media GETs are tokenless and bypass this client.
  */
+import { Platform } from 'react-native';
 import { cacheJson, localPhotoUri, readCachedJson } from '../offlineStore';
 import { sessionCookie } from '../auth';
 import { reportDataSource } from '../dataSource';
 export { API_BASE } from './base';
 import { API_BASE } from './base';
+
+/**
+ * iOS NSURLSession otherwise overrides a manually-set `Cookie` header with its
+ * own (empty) cookie jar, so the session cookie never reaches the server and
+ * every request 401s. `credentials: 'omit'` makes the native layer honor our
+ * header — this is exactly what @better-auth/expo's own fetch does (it sets
+ * `options.credentials = "omit"` before attaching `getCookie()`). Web keeps the
+ * default (browser cookie jar / x-api-key debug path).
+ */
+export const CREDENTIALS: RequestCredentials | undefined = Platform.OS === 'web' ? undefined : 'omit';
 
 /**
  * Dev-only machine key for expo-web debugging, where the browser can't carry
@@ -35,7 +46,7 @@ type PhotoSize = 'thumb' | 'card' | 'full';
  */
 export async function getJson<T>(path: string): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders() });
+    const res = await fetch(`${API_BASE}${path}`, { headers: authHeaders(), credentials: CREDENTIALS });
     if (!res.ok) throw new Error(`HTTP ${res.status} for GET ${path}`);
     const data = (await res.json()) as T;
     void cacheJson(path, data);
@@ -56,6 +67,7 @@ export async function writeJson<T>(method: string, path: string, body?: unknown)
   const res = await fetch(`${API_BASE}${path}`, {
     method,
     headers,
+    credentials: CREDENTIALS,
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${method} ${path}`);
@@ -81,7 +93,7 @@ export async function postForm<T>(
     form.append(fileField, { uri: file.uri, name: file.name, type: file.type } as unknown as Blob);
   }
   const headers: Record<string, string> = { ...authHeaders() };
-  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: form });
+  const res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, credentials: CREDENTIALS, body: form });
   if (!res.ok) {
     let code = `HTTP ${res.status}`;
     try {

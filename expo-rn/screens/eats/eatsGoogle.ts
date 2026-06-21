@@ -10,7 +10,7 @@
  * - small pure helpers: stored-hours parse, thumb precedence, long weekday.
  */
 import { useCallback, useRef, useState } from 'react';
-import { api, API_BASE, photoUrl, type AutocompletePrediction, type Restaurant } from '../../lib/api';
+import { api, API_BASE, CREDENTIALS, photoUrl, type AutocompletePrediction, type Restaurant } from '../../lib/api';
 import { sessionCookie } from '../../lib/auth';
 
 const enc = encodeURIComponent;
@@ -41,7 +41,7 @@ async function fetchDetailsFlat(placeId: string, sessionToken: string): Promise<
     const cookie = sessionCookie();
     const res = await fetch(
       `${API_BASE}/api/google/details?placeId=${enc(placeId)}&sessionToken=${enc(sessionToken)}`,
-      cookie ? { headers: { Cookie: cookie } } : undefined,
+      { headers: cookie ? { Cookie: cookie } : undefined, credentials: CREDENTIALS },
     );
     if (!res.ok) return null;
     const data = (await res.json()) as Partial<PlaceDetailsFlat>;
@@ -115,7 +115,7 @@ export async function forwardGeocode(address: string): Promise<GeocodeResult | n
     const cookie = sessionCookie();
     const res = await fetch(
       `${API_BASE}/api/google/geocode?address=${enc(trimmed)}`,
-      cookie ? { headers: { Cookie: cookie } } : undefined,
+      { headers: cookie ? { Cookie: cookie } : undefined, credentials: CREDENTIALS },
     );
     if (!res.ok) return null;
     const data = (await res.json()) as {
