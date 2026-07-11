@@ -1,7 +1,7 @@
 /**
  * Home (web components/HomeClient.tsx + app/(home)/layout.tsx): logo header,
- * first-run onboarding note, the trip-card list (server order preserved:
- * active first, then startDate, then id — never re-sort), mascot
+ * first-run onboarding note, the trip-card list (server order within groups;
+ * active + upcoming first, then a divider, then past trips sunk to the bottom), mascot
  * loading/error/empty states, and the orange New-trip FAB. Cards open the
  * trip; the pencil chip opens the Manage sheet.
  */
@@ -28,9 +28,28 @@ import { useOnline } from '../../lib/online';
 import { colors, font, type } from '../../lib/theme';
 import { useReduceMotion, usePressScale } from '../../components/ui/motion';
 import { TripCard } from './TripCard';
+import { tripStatus } from './tripDates';
 import { NewTripSheet } from './NewTripSheet';
 import { ManageTripSheet } from './ManageTripSheet';
 import { OnboardingNote } from './OnboardingNote';
+
+/** A list row: a trip card, or the hairline that sinks past trips to the bottom. */
+type TripRow = { kind: 'trip'; trip: Trip } | { kind: 'divider' };
+
+/**
+ * Current (active + upcoming) trips stay in server order, then a divider, then
+ * past trips (also server order) sunk to the bottom. Each past card shows its
+ * own "Past" pill, so the divider stays label-free.
+ */
+function buildTripRows(trips: Trip[]): TripRow[] {
+  const past = trips.filter((t) => tripStatus(t) === 'past');
+  const current = trips.filter((t) => tripStatus(t) !== 'past');
+  return [
+    ...current.map((trip): TripRow => ({ kind: 'trip', trip })),
+    ...(past.length ? [{ kind: 'divider' } as const] : []),
+    ...past.map((trip): TripRow => ({ kind: 'trip', trip })),
+  ];
+}
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 type State = { status: 'loading' } | { status: 'error' } | { status: 'loaded'; trips: Trip[] };
@@ -246,9 +265,9 @@ export function HomeScreen({ navigation }: Props) {
   } else {
     content = (
       <FlatList
-        // Server order is meaningful (active first, then startDate, then id).
-        data={state.trips}
-        keyExtractor={(t) => t.id}
+        // Active + upcoming keep server order; past trips sink below a divider.
+        data={buildTripRows(state.trips)}
+        keyExtractor={(row, i) => (row.kind === 'trip' ? row.trip.id : `divider-${i}`)}
         contentContainerStyle={s.list}
         ListHeaderComponent={
           <View>
@@ -256,11 +275,19 @@ export function HomeScreen({ navigation }: Props) {
             <Text style={s.sectionLabel}>Trips</Text>
           </View>
         }
-        renderItem={({ item, index }) => (
-          <FadeUpItem index={index}>
-            <TripCard trip={item} onPress={() => openTrip(item)} onManage={() => setManageTrip(item)} />
-          </FadeUpItem>
-        )}
+        renderItem={({ item, index }) =>
+          item.kind === 'divider' ? (
+            <View style={s.pastDivider} />
+          ) : (
+            <FadeUpItem index={index}>
+              <TripCard
+                trip={item.trip}
+                onPress={() => openTrip(item.trip)}
+                onManage={() => setManageTrip(item.trip)}
+              />
+            </FadeUpItem>
+          )
+        }
       />
     );
   }
@@ -337,6 +364,8 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   statePad: { flex: 1, padding: 16, paddingBottom: 96 },
   list: { padding: 16, paddingBottom: 100, gap: 12 },
+  // Sinks the past-trips pile below the current ones (12px list gap on each side).
+  pastDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
   sectionLabel: {
     ...type.micro,
     textTransform: 'uppercase',
