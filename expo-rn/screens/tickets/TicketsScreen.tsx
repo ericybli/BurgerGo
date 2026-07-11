@@ -252,14 +252,15 @@ function TicketCard({
   const when = formatTicketWhen(ticket.date, ticket.time);
   const imageFiles = ticket.files.filter((f) => f.mime.startsWith('image/'));
   const pdfFiles = ticket.files.filter((f) => !f.mime.startsWith('image/'));
-  const heroImage = imageFiles[0];
   // Up to three image-thumb chips; PDFs collapse into a single count chip.
   const thumbChips = imageFiles.slice(0, 3);
 
   return (
     <FadeUp delayIndex={Math.min(index, 6)}>
       <View style={styles.card}>
-        {/* Hero band — deterministic gradient, overlaid by the first image if any. */}
+        {/* Hero band — a decorative deterministic gradient placeholder. Attachment
+            previews (often unreadable QR/PDF crops) live as thumb chips in the stub
+            below, not stretched across the hero. */}
         <View style={styles.band}>
           <LinearGradient
             colors={gradientFor(ticket.title)}
@@ -267,13 +268,6 @@ function TicketCard({
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
-          {heroImage ? (
-            <Image
-              source={{ uri: api.tickets.fileUrl(heroImage.id) }}
-              style={StyleSheet.absoluteFill}
-              resizeMode="cover"
-            />
-          ) : null}
           <View style={styles.bandOverlay}>
             <View style={styles.bandChip}>
               <Text style={styles.bandChipGlyph}>🎟️</Text>
