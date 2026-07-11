@@ -43,15 +43,20 @@ async function apiPost(path, body) {
 }
 
 /**
- * Download an image URL here and upload it to the place/restaurant via the
- * existing multipart photo endpoint. Best-effort: returns a short status string.
+ * Download an image URL here and upload it via the existing multipart photo
+ * endpoint. Returns the created photo's id on success (so callers can e.g. set
+ * it as a trip's coverPhoto), or null on failure (never throws — best-effort).
  */
-async function uploadPhoto({ tripId, ownerType, ownerId, imageUrl }) {
-  const img = await fetch(imageUrl);
-  if (!img.ok) return `photo skipped (download ${img.status})`;
+async function uploadPhotoRaw({ tripId, ownerType, ownerId, imageUrl }) {
+  // Wikimedia (and some other hosts) rate-limit/block requests without a
+  // descriptive User-Agent per their bot policy — harmless to send everywhere.
+  const img = await fetch(imageUrl, {
+    headers: { 'user-agent': 'BurgerGo-MCP/1.0 (https://eric.month2month.com/burgergo)' },
+  });
+  if (!img.ok) return { ok: false, status: `download ${img.status}` };
   const buf = Buffer.from(await img.arrayBuffer());
   const contentType = img.headers.get('content-type') || 'image/jpeg';
-  if (!contentType.startsWith('image/')) return 'photo skipped (not an image)';
+  if (!contentType.startsWith('image/')) return { ok: false, status: 'not an image' };
   const fd = new FormData();
   fd.set('image', new Blob([buf], { type: contentType }), 'photo');
   fd.set('tripId', tripId);
@@ -59,7 +64,15 @@ async function uploadPhoto({ tripId, ownerType, ownerId, imageUrl }) {
   fd.set('ownerId', ownerId);
   const photoHeaders = API_KEY ? { 'x-api-key': API_KEY } : {};
   const res = await fetch(`${BASE_URL}/api/photos`, { method: 'POST', headers: photoHeaders, body: fd });
-  return res.ok ? 'photo uploaded' : `photo failed (${res.status})`;
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) return { ok: false, status: `upload failed (${res.status})` };
+  return { ok: true, photoId: json?.photo?.id ?? null };
+}
+
+/** Convenience wrapper for add_saved_place / add_restaurant: status string only. */
+async function uploadPhoto(args) {
+  const r = await uploadPhotoRaw(args);
+  return r.ok ? 'photo uploaded' : `photo skipped (${r.status})`;
 }
 
 function ok(data) {
@@ -112,6 +125,41 @@ server.tool(
         status: r.status, rating: r.rating, scheduledDayDate: r.scheduledDayDate,
       }));
       return ok({ trip: { id: trip.id, name: trip.name, startDate: trip.startDate, endDate: trip.endDate }, days, savedPlaces: saved, savedLists: lists.map((l) => l.name), restaurants });
+    } catch (e) {
+      return fail(String(e.message ?? e));
+    }
+  },
+);
+
+server.tool(
+  'create_trip',
+  'Create a new BurgerGo trip. Optionally attach a cover photo by URL (downloaded here and uploaded via the multipart photo endpoint, same as add_saved_place/add_restaurant).',
+  {
+    name: z.string().describe('Trip name'),
+    startDate: z.string().describe('YYYY-MM-DD'),
+    endDate: z.string().describe('YYYY-MM-DD, must be >= startDate'),
+    imageUrl: z.string().url().optional().describe('Image URL to attach as the trip cover photo'),
+  },
+  async ({ name, startDate, endDate, imageUrl }) => {
+    try {
+      const { trip } = await apiPost('/api/trips', { name, startDate, endDate });
+      let cover = 'no cover';
+      if (imageUrl) {
+        const uploaded = await uploadPhotoRaw({ tripId: trip.id, ownerType: 'trip', ownerId: trip.id, imageUrl });
+        if (uploaded.ok && uploaded.photoId) {
+          const headers = { 'content-type': 'application/json' };
+          if (API_KEY) headers['x-api-key'] = API_KEY;
+          const res = await fetch(`${BASE_URL}/api/trips/${trip.id}`, {
+            method: 'PATCH',
+            headers,
+            body: JSON.stringify({ coverPhoto: uploaded.photoId }),
+          });
+          cover = res.ok ? 'cover set' : `cover PATCH failed (${res.status})`;
+        } else {
+          cover = `cover skipped (${uploaded.status})`;
+        }
+      }
+      return ok({ created: { id: trip.id, name: trip.name, startDate: trip.startDate, endDate: trip.endDate }, cover });
     } catch (e) {
       return fail(String(e.message ?? e));
     }
