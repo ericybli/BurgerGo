@@ -107,7 +107,7 @@ export function DayItinerary({
   }, [dayDate]);
 
   // Itinerary density: compact rows vs large cards, remembered across visits.
-  const [density, setDensity] = useState<PlaceDensity>('rows');
+  const [density, setDensity] = useState<PlaceDensity>('cards');
   useEffect(() => {
     AsyncStorage.getItem(DENSITY_KEY)
       .then((stored) => {
@@ -209,47 +209,63 @@ export function DayItinerary({
         </View>
       ) : (
         <View>
-          {stops.map((stop, i) => {
-            const prev = stops[i - 1];
-            const legMode = stop.legMode ?? mode;
-            return (
-              <Fragment key={stop.id}>
-                {prev ? (
-                  // Wrapper keys carry the day's date so a day switch remounts
-                  // the rows and replays the entrance (list keying — the
-                  // stop.id Fragment key — is unchanged).
-                  <StaggerIn key={`leg-${dayDate}`} index={i * 2 - 1}>
-                    <LegConnector
-                      leg={legFor(legs, prev.id, stop.id, legMode)}
-                      mode={legMode}
-                      disabled={disabled}
-                      online={online}
-                      onModeChange={(m) => onLegModeChange(stop, m)}
-                    />
+          {/* Day timeline: a single vertical rail (dayColor) threads the
+              numbered stop nodes; leg pills hang between them on hollow nodes.
+              PlaceCard renders in `timeline` mode (no internal pin) so cards
+              fill the lane to the right of the rail. */}
+          <View style={styles.timeline}>
+            <View style={[styles.rail, { backgroundColor: dayColor }]} pointerEvents="none" />
+            {stops.map((stop, i) => {
+              const prev = stops[i - 1];
+              const legMode = stop.legMode ?? mode;
+              return (
+                <Fragment key={stop.id}>
+                  {prev ? (
+                    // Wrapper keys carry the day's date so a day switch remounts
+                    // the rows and replays the entrance (list keying — the
+                    // stop.id Fragment key — is unchanged).
+                    <StaggerIn key={`leg-${dayDate}`} index={i * 2 - 1}>
+                      <View style={styles.legRow}>
+                        <View style={styles.legNode} pointerEvents="none" />
+                        <LegConnector
+                          leg={legFor(legs, prev.id, stop.id, legMode)}
+                          mode={legMode}
+                          disabled={disabled}
+                          online={online}
+                          onModeChange={(m) => onLegModeChange(stop, m)}
+                        />
+                      </View>
+                    </StaggerIn>
+                  ) : null}
+                  <StaggerIn key={`stop-${dayDate}`} index={i * 2}>
+                    <View style={styles.stopRow}>
+                      <View style={[styles.node, { backgroundColor: dayColor }]}>
+                        <Text style={styles.nodeText}>{stop.orderIndex + 1}</Text>
+                      </View>
+                      <PlaceCard
+                        timeline
+                        place={stop}
+                        pinNumber={stop.orderIndex + 1}
+                        pinColor={dayColor}
+                        density={density}
+                        disabled={disabled}
+                        isFirst={i === 0}
+                        isLast={i === stops.length - 1}
+                        onTap={() => onTapPlace(stop)}
+                        onView={() => onViewPlace(stop)}
+                        onMoveUp={() => move(stop, 'up')}
+                        onMoveDown={() => move(stop, 'down')}
+                        onMoveToSaved={() => onMoveToSaved(stop)}
+                        onMoveToDay={() => onMoveToDay(stop)}
+                        onCopyToDay={() => onCopyToDay(stop)}
+                        onDelete={() => onDelete(stop)}
+                      />
+                    </View>
                   </StaggerIn>
-                ) : null}
-                <StaggerIn key={`stop-${dayDate}`} index={i * 2}>
-                  <PlaceCard
-                    place={stop}
-                    pinNumber={stop.orderIndex + 1}
-                    pinColor={dayColor}
-                    density={density}
-                    disabled={disabled}
-                    isFirst={i === 0}
-                    isLast={i === stops.length - 1}
-                    onTap={() => onTapPlace(stop)}
-                    onView={() => onViewPlace(stop)}
-                    onMoveUp={() => move(stop, 'up')}
-                    onMoveDown={() => move(stop, 'down')}
-                    onMoveToSaved={() => onMoveToSaved(stop)}
-                    onMoveToDay={() => onMoveToDay(stop)}
-                    onCopyToDay={() => onCopyToDay(stop)}
-                    onDelete={() => onDelete(stop)}
-                  />
-                </StaggerIn>
-              </Fragment>
-            );
-          })}
+                </Fragment>
+              );
+            })}
+          </View>
 
           <View style={styles.footerRow}>
             <Button title="Add place" onPress={onAddPlace} disabled={disabled} style={{ flex: 1 }} />
@@ -308,6 +324,37 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
+  },
+
+  timeline: { position: 'relative', paddingLeft: 38 },
+  rail: { position: 'absolute', left: 15, top: 10, bottom: 26, width: 2, opacity: 0.5 },
+  stopRow: { position: 'relative' },
+  node: {
+    position: 'absolute',
+    left: -33,
+    top: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    borderWidth: 3,
+    borderColor: colors.bg,
+  },
+  nodeText: { color: colors.white, fontFamily: font.bold, fontSize: 11.5, fontVariant: ['tabular-nums'] },
+  legRow: { position: 'relative' },
+  legNode: {
+    position: 'absolute',
+    left: -30,
+    top: 10,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.bg,
+    borderWidth: 2,
+    borderColor: colors.line,
+    zIndex: 2,
   },
 
   footerRow: { flexDirection: 'row', gap: 8, marginTop: 12 },

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import type { Place } from '../../lib/api';
-import { colors, font } from '../../lib/theme';
+import { colors, font, glyph } from '../../lib/theme';
 import { thumbForPlace } from '../../lib/legView';
 import { categoryLabel, useTwoTapConfirm } from './planShared';
 import { PhotoPlaceholder } from './PhotoPlaceholder';
@@ -14,6 +14,9 @@ type PlaceCardProps = {
   pinNumber: number;
   pinColor: string;
   density: PlaceDensity;
+  /** Timeline mode: the numbered node is drawn on the rail by DayItinerary, so
+   * the card omits its own internal pin column. */
+  timeline?: boolean;
   /** Offline or mutation in flight → management actions disabled. */
   disabled: boolean;
   isFirst: boolean;
@@ -29,6 +32,16 @@ type PlaceCardProps = {
   onCopyToDay: () => void;
   onDelete: () => void;
 };
+
+/** "90 min" → "1h 30m", "120" → "2h", under an hour stays "45 min". */
+function formatDuration(min: number): string {
+  if (min >= 60) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${min} min`;
+}
 
 /** Outline action pill (accent = info actions, danger = delete). */
 function Pill({
@@ -70,13 +83,18 @@ function Pill({
 /**
  * One itinerary stop, in either density (web PlaceCard):
  * - rows: 54px thumb, hairline separator, chevrons in a right column;
- * - cards: rounded hairline card with a 140px photo and pill actions.
+ * - cards: photo-hero card — 118px photo with a glyph chip + time chip
+ *   overlay, name + duration·category, and text-link actions.
+ *
+ * In `timeline` mode the internal pin column is dropped (DayItinerary draws the
+ * numbered node on the rail) and the card/row spans the full lane width.
  */
 export function PlaceCard({
   place,
   pinNumber,
   pinColor,
   density,
+  timeline = false,
   disabled,
   isFirst,
   isLast,
@@ -144,7 +162,7 @@ export function PlaceCard({
   if (density === 'rows') {
     return (
       <View style={[styles.rowWrap, !isLast && styles.rowSeparator]}>
-        <View style={styles.rowPinCol}>{pin}</View>
+        {timeline ? null : <View style={styles.rowPinCol}>{pin}</View>}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Pressable onPress={onTap} style={styles.rowBody}>
             {thumb ? (
@@ -185,41 +203,74 @@ export function PlaceCard({
     );
   }
 
+  // ── cards density: photo-hero card ──
+  const card = (
+    <View style={styles.card}>
+      <Pressable onPress={onTap}>
+        <View style={styles.hero}>
+          {thumb ? (
+            <Image source={{ uri: thumb }} style={styles.heroPhoto} resizeMode="cover" />
+          ) : (
+            <PhotoPlaceholder category={place.category} height={118} />
+          )}
+          {/* Corner glyph chip only over a real photo — the placeholder already
+              shows the category glyph, so a chip would double it. */}
+          {thumb ? (
+            <View style={styles.glyphChip}>
+              <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
+            </View>
+          ) : null}
+          {place.scheduledTime ? (
+            <View style={styles.timeChip}>
+              <Text style={styles.timeChipText}>{place.scheduledTime}</Text>
+            </View>
+          ) : null}
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardName} numberOfLines={2}>
+            {place.name}
+          </Text>
+          <View style={styles.cardMetaRow}>
+            {place.durationMin != null ? (
+              <>
+                <Text style={styles.cardDuration}>{formatDuration(place.durationMin)}</Text>
+                <Text style={styles.cardDot}>·</Text>
+              </>
+            ) : null}
+            <Text style={styles.cardCategory} numberOfLines={1}>
+              {categoryLabel(place.category)}
+            </Text>
+          </View>
+        </View>
+      </Pressable>
+      <View style={styles.cardActions}>
+        <Pressable onPress={onView} hitSlop={4}>
+          <Text style={styles.viewText}>View</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => {
+            setManaging((v) => !v);
+            del.disarm();
+          }}
+          hitSlop={4}
+          accessibilityState={{ expanded: managing }}
+        >
+          <Text style={styles.manageText}>Manage</Text>
+        </Pressable>
+        <View style={styles.cardChevrons}>{chevrons(true)}</View>
+      </View>
+      {managing ? <View style={styles.cardManageWrap}>{managePills}</View> : null}
+    </View>
+  );
+
+  if (timeline) {
+    return <View style={styles.cardTimelineWrap}>{card}</View>;
+  }
+
   return (
     <View style={styles.cardWrap}>
       <View style={styles.cardPinCol}>{pin}</View>
-      <View style={styles.card}>
-        <Pressable onPress={onTap}>
-          {thumb ? (
-            <Image source={{ uri: thumb }} style={styles.cardPhoto} resizeMode="cover" />
-          ) : (
-            <PhotoPlaceholder category={place.category} height={140} />
-          )}
-          <View style={styles.cardBody}>
-            <Text style={styles.cardName} numberOfLines={1}>
-              {place.name}
-            </Text>
-            <Text style={styles.cardSub} numberOfLines={1}>
-              {categoryLabel(place.category)}
-              {place.address ? ` · ${place.address}` : ''}
-            </Text>
-            {meta}
-          </View>
-        </Pressable>
-        <View style={styles.cardActions}>
-          <Pill label="View" onPress={onView} />
-          <Pill
-            label="Manage"
-            tone="neutral"
-            onPress={() => {
-              setManaging((v) => !v);
-              del.disarm();
-            }}
-          />
-          <View style={styles.cardChevrons}>{chevrons(true)}</View>
-        </View>
-        {managing ? <View style={styles.cardManageWrap}>{managePills}</View> : null}
-      </View>
+      {card}
     </View>
   );
 }
@@ -261,31 +312,73 @@ const styles = StyleSheet.create({
   viewText: { fontFamily: font.semibold, fontSize: 12, color: colors.accent, paddingVertical: 2 },
   manageText: { fontFamily: font.semibold, fontSize: 12, color: colors.sub, paddingVertical: 2 },
 
-  // cards density
+  // cards density — photo-hero card
   cardWrap: { flexDirection: 'row', gap: 10 },
+  cardTimelineWrap: { marginBottom: 12 },
   cardPinCol: { width: 24, alignItems: 'center', paddingTop: 4 },
   card: {
     flex: 1,
     minWidth: 0,
     marginBottom: 12,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.bg,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
   },
-  cardPhoto: { width: '100%', height: 140, backgroundColor: colors.surface },
-  cardBody: { paddingHorizontal: 12, paddingTop: 10 },
-  cardName: { fontFamily: font.semibold, fontSize: 15, color: colors.ink, letterSpacing: -0.15 },
-  cardSub: { fontFamily: font.medium, fontSize: 12, color: colors.sub, marginTop: 1 },
+  hero: { position: 'relative' },
+  heroPhoto: { width: '100%', height: 118, backgroundColor: colors.surface },
+  glyphChip: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  glyphChipText: { fontSize: 18, lineHeight: 22 },
+  timeChip: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    borderRadius: 999,
+    backgroundColor: colors.white,
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 2,
+  },
+  timeChipText: { fontFamily: font.bold, fontSize: 12, color: colors.ink, fontVariant: ['tabular-nums'] },
+  cardBody: { paddingHorizontal: 13, paddingTop: 11 },
+  cardName: { fontFamily: font.bold, fontSize: 15.5, color: colors.ink, letterSpacing: -0.155 },
+  cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 3 },
+  cardDuration: { fontFamily: font.semibold, fontSize: 12.5, color: colors.accent, fontVariant: ['tabular-nums'] },
+  cardDot: { fontFamily: font.regular, fontSize: 12.5, color: colors.faint },
+  cardCategory: { fontFamily: font.medium, fontSize: 12.5, color: colors.sub, flexShrink: 1 },
   cardActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
+    gap: 16,
+    paddingHorizontal: 13,
     paddingTop: 10,
     paddingBottom: 12,
   },
   cardChevrons: { marginLeft: 'auto', flexDirection: 'row' },
-  cardManageWrap: { paddingHorizontal: 12, paddingBottom: 12 },
+  cardManageWrap: { paddingHorizontal: 13, paddingBottom: 12 },
 });
