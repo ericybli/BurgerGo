@@ -31,74 +31,78 @@ function SavedPlaceCard({
   const thumb = thumbForPlace(place, 'card');
 
   return (
-    <View style={styles.card}>
-      <Pressable onPress={onTap}>
-        {thumb ? (
-          <Image source={{ uri: thumb }} style={styles.photo} resizeMode="cover" />
-        ) : (
-          <PhotoPlaceholder category={place.category} height={130} />
-        )}
-        <View style={styles.cardBody}>
-          <View style={styles.nameRow}>
-            <Text>{glyph(place.category)}</Text>
+    <View style={styles.cardShadow}>
+      <View style={styles.card}>
+        <Pressable onPress={onTap}>
+          <View style={styles.photoWrap}>
+            {thumb ? (
+              <Image source={{ uri: thumb }} style={styles.photo} resizeMode="cover" />
+            ) : (
+              <PhotoPlaceholder category={place.category} height={118} />
+            )}
+            <View style={styles.glyphChip}>
+              <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
+            </View>
+          </View>
+          <View style={styles.cardBody}>
             <Text style={styles.name} numberOfLines={1}>
               {place.name}
             </Text>
-          </View>
-          <Text style={styles.sub} numberOfLines={1}>
-            {categoryLabel(place.category)}
-            {place.address ? ` · ${place.address}` : ''}
-          </Text>
-          {place.notes ? (
-            <Text style={styles.notes} numberOfLines={1}>
-              {place.notes}
+            <Text style={styles.sub} numberOfLines={1}>
+              {categoryLabel(place.category)}
+              {place.address ? ` · ${place.address}` : ''}
             </Text>
-          ) : null}
-        </View>
-      </Pressable>
+            {place.notes ? (
+              <Text style={styles.notes} numberOfLines={1}>
+                {place.notes}
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
 
-      <View style={styles.actions}>
-        <Pressable
-          disabled={disabled}
-          onPress={onAddToDay}
-          style={({ pressed }) => [
-            styles.addToDayBtn,
-            pressed && !disabled && { backgroundColor: colors.orangePress },
-            disabled && styles.addToDayDisabled,
-          ]}
-        >
-          <Text style={[styles.addToDayText, disabled && { color: colors.faint }]}>Add to day</Text>
-        </Pressable>
-        <Pressable
-          accessibilityState={{ expanded: managing }}
-          onPress={() => {
-            setManaging((v) => !v);
-            del.disarm();
-          }}
-          style={({ pressed }) => [styles.manageBtn, pressed && { backgroundColor: colors.surface }]}
-        >
-          <Text style={styles.manageText}>Manage</Text>
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable
+            disabled={disabled}
+            onPress={onAddToDay}
+            style={({ pressed }) => [
+              styles.addToDayBtn,
+              pressed && !disabled && { backgroundColor: colors.orangePress },
+              disabled && styles.addToDayDisabled,
+            ]}
+          >
+            <Text style={[styles.addToDayText, disabled && { color: colors.faint }]}>+ Add to day</Text>
+          </Pressable>
+          <Pressable
+            accessibilityState={{ expanded: managing }}
+            onPress={() => {
+              setManaging((v) => !v);
+              del.disarm();
+            }}
+            style={({ pressed }) => [styles.manageBtn, pressed && { backgroundColor: colors.surface }]}
+          >
+            <Text style={styles.manageText}>Manage</Text>
+          </Pressable>
+        </View>
+
+        {managing ? (
+          <View style={styles.manageRow}>
+            <Pressable
+              disabled={disabled}
+              onPress={onMoveToList}
+              style={({ pressed }) => [styles.pill, disabled && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.pillAccent}>Move to list</Text>
+            </Pressable>
+            <Pressable
+              disabled={disabled}
+              onPress={del.fire}
+              style={({ pressed }) => [styles.pill, disabled && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
+            >
+              <Text style={styles.pillDanger}>{del.armed ? 'Sure? Delete' : 'Delete'}</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
-
-      {managing ? (
-        <View style={styles.manageRow}>
-          <Pressable
-            disabled={disabled}
-            onPress={onMoveToList}
-            style={({ pressed }) => [styles.pill, disabled && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.pillAccent}>Move to list</Text>
-          </Pressable>
-          <Pressable
-            disabled={disabled}
-            onPress={del.fire}
-            style={({ pressed }) => [styles.pill, disabled && { opacity: 0.4 }, pressed && { opacity: 0.7 }]}
-          >
-            <Text style={styles.pillDanger}>{del.armed ? 'Sure? Delete' : 'Delete'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -347,17 +351,43 @@ const styles = StyleSheet.create({
   emptyListHint: { marginTop: 8, paddingHorizontal: 12, fontFamily: font.regular, fontSize: 12, color: colors.faint },
 
   cardsCol: { marginTop: 8, gap: 12 },
+  cardShadow: {
+    borderRadius: 16,
+    backgroundColor: colors.bg,
+    shadowColor: colors.ink,
+    shadowOpacity: 0.1,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 2,
+  },
   card: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.line,
     backgroundColor: colors.bg,
     overflow: 'hidden',
   },
-  photo: { width: '100%', height: 130, backgroundColor: colors.surface },
+  photoWrap: { position: 'relative' },
+  photo: { width: '100%', height: 118, backgroundColor: colors.surface },
+  glyphChip: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.ink,
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  glyphChipText: { fontSize: 18 },
   cardBody: { paddingHorizontal: 12, paddingTop: 10 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  name: { flexShrink: 1, fontFamily: font.semibold, fontSize: 15, color: colors.ink, letterSpacing: -0.15 },
+  name: { flexShrink: 1, fontFamily: font.semibold, fontSize: 15.5, color: colors.ink, letterSpacing: -0.15 },
   sub: { fontFamily: font.regular, fontSize: 12, color: colors.sub, marginTop: 1 },
   notes: { fontFamily: font.regular, fontSize: 12.5, color: colors.sub, marginTop: 4 },
 
