@@ -23,7 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { FileText, Image as ImageIcon, X } from 'lucide-react-native';
 import { api, type Ticket, type TicketFile } from '../../lib/api';
 import { colors, font, radius, type } from '../../lib/theme';
-import { Button, OfflineHint } from '../../components/ui';
+import { Button, DateField, OfflineHint, TimeField } from '../../components/ui';
 
 const MAX_FILE_BYTES = 15 * 1024 * 1024; // server cap: 15 MB per file
 
@@ -174,18 +174,10 @@ export function TicketSheet({
       setError(STR.titleRequired);
       return;
     }
-    // RN replaces the web's native date/time inputs with free text — pre-validate
-    // with the server's regexes so a 400 doesn't surface as the generic error.
-    const dateValue = date.trim();
-    const timeValue = time.trim();
-    if (dateValue && !/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
-      setError('Use YYYY-MM-DD for the date.');
-      return;
-    }
-    if (timeValue && !/^\d{2}:\d{2}$/.test(timeValue)) {
-      setError('Use HH:MM for the time.');
-      return;
-    }
+    // Date/time now come from the calendar + time pickers, which only ever emit
+    // a valid "YYYY-MM-DD" / 24h "HH:MM" or an empty string — no format guard needed.
+    const dateValue = date;
+    const timeValue = time;
     setError(null);
     setSaving(true);
     try {
@@ -227,23 +219,21 @@ export function TicketSheet({
       {error ? <Text style={s.errorBanner}>{error}</Text> : null}
 
       <FormField label={STR.titleLabel} value={title} onChangeText={setTitle} editable={!disabled} />
-      <FormField
+      <DateField
         label={STR.dateLabel}
+        labelStyle={s.fieldLabel}
+        containerStyle={s.pickerField}
         value={date}
-        onChangeText={setDate}
-        editable={!disabled}
-        placeholder="YYYY-MM-DD"
-        autoCapitalize="none"
-        style={s.tabular}
+        onChange={setDate}
+        disabled={disabled}
       />
-      <FormField
+      <TimeField
         label={STR.timeLabel}
+        labelStyle={s.fieldLabel}
+        containerStyle={s.pickerField}
         value={time}
-        onChangeText={setTime}
-        editable={!disabled}
-        placeholder="HH:MM"
-        autoCapitalize="none"
-        style={s.tabular}
+        onChange={setTime}
+        disabled={disabled}
       />
       <FormField
         label={STR.locationLabel}
@@ -446,6 +436,8 @@ const s = StyleSheet.create({
     marginTop: 12,
     marginBottom: 4,
   },
+  // Neutralize the kit picker's default field margin — s.fieldLabel supplies the gap.
+  pickerField: { marginTop: 0 },
   input: {
     borderWidth: 1,
     borderColor: colors.line,

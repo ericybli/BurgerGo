@@ -22,7 +22,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { api, photoUrl, type Trip } from '../../lib/api';
 import { colors, font, radius, type } from '../../lib/theme';
-import { Button, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
+import { Button, DateField, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
 import { usePressScale } from '../../components/ui/motion';
 import { addTripDay, removeTripDay } from './homeApi';
 import { MembersSection } from './MembersSection';
@@ -248,13 +248,13 @@ export function ManageTripSheet({
           <Text style={s.heading}>Move dates</Text>
           <Text style={s.label}>New start date</Text>
           <View style={s.inlineRow}>
-            <Input
+            <DateField
               value={startDate}
-              onChangeText={setStartDate}
-              editable={!busy}
-              placeholder="YYYY-MM-DD"
-              autoCapitalize="none"
-              autoCorrect={false}
+              onChange={setStartDate}
+              disabled={busy}
+              clearable={false}
+              placeholder="Pick a date"
+              containerStyle={s.inlineField}
             />
             <PillButton
               label="Move"
@@ -358,6 +358,7 @@ const s = StyleSheet.create({
   heading: { marginTop: 24, ...type.heading, color: colors.ink },
   hint: { marginTop: 6, ...type.caption, color: colors.sub },
   inlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  inlineField: { flex: 1 },
   input: {
     flex: 1,
     borderWidth: 1,

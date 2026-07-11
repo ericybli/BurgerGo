@@ -8,7 +8,7 @@ import { CATEGORIES, colors, font, radius, type } from '../../lib/theme';
 import { inputToMinor, minorToInput } from '../../lib/currency';
 import { placeUrl } from '../../lib/googleMapsUrl';
 import { todayLocal } from '../../lib/days';
-import { Button, Field, OfflineHint, Select } from '../../components/ui';
+import { Button, Field, OfflineHint, Select, TimeField } from '../../components/ui';
 import { categoryLabel, isHttpUrl, placeCategoryToBudget } from './planShared';
 import { useAutocomplete } from './useAutocomplete';
 import { addPlaceLink, generateSummary } from './planApi';
@@ -329,28 +329,13 @@ export function PlaceDetailSheet({
 
       <Select label="Category" value={category} options={CATEGORY_OPTIONS} onChange={setCategory} disabled={busy || disabled} />
 
-      <View style={styles.inlineFieldRow}>
-        <View style={{ flex: 1 }}>
-          <Field
-            label="Time"
-            value={time}
-            onChangeText={setTime}
-            editable={!busy && !disabled}
-            placeholder="HH:MM"
-            autoCapitalize="none"
-            keyboardType="numbers-and-punctuation"
-          />
-        </View>
-        {time ? (
-          <Pressable
-            disabled={busy || disabled}
-            onPress={() => setTime('')}
-            style={[styles.clearTimeBtn, (busy || disabled) && { opacity: 0.4 }]}
-          >
-            <Text style={styles.clearTimeText}>Clear</Text>
-          </Pressable>
-        ) : null}
-      </View>
+      <TimeField
+        label="Time"
+        value={time}
+        onChange={setTime}
+        disabled={busy || disabled}
+        placeholder="Set a time"
+      />
 
       <View style={styles.inlineFieldRow}>
         <Text style={styles.currencyPrefix}>{currency}</Text>
@@ -601,15 +586,6 @@ const styles = StyleSheet.create({
   suggestionText: { ...type.body, color: colors.ink },
 
   inlineFieldRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
-  clearTimeBtn: {
-    borderRadius: radius.control,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.bg,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
-  },
-  clearTimeText: { fontFamily: font.semibold, fontSize: 13, color: colors.sub },
   currencyPrefix: { fontFamily: font.medium, fontSize: 12, color: colors.sub, paddingBottom: 14 },
 
   expenseBtn: {

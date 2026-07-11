@@ -37,6 +37,9 @@ import { colors, font, radius, type } from '../../lib/theme';
 import { GlassPlate } from './glass';
 import { springy, usePressScale } from './motion';
 
+// Tap-to-pick date & time controls (calendar / time wheel) — see DateTimeField.tsx.
+export { DateField, TimeField } from './DateTimeField';
+
 // --- Screen container -------------------------------------------------------
 
 export function Screen({

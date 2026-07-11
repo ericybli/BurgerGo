@@ -23,7 +23,7 @@ import {
 import { api, type JournalEntry } from '../../lib/api';
 import { colors, font, radius, type } from '../../lib/theme';
 import { todayLocal } from '../../lib/days';
-import { Button } from '../../components/ui';
+import { Button, DateField } from '../../components/ui';
 import { ErrorBanner, FormField, OutlineAccentButton } from './formBits';
 import { PhotoGallery } from './PhotoGallery';
 import { pickImages, uploadErrorMessage } from './photoUpload';
@@ -176,15 +176,13 @@ export function EntrySheet({
         editable={editable}
         autoFocus={!isEdit}
       />
-      <FormField
+      <DateField
         label={STR.dateLabel}
+        labelStyle={es.pickerLabel}
+        containerStyle={es.field}
         value={entryDate}
-        onChangeText={setEntryDate}
-        editable={editable}
-        placeholder="YYYY-MM-DD"
-        autoCapitalize="none"
-        autoCorrect={false}
-        style={{ fontVariant: ['tabular-nums'] }}
+        onChange={setEntryDate}
+        disabled={!editable}
       />
 
       <View style={es.field}>
@@ -273,6 +271,8 @@ const es = StyleSheet.create({
 
   field: { marginTop: 12 },
   micro: { ...type.micro, color: colors.faint, textTransform: 'uppercase' },
+  // DateField label: journal micro-uppercase look with the picker's 4px gap to the control.
+  pickerLabel: { ...type.micro, color: colors.faint, textTransform: 'uppercase', marginBottom: 4 },
   toolbar: { marginTop: 4, flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   toolChip: {
     backgroundColor: colors.surface,

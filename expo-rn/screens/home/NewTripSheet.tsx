@@ -8,9 +8,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { api } from '../../lib/api';
 import { colors, type } from '../../lib/theme';
-import { Button, Field, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+import { Button, DateField, Field, OfflineHint, Sheet, SheetPanel } from '../../components/ui';
 
 export function NewTripSheet({
   visible,
@@ -36,14 +34,12 @@ export function NewTripSheet({
       setError('Please enter a trip name.');
       return;
     }
-    // RN uses free-text date fields, so format gets a lenient gate the web
-    // delegates to <input type=date>.
-    if (!DATE_RE.test(startDate)) {
-      setError('Start date must be YYYY-MM-DD.');
+    if (!startDate) {
+      setError('Please choose a start date.');
       return;
     }
-    if (!DATE_RE.test(endDate)) {
-      setError('End date must be YYYY-MM-DD.');
+    if (!endDate) {
+      setError('Please choose an end date.');
       return;
     }
     if (endDate < startDate) {
@@ -72,23 +68,20 @@ export function NewTripSheet({
             placeholder="Tokyo adventure"
             editable={!pending}
           />
-          <Field
+          <DateField
             label="Start date"
             value={startDate}
-            onChangeText={setStartDate}
-            placeholder="YYYY-MM-DD"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!pending}
+            onChange={setStartDate}
+            clearable={false}
+            disabled={pending}
           />
-          <Field
+          <DateField
             label="End date"
             value={endDate}
-            onChangeText={setEndDate}
-            placeholder="YYYY-MM-DD"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!pending}
+            onChange={setEndDate}
+            clearable={false}
+            minDate={startDate || undefined}
+            disabled={pending}
           />
           {error ? (
             <Text accessibilityRole="alert" style={s.error}>

@@ -31,6 +31,7 @@ import { colors, font, radius, type } from '../../lib/theme';
 import { todayLocal } from '../../lib/days';
 import {
   Button,
+  DateField,
   Field,
   Loading,
   SegmentedControl,
@@ -609,14 +610,13 @@ function ExpenseForm({
           onChange={setCategory}
           disabled={!editable}
         />
-        <Field
+        <DateField
           label="Date"
           value={spentOn}
-          onChangeText={setSpentOn}
-          editable={editable}
-          autoCapitalize="none"
-          placeholder="YYYY-MM-DD"
-          style={{ fontVariant: ['tabular-nums'] }}
+          onChange={setSpentOn}
+          disabled={!editable}
+          clearable={false}
+          placeholder="Select date"
         />
         <Field label="Note" value={note} onChangeText={setNote} editable={editable} />
         <BudgetSelect
