@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BurgerGo Plan — concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1F1C; --sub:#6E746E; --faint:#A8ADA7; --line:#E9EBE6; --surface:#F4F5F2;
+    --accent:#33677A; --accentTint:#E6EFF1; --orange:#E0502C; --cream:#F7F1E4; --success:#3E8E6E; --bg:#FFFFFF;
+    --d1:#33677A; --d2:#C99231;
+    font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{ background:#EDEBE6; background-image:radial-gradient(1200px 700px at 20% -5%,#F6F3EC 0,rgba(246,243,236,0) 60%),radial-gradient(1000px 700px at 100% 110%,#EAF0F0 0,rgba(234,240,240,0) 55%); padding:56px; }
+  .stage{ display:flex; gap:64px; justify-content:center; align-items:flex-start; flex-wrap:wrap; max-width:1500px; margin:0 auto; }
+  .col{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .cap{ font-size:15px; font-weight:600; color:#6a6f6b; }
+  .cap small{ display:block; font-weight:500; color:#9a9f9b; font-size:12.5px; margin-top:2px; text-align:center; }
+  .phone{ width:390px; height:844px; border-radius:56px; background:#0f1211; padding:12px; box-shadow:0 40px 80px -30px rgba(20,24,22,.55),0 8px 24px rgba(20,24,22,.18); position:relative; }
+  .screen{ width:100%; height:100%; border-radius:45px; background:var(--bg); overflow:hidden; position:relative; }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:126px; height:32px; background:#0f1211; border-radius:0 0 18px 18px; z-index:40; }
+  .status{ position:absolute; top:0; left:0; right:0; height:54px; z-index:30; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 6px; font-size:14px; font-weight:600; }
+
+  /* sticky chrome */
+  .chrome{ position:absolute; top:54px; left:0; right:0; z-index:20; background:var(--bg); padding:8px 16px 10px; border-bottom:1px solid var(--line); }
+  .seg{ display:flex; gap:8px; }
+  .segc{ flex:1; display:flex; background:var(--surface); border-radius:10px; padding:3px; gap:3px; }
+  .segc div{ flex:1; text-align:center; font-size:13px; font-weight:600; color:var(--sub); padding:7px 0; border-radius:8px; }
+  .segc div.on{ background:#fff; color:var(--ink); box-shadow:0 1px 2px rgba(20,24,22,.12); }
+  /* day strip */
+  .strip{ display:flex; gap:8px; margin-top:10px; }
+  .chip{ flex:1; text-align:center; border:1px solid var(--line); border-radius:12px; padding:7px 0; font-size:12px; font-weight:600; color:var(--sub); }
+  .chip small{ display:block; font-size:15px; font-weight:700; color:var(--ink); margin-top:1px; }
+  .chip.on{ background:var(--ink); border-color:var(--ink); color:rgba(255,255,255,.7); }
+  .chip.on small{ color:#fff; }
+
+  .scroll{ position:absolute; inset:0; padding:186px 16px 130px; overflow:hidden; }
+
+  /* day header */
+  .dayhead{ display:flex; align-items:center; gap:8px; margin-bottom:6px; }
+  .dayhead .dl{ font-size:13px; font-weight:700; color:var(--ink); }
+  .dayhead .dt{ font-size:12.5px; color:var(--sub); }
+  .dayhead .mode{ margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--accent); background:var(--accentTint); padding:5px 10px; border-radius:999px; }
+
+  /* TIMELINE */
+  .tl{ position:relative; padding-left:38px; }
+  .rail{ position:absolute; left:15px; top:6px; bottom:26px; width:2px; background:linear-gradient(var(--d1),var(--d1)); opacity:.5; }
+  .node{ position:absolute; left:5px; width:22px; height:22px; border-radius:50%; background:var(--d1); color:#fff; font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 3px #fff; z-index:2; }
+  .stop{ position:relative; margin-bottom:8px; }
+  .pcard{ border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fff; box-shadow:0 10px 24px -20px rgba(20,24,22,.4); }
+  .pcard .ph{ height:118px; position:relative; }
+  .g1{ background:radial-gradient(120% 120% at 30% 20%,#7fa9b8,#33677A 70%); }
+  .g2{ background:radial-gradient(120% 120% at 60% 20%,#d9b98a,#9a6b45 70%); }
+  .g3{ background:radial-gradient(120% 120% at 40% 20%,#9fb48f,#5b7c57 70%); }
+  .ph .glyph{ position:absolute; top:10px; left:10px; width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .ph .time{ position:absolute; top:10px; right:10px; background:rgba(255,255,255,.94); color:var(--ink); font-weight:700; font-size:12px; padding:5px 10px; border-radius:999px; }
+  .pcard .bd{ padding:11px 13px 12px; }
+  .pcard .nm{ font-size:15.5px; font-weight:700; letter-spacing:-.01em; color:var(--ink); }
+  .pcard .mt{ display:flex; align-items:center; gap:8px; margin-top:4px; font-size:12px; color:var(--sub); font-weight:500; }
+  .pcard .mt .dur{ color:var(--accent); font-weight:600; }
+  .pcard .mt .dot{ color:var(--faint); }
+  .pcard .act{ display:flex; gap:16px; margin-top:10px; }
+  .pcard .act a{ font-size:12.5px; font-weight:700; color:var(--accent); }
+  .pcard .act a.mng{ color:var(--sub); }
+  /* leg on the rail */
+  .leg{ position:relative; margin:2px 0 10px; display:flex; align-items:center; gap:8px; }
+  .leg .pill{ display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); border-radius:999px; padding:4px 11px; font-size:11.5px; font-weight:600; color:var(--sub); }
+  .leg .pill .m{ font-size:13px; }
+  .leg .modes{ margin-left:auto; display:flex; gap:12px; }
+  .leg .modes span{ font-size:11.5px; font-weight:600; color:var(--faint); padding-bottom:1px; }
+  .leg .modes span.on{ color:var(--accent); border-bottom:2px solid var(--accent); }
+  .node.leg-node{ top:8px; background:#fff; border:2px solid var(--line); width:14px; height:14px; left:9px; box-shadow:none; }
+
+  .addrow{ display:flex; gap:8px; margin-top:6px; }
+  .addrow .b{ flex:1; text-align:center; padding:12px; border-radius:12px; font-weight:700; font-size:14px; }
+  .addrow .pri{ background:var(--orange); color:#fff; }
+  .addrow .sec{ border:1px solid var(--line); color:var(--ink); }
+
+  /* SAVED */
+  .newlist{ border:1.5px dashed var(--line); border-radius:12px; text-align:center; padding:11px; font-size:13px; font-weight:700; color:var(--accent); }
+  .lhead{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:12px; padding:11px 12px; margin-top:14px; }
+  .lhead .cv{ color:var(--faint); font-size:13px; } .lhead .ln{ font-size:14px; font-weight:700; color:var(--ink); } .lhead .lc{ margin-left:auto; color:var(--faint); font-size:12.5px; font-weight:600; } .lhead .mo{ color:var(--faint); font-size:16px; }
+  .scard{ border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fff; margin-top:10px; box-shadow:0 10px 24px -20px rgba(20,24,22,.4); }
+  .scard .ph{ height:118px; position:relative; }
+  .scard .glyph{ position:absolute; top:10px; left:10px; width:34px; height:34px; border-radius:10px; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 2px 6px rgba(0,0,0,.15); }
+  .scard .bd{ padding:11px 13px 4px; }
+  .scard .nm{ font-size:15.5px; font-weight:700; color:var(--ink); }
+  .scard .sub{ font-size:12px; color:var(--sub); margin-top:2px; }
+  .scard .act{ display:flex; gap:8px; padding:10px 13px 13px; }
+  .scard .add{ background:var(--orange); color:#fff; font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:10px; }
+  .scard .mng{ border:1px solid var(--line); color:var(--sub); font-weight:700; font-size:12.5px; padding:8px 16px; border-radius:10px; }
+
+  .tabbar{ position:absolute; left:14px; right:14px; bottom:22px; height:62px; z-index:25; background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,.66)); backdrop-filter:blur(14px) saturate(1.4); border:1px solid rgba(255,255,255,.7); border-radius:999px; box-shadow:0 16px 34px -14px rgba(20,24,22,.4); display:flex; align-items:center; justify-content:space-around; padding:0 6px; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:var(--faint); flex:1; } .tab.active{ color:var(--accent); } .tab .ic{ font-size:17px; }
+</style></head>
+<body>
+<div class="stage">
+
+  <!-- ITINERARY TIMELINE -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>● ▂▄▆ ▮</span></div>
+      <div class="chrome">
+        <div class="seg">
+          <div class="segc"><div class="on">List</div><div>Map</div></div>
+          <div class="segc"><div class="on">Days</div><div>Saved</div></div>
+        </div>
+        <div class="strip">
+          <div class="chip on">SAT<small>6</small></div>
+          <div class="chip">SUN<small>7</small></div>
+          <div class="chip">MON<small>8</small></div>
+        </div>
+      </div>
+
+      <div class="scroll">
+        <div class="dayhead">
+          <span class="dl">Day 1</span><span class="dt">· Volcano &amp; coast</span>
+          <span class="mode">🚗 Driving</span>
+        </div>
+
+        <div class="tl">
+          <div class="rail"></div>
+
+          <div class="stop">
+            <div class="node">1</div>
+            <div class="pcard">
+              <div class="ph g1"><div class="glyph">🏞️</div><span class="time">9:30 AM</span></div>
+              <div class="bd">
+                <div class="nm">Volcanoes National Park</div>
+                <div class="mt"><span class="dur">2h 30m</span><span class="dot">·</span><span>Sightseeing</span></div>
+                <div class="act"><a>View</a><a class="mng">Manage</a></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="leg">
+            <div class="node leg-node"></div>
+            <span class="pill"><span class="m">🚗</span> 42 min · 38 mi</span>
+            <span class="modes"><span>Walk</span><span class="on">Drive</span><span>Transit</span></span>
+          </div>
+
+          <div class="stop">
+            <div class="node">2</div>
+            <div class="pcard">
+              <div class="ph g2"><div class="glyph">🎟️</div><span class="time">1:00 PM</span></div>
+              <div class="bd">
+                <div class="nm">Punaluʻu Black Sand Beach</div>
+                <div class="mt"><span class="dur">1h</span><span class="dot">·</span><span>Activity</span></div>
+                <div class="act"><a>View</a><a class="mng">Manage</a></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="leg">
+            <div class="node leg-node"></div>
+            <span class="pill"><span class="m">🚗</span> 18 min · 12 mi</span>
+            <span class="modes"><span>Walk</span><span class="on">Drive</span><span>Transit</span></span>
+          </div>
+
+          <div class="stop">
+            <div class="node">3</div>
+            <div class="pcard">
+              <div class="ph g3"><div class="glyph">🛏️</div><span class="time">6:30 PM</span></div>
+              <div class="bd">
+                <div class="nm">Sheraton Kona Resort</div>
+                <div class="mt"><span>Lodging</span></div>
+                <div class="act"><a>View</a><a class="mng">Manage</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="addrow">
+          <div class="b pri">＋ Add place</div>
+          <div class="b sec">Add from Saved</div>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab active"><span class="ic">📍</span>Plan</div><div class="tab"><span class="ic">🍴</span>Eats</div>
+        <div class="tab"><span class="ic">🎟️</span>Tickets</div><div class="tab"><span class="ic">💳</span>Budget</div>
+        <div class="tab"><span class="ic">✅</span>To do</div><div class="tab"><span class="ic">📖</span>Journal</div>
+      </div>
+    </div></div>
+    <div class="cap">1 · Day itinerary (timeline)<small>Day-colored rail · photo cards + category glyph + time · legs on the rail</small></div>
+  </div>
+
+  <!-- SAVED -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>● ▂▄▆ ▮</span></div>
+      <div class="chrome">
+        <div class="seg">
+          <div class="segc"><div class="on">List</div><div>Map</div></div>
+          <div class="segc"><div>Days</div><div class="on">Saved</div></div>
+        </div>
+      </div>
+
+      <div class="scroll" style="padding-top:130px">
+        <div class="newlist">＋ New list…</div>
+
+        <div class="lhead"><span class="cv">▾</span><span class="ln">Must-eat</span><span class="lc">2</span><span class="mo">⋯</span></div>
+
+        <div class="scard">
+          <div class="ph g2"><div class="glyph">🍽️</div></div>
+          <div class="bd"><div class="nm">Da Poke Shack</div><div class="sub">Activity · 76-6246 Aliʻi Dr</div></div>
+          <div class="act"><span class="add">＋ Add to day</span><span class="mng">Manage</span></div>
+        </div>
+
+        <div class="scard">
+          <div class="ph g3"><div class="glyph">🏞️</div></div>
+          <div class="bd"><div class="nm">Rainbow Falls</div><div class="sub">Sightseeing · Hilo</div></div>
+          <div class="act"><span class="add">＋ Add to day</span><span class="mng">Manage</span></div>
+        </div>
+
+        <div class="lhead"><span class="cv">▸</span><span class="ln">Maybe</span><span class="lc">4</span><span class="mo">⋯</span></div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab active"><span class="ic">📍</span>Plan</div><div class="tab"><span class="ic">🍴</span>Eats</div>
+        <div class="tab"><span class="ic">🎟️</span>Tickets</div><div class="tab"><span class="ic">💳</span>Budget</div>
+        <div class="tab"><span class="ic">✅</span>To do</div><div class="tab"><span class="ic">📖</span>Journal</div>
+      </div>
+    </div></div>
+    <div class="cap">2 · Saved places<small>Lists (collapsible) · photo cards + glyph · orange “Add to day”</small></div>
+  </div>
+
+</div>
+</body></html>
