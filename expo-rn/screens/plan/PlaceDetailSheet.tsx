@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Image, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { X } from 'lucide-react-native';
 import { api, photoUrl, type Place, type PlacePatch } from '../../lib/api';
@@ -60,6 +61,7 @@ export function PlaceDetailSheet({
   /** Reload the underlying list after a photo/link change (without closing). */
   onChanged?: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const disabled = !online;
   const [name, setName] = useState(place.name);
   const [address, setAddress] = useState(place.address ?? '');
@@ -272,11 +274,12 @@ export function PlaceDetailSheet({
   const expenseDisabled = disabled || busy || inputToMinor(cost, currency) == null || expenseStatus === 'added';
 
   return (
-    <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+    <View style={styles.sheetPanel}>
       <View style={styles.handle} />
-      <Text style={styles.title} numberOfLines={1}>
-        {place.name}
-      </Text>
+      <ScrollView style={styles.sheetScroll} contentContainerStyle={styles.sheet} keyboardShouldPersistTaps="handled">
+        <Text style={styles.title} numberOfLines={1}>
+          {place.name}
+        </Text>
 
       {saveError ? (
         <Text accessibilityRole="alert" style={styles.errorBox}>
@@ -534,25 +537,38 @@ export function PlaceDetailSheet({
         <Text style={styles.mapsText}>Open in Google Maps</Text>
       </Pressable>
 
-      {!online ? <OfflineHint /> : null}
+        {!online ? <OfflineHint /> : null}
+      </ScrollView>
 
-      <View style={styles.actions}>
+      {/* Pinned footer: Cancel/Save always visible, never scrolls away. */}
+      <View style={[styles.actions, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
         <Button title="Cancel" variant="secondary" onPress={onClose} style={{ flex: 1 }} disabled={busy} />
         <Button title="Save" onPress={() => void handleSave()} busy={busy} disabled={disabled} style={{ flex: 1 }} />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheetScroll: {
+  // Column panel: fixed handle on top, flexible scroll in the middle, pinned
+  // footer at the bottom. Caps at 92% so the footer never leaves the screen.
+  sheetPanel: {
     maxHeight: '92%',
     backgroundColor: colors.bg,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
   },
-  sheet: { padding: 18, paddingTop: 8, paddingBottom: 32 },
-  handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: colors.line, marginBottom: 12 },
+  sheetScroll: { flexShrink: 1 },
+  sheet: { padding: 18, paddingTop: 8, paddingBottom: 20 },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.line,
+    marginTop: 10,
+    marginBottom: 12,
+  },
   title: { ...type.title, fontSize: 18, color: colors.ink },
 
   label: { fontFamily: font.semibold, fontSize: 13, color: colors.ink },
@@ -692,5 +708,13 @@ const styles = StyleSheet.create({
   mapsBtn: { marginTop: 18, borderRadius: 12, backgroundColor: colors.accent, paddingVertical: 12, alignItems: 'center' },
   mapsText: { fontFamily: font.semibold, fontSize: 14, color: colors.white },
 
-  actions: { flexDirection: 'row', gap: 12, marginTop: 12 },
+  actions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+    backgroundColor: colors.bg,
+  },
 });

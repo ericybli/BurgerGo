@@ -364,8 +364,14 @@ const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   statePad: { flex: 1, padding: 16, paddingBottom: 96 },
   list: { padding: 16, paddingBottom: 100, gap: 12 },
-  // Sinks the past-trips pile below the current ones (12px list gap on each side).
-  pastDivider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.line },
+  // Isolates the past-trips pile from the current ones: extra air above the
+  // line (on top of the 12px list gap) so the break reads clearly.
+  pastDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.line,
+    marginTop: 28,
+    marginBottom: 12,
+  },
   sectionLabel: {
     ...type.micro,
     textTransform: 'uppercase',
