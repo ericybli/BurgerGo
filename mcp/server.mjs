@@ -168,7 +168,7 @@ server.tool(
 
 server.tool(
   'add_saved_place',
-  'Add a Saved (wishlist) place to a trip. The address is geocoded so it maps. Optionally attach a photo by URL.',
+  'Add a place to a trip — Saved (wishlist) by default, or scheduled onto a specific day when dayDate is given. The address is geocoded so it maps. Optionally attach a photo by URL.',
   {
     tripId: z.string(),
     name: z.string().describe('Place name'),
@@ -185,15 +185,27 @@ server.tool(
     list: z
       .string()
       .optional()
-      .describe('Saved-list name to group this place under (Saved tab). Reuses a same-named list (case-insensitive) or creates it. Omit to leave it loose.'),
+      .describe('Saved-list name to group this place under (Saved tab). Only applies when dayDate is omitted. Reuses a same-named list (case-insensitive) or creates it.'),
+    dayDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional()
+      .describe('YYYY-MM-DD. When set, schedules the place onto that trip day (appended after existing stops) instead of the Saved bucket.'),
+    scheduledTime: z
+      .string()
+      .regex(/^\d{2}:\d{2}$/)
+      .optional()
+      .describe('24h HH:MM. Only meaningful alongside dayDate.'),
     imageUrl: z.string().url().optional().describe('Image URL to attach as the place photo'),
   },
-  async ({ tripId, name, address, about, notes, category, list, imageUrl }) => {
+  async ({ tripId, name, address, about, notes, category, list, dayDate, scheduledTime, imageUrl }) => {
     try {
-      const { place } = await apiPost(`/api/trips/${tripId}/places`, { name, address, about, notes, category, list });
+      const { place } = await apiPost(`/api/trips/${tripId}/places`, {
+        name, address, about, notes, category, list, dayDate, scheduledTime,
+      });
       let photo = 'no photo';
       if (imageUrl) photo = await uploadPhoto({ tripId, ownerType: 'place', ownerId: place.id, imageUrl });
-      return ok({ created: { id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng }, photo });
+      return ok({ created: { id: place.id, name: place.name, address: place.address, lat: place.lat, lng: place.lng, dayDate: place.dayDate, scheduledTime: place.scheduledTime }, photo });
     } catch (e) {
       return fail(String(e.message ?? e));
     }
