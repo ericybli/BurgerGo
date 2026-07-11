@@ -12,6 +12,7 @@
  */
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { api, type Restaurant, type RestaurantInput, type RestaurantStatus } from '../../lib/api';
 import { Button, Field, OfflineHint, Select, SheetPanel } from '../../components/ui';
 import { colors, radius, type } from '../../lib/theme';
@@ -53,6 +54,7 @@ export function RestaurantForm({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const isEdit = restaurant !== null;
   const initialAddress = restaurant?.address ?? '';
   const [name, setName] = useState(restaurant?.name ?? '');
@@ -151,7 +153,7 @@ export function RestaurantForm({
 
   return (
     <SheetPanel style={styles.panel}>
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+      <ScrollView style={styles.scroll} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         {error ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>Couldn't save — please try again.</Text>
@@ -199,18 +201,20 @@ export function RestaurantForm({
         <Field label="Notes" value={notes} onChangeText={setNotes} editable={!locked} multiline />
 
         {!online ? <OfflineHint /> : null}
-
-        <View style={styles.row}>
-          <Button title="Cancel" variant="secondary" onPress={onClose} style={{ flex: 1 }} />
-          <Button title="Save" onPress={save} busy={busy} disabled={!online} style={{ flex: 1 }} />
-        </View>
       </ScrollView>
+
+      {/* Pinned footer: Cancel/Save always visible, never scrolls away. */}
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <Button title="Cancel" variant="secondary" onPress={onClose} style={{ flex: 1 }} />
+        <Button title="Save" onPress={save} busy={busy} disabled={!online} style={{ flex: 1 }} />
+      </View>
     </SheetPanel>
   );
 }
 
 const styles = StyleSheet.create({
   panel: { maxHeight: '85%' },
+  scroll: { flexShrink: 1 },
   content: { paddingBottom: 4 },
 
   errorBox: {
@@ -237,5 +241,11 @@ const styles = StyleSheet.create({
   suggestionDivider: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.line },
   suggestionText: { ...type.body, color: colors.ink },
 
-  row: { flexDirection: 'row', gap: 12, marginTop: 16 },
+  footer: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+  },
 });

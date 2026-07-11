@@ -17,6 +17,7 @@ import {
   type TextInputProps,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { FileText, Image as ImageIcon, X } from 'lucide-react-native';
@@ -72,6 +73,7 @@ export function TicketSheet({
   /** Reload the parent list; must NOT close the sheet (called mid-edit on file deletes). */
   onSaved: () => void;
 }) {
+  const insets = useSafeAreaInsets();
   const isEdit = !!ticket;
   const [title, setTitle] = useState(ticket?.title ?? '');
   const [date, setDate] = useState(ticket?.date ?? '');
@@ -213,13 +215,14 @@ export function TicketSheet({
   }
 
   return (
-    <ScrollView
-      style={s.panel}
-      contentContainerStyle={s.panelContent}
-      keyboardShouldPersistTaps="handled"
-    >
+    <View style={s.panel}>
       <View style={s.handle} />
-      <Text style={s.sheetTitle}>{isEdit ? STR.editTitle : STR.newTitle}</Text>
+      <ScrollView
+        style={s.scroll}
+        contentContainerStyle={s.panelContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={s.sheetTitle}>{isEdit ? STR.editTitle : STR.newTitle}</Text>
 
       {error ? <Text style={s.errorBanner}>{error}</Text> : null}
 
@@ -292,9 +295,11 @@ export function TicketSheet({
       </View>
       <Text style={s.hint}>{STR.filesHint}</Text>
 
-      {!online ? <OfflineHint /> : null}
+        {!online ? <OfflineHint /> : null}
+      </ScrollView>
 
-      <View style={s.footer}>
+      {/* Pinned footer: Save/Cancel always visible, never scrolls away. */}
+      <View style={[s.footer, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
         <Button
           title={saving ? STR.saving : STR.save}
           onPress={() => void handleSave()}
@@ -303,7 +308,7 @@ export function TicketSheet({
         />
         <Button title={STR.cancel} variant="secondary" onPress={onClose} style={s.cancelBtn} />
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -397,12 +402,15 @@ function PickButton({
 }
 
 const s = StyleSheet.create({
+  // Column panel: fixed handle on top, flexible scroll in the middle, pinned
+  // footer at the bottom (caps at 85% so the footer never leaves the screen).
   panel: {
     maxHeight: '85%',
     backgroundColor: colors.bg,
     borderTopLeftRadius: radius.sheet,
     borderTopRightRadius: radius.sheet,
   },
+  scroll: { flexShrink: 1 },
   panelContent: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 32 },
   handle: {
     alignSelf: 'center',
@@ -488,6 +496,14 @@ const s = StyleSheet.create({
   pickBtnText: { ...type.label, color: colors.accent },
   hint: { ...type.caption, color: colors.faint, marginTop: 6 },
 
-  footer: { flexDirection: 'row', gap: 8, marginTop: 20 },
+  footer: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.line,
+    backgroundColor: colors.bg,
+  },
   cancelBtn: { width: 90 },
 });
