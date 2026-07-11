@@ -19,11 +19,14 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { FileText, Image as ImageIcon } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FileText } from 'lucide-react-native';
 import { api, type Ticket } from '../../lib/api';
 import { useTrip } from '../../navigation/TripContext';
 import { useOnline } from '../../lib/online';
 import { colors, font, radius, type } from '../../lib/theme';
+import { gradientFor } from '../../lib/uiHash';
+import { formatTicketWhen } from './ticketFormat';
 import { Button, Loading, Sheet } from '../../components/ui';
 import { TicketSheet } from './TicketSheet';
 
@@ -218,55 +221,115 @@ function TicketCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const when = [ticket.date, ticket.time].filter(Boolean).join(' · ');
+  const when = formatTicketWhen(ticket.date, ticket.time);
+  const imageFiles = ticket.files.filter((f) => f.mime.startsWith('image/'));
+  const pdfFiles = ticket.files.filter((f) => !f.mime.startsWith('image/'));
+  const heroImage = imageFiles[0];
+  // Up to three image-thumb chips; PDFs collapse into a single count chip.
+  const thumbChips = imageFiles.slice(0, 3);
+
   return (
     <FadeUp delayIndex={Math.min(index, 6)}>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{ticket.title}</Text>
-        {when ? <Text style={styles.cardWhen}>{when}</Text> : null}
-        {ticket.location ? <Text style={styles.cardLocation}>{ticket.location}</Text> : null}
-        {ticket.note ? <Text style={styles.cardNote}>{ticket.note}</Text> : null}
+        {/* Hero band — deterministic gradient, overlaid by the first image if any. */}
+        <View style={styles.band}>
+          <LinearGradient
+            colors={gradientFor(ticket.title)}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+          {heroImage ? (
+            <Image
+              source={{ uri: api.tickets.fileUrl(heroImage.id) }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : null}
+          <View style={styles.bandOverlay}>
+            <View style={styles.bandChip}>
+              <Text style={styles.bandChipGlyph}>🎟️</Text>
+            </View>
+            {when ? (
+              <View style={styles.bandPill}>
+                <Text style={styles.bandPillText}>{when}</Text>
+              </View>
+            ) : null}
+          </View>
+        </View>
 
-        {ticket.files.length > 0 ? (
-          <View style={styles.fileList}>
-            {ticket.files.map((f) => (
+        {/* Perforation — two edge notches with a dashed tear line between. */}
+        <View style={styles.perf}>
+          <View style={[styles.perfNotch, { left: -9 }]} />
+          <View style={styles.perfDash} />
+          <View style={[styles.perfNotch, { right: -9 }]} />
+        </View>
+
+        {/* Stub */}
+        <View style={styles.stub}>
+          <Text style={styles.cardTitle}>{ticket.title}</Text>
+          {ticket.location ? (
+            <Text style={styles.cardLocation} numberOfLines={1}>
+              📍 {ticket.location}
+            </Text>
+          ) : null}
+          {ticket.note ? (
+            <Text style={styles.cardNote} numberOfLines={2}>
+              {ticket.note}
+            </Text>
+          ) : null}
+
+          <View style={styles.metaRow}>
+            <View style={styles.chipRow}>
+              {thumbChips.map((f) => (
+                <Pressable
+                  key={f.id}
+                  onPress={() => void Linking.openURL(api.tickets.fileUrl(f.id))}
+                  hitSlop={4}
+                >
+                  <Image
+                    source={{ uri: api.tickets.fileUrl(f.id) }}
+                    style={styles.thumbChip}
+                    resizeMode="cover"
+                  />
+                </Pressable>
+              ))}
+              {pdfFiles.length > 0 ? (
+                <Pressable
+                  key={pdfFiles[0]!.id}
+                  onPress={() => void Linking.openURL(api.tickets.fileUrl(pdfFiles[0]!.id))}
+                  hitSlop={4}
+                  style={({ pressed }) => [styles.pdfChip, pressed && { backgroundColor: colors.surface }]}
+                >
+                  <FileText size={14} strokeWidth={1.75} color={colors.accent} />
+                  <Text style={styles.pdfChipText}>
+                    {pdfFiles.length > 1 ? `PDF · ${pdfFiles.length}` : 'PDF'}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            <View style={styles.actions}>
+              <Pressable disabled={!online} onPress={onEdit} hitSlop={6}>
+                <Text style={[styles.editText, !online && styles.disabledText]}>Edit</Text>
+              </Pressable>
               <Pressable
-                key={f.id}
-                onPress={() => void Linking.openURL(api.tickets.fileUrl(f.id))}
-                style={({ pressed }) => [styles.fileRow, pressed && { backgroundColor: colors.surface }]}
+                disabled={!online}
+                onPress={onDelete}
+                hitSlop={6}
+                style={confirming ? styles.confirmPill : undefined}
               >
-                {f.mime === 'application/pdf' ? (
-                  <FileText size={15} strokeWidth={1.75} color={colors.accent} />
-                ) : (
-                  <ImageIcon size={15} strokeWidth={1.75} color={colors.accent} />
-                )}
-                <Text style={styles.fileName} numberOfLines={1}>
-                  {f.name}
+                <Text
+                  style={[
+                    confirming ? styles.confirmText : styles.deleteText,
+                    !online && styles.disabledText,
+                  ]}
+                >
+                  {confirming ? 'Tap again to delete' : 'Delete'}
                 </Text>
               </Pressable>
-            ))}
+            </View>
           </View>
-        ) : null}
-
-        <View style={styles.actions}>
-          <Pressable disabled={!online} onPress={onEdit} hitSlop={6}>
-            <Text style={[styles.editText, !online && styles.disabledText]}>Edit</Text>
-          </Pressable>
-          <Pressable
-            disabled={!online}
-            onPress={onDelete}
-            hitSlop={6}
-            style={confirming ? styles.confirmPill : undefined}
-          >
-            <Text
-              style={[
-                confirming ? styles.confirmText : styles.deleteText,
-                !online && styles.disabledText,
-              ]}
-            >
-              {confirming ? 'Tap again to delete' : 'Delete'}
-            </Text>
-          </Pressable>
         </View>
       </View>
     </FadeUp>
@@ -333,37 +396,113 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: colors.bg,
+    borderRadius: 20,
+    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: radius.card,
+    marginBottom: 0,
+    shadowColor: '#14181A',
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 3,
+  },
+
+  // Hero band — gradient base, optional photo overlay, glass chip + when pill.
+  band: { height: 92, position: 'relative' },
+  bandOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 14,
   },
-  cardTitle: {
-    fontFamily: font.bold,
-    fontSize: 15.5,
-    lineHeight: 20,
-    letterSpacing: -0.155,
-    color: colors.ink,
-  },
-  cardWhen: { ...type.caption, color: colors.faint, fontVariant: ['tabular-nums'], marginTop: 2 },
-  cardLocation: { ...type.caption, color: colors.sub, marginTop: 4 },
-  cardNote: { fontFamily: font.regular, fontSize: 13, lineHeight: 19, color: colors.sub, marginTop: 6 },
-
-  fileList: { marginTop: 10, gap: 6 },
-  fileRow: {
-    flexDirection: 'row',
+  bandChip: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
+  },
+  bandChipGlyph: { fontSize: 20, lineHeight: 24 },
+  bandPill: {
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  bandPillText: {
+    fontFamily: font.bold,
+    fontSize: 12.5,
+    color: colors.ink,
+    fontVariant: ['tabular-nums'],
+  },
+
+  // Perforation between band and stub.
+  perf: { height: 0, position: 'relative' },
+  perfNotch: {
+    position: 'absolute',
+    top: -9,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.bg,
     borderWidth: 1,
     borderColor: colors.line,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
-  fileName: { ...type.caption, fontFamily: font.semibold, color: colors.ink, flex: 1 },
+  perfDash: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    top: 0,
+    borderTopWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: colors.line,
+  },
 
-  actions: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12 },
+  stub: { backgroundColor: colors.white, paddingVertical: 14, paddingHorizontal: 16 },
+  cardTitle: {
+    fontFamily: font.bold,
+    fontSize: 17,
+    lineHeight: 22,
+    letterSpacing: -0.17,
+    color: colors.ink,
+  },
+  cardLocation: { fontFamily: font.medium, fontSize: 13.5, lineHeight: 18, color: colors.sub, marginTop: 4 },
+  cardNote: { fontFamily: font.regular, fontSize: 13, lineHeight: 19, color: colors.sub, marginTop: 6 },
+
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  chipRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 },
+  thumbChip: {
+    width: 28,
+    height: 28,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.surface,
+  },
+  pdfChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 28,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 7,
+    paddingHorizontal: 9,
+  },
+  pdfChipText: { fontFamily: font.semibold, fontSize: 12, color: colors.ink },
+
+  actions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   editText: { ...type.label, color: colors.accent },
   deleteText: { ...type.label, color: colors.danger },
   confirmPill: {
