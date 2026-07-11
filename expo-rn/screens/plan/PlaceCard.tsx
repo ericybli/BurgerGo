@@ -213,9 +213,13 @@ export function PlaceCard({
           ) : (
             <PhotoPlaceholder category={place.category} height={118} />
           )}
-          <View style={styles.glyphChip}>
-            <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
-          </View>
+          {/* Corner glyph chip only over a real photo — the placeholder already
+              shows the category glyph, so a chip would double it. */}
+          {thumb ? (
+            <View style={styles.glyphChip}>
+              <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
+            </View>
+          ) : null}
           {place.scheduledTime ? (
             <View style={styles.timeChip}>
               <Text style={styles.timeChipText}>{place.scheduledTime}</Text>

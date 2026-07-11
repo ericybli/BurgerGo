@@ -40,9 +40,13 @@ function SavedPlaceCard({
             ) : (
               <PhotoPlaceholder category={place.category} height={118} />
             )}
-            <View style={styles.glyphChip}>
-              <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
-            </View>
+            {/* Corner glyph chip only over a real photo — the placeholder already
+                shows the category glyph. */}
+            {thumb ? (
+              <View style={styles.glyphChip}>
+                <Text style={styles.glyphChipText}>{glyph(place.category)}</Text>
+              </View>
+            ) : null}
           </View>
           <View style={styles.cardBody}>
             <Text style={styles.name} numberOfLines={1}>
