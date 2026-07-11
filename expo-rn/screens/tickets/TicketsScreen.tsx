@@ -26,7 +26,7 @@ import { useTrip } from '../../navigation/TripContext';
 import { useOnline } from '../../lib/online';
 import { colors, font, radius, type } from '../../lib/theme';
 import { gradientFor } from '../../lib/uiHash';
-import { formatTicketWhen } from './ticketFormat';
+import { formatTicketWhen, ticketDayKey, ticketDayLabel } from './ticketFormat';
 import { Button, Loading, Sheet } from '../../components/ui';
 import { TicketSheet } from './TicketSheet';
 
@@ -101,6 +101,18 @@ export function TicketsScreen() {
     sortKey(a) < sortKey(b) ? -1 : sortKey(a) > sortKey(b) ? 1 : 0,
   );
 
+  // Bucket the already-sorted list into day groups, preserving first-seen order:
+  // dated groups stay ascending, and the undated 'anytime' bucket lands last
+  // (undated tickets sort last). One continuous index drives the entrance stagger.
+  const groups: { key: string; items: Ticket[] }[] = [];
+  for (const t of tickets) {
+    const key = ticketDayKey(t.date);
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.items.push(t);
+    else groups.push({ key, items: [t] });
+  }
+  let runningIndex = 0;
+
   return (
     <View style={styles.root}>
       <ScrollView
@@ -129,16 +141,32 @@ export function TicketsScreen() {
             }
           />
         ) : (
-          tickets.map((tk, i) => (
-            <TicketCard
-              key={tk.id}
-              ticket={tk}
-              index={i}
-              online={online}
-              confirming={confirmingDelete === tk.id}
-              onEdit={() => setSheet({ ticket: tk })}
-              onDelete={() => handleDelete(tk.id)}
-            />
+          groups.map((group, gi) => (
+            <View key={group.key} style={styles.group}>
+              <View style={[styles.dayHeader, gi === 0 ? styles.dayHeaderFirst : styles.dayHeaderRest]}>
+                <View style={styles.dayHalo}>
+                  <View style={styles.dayDot} />
+                </View>
+                <Text style={styles.dayLabel}>{ticketDayLabel(group.key)}</Text>
+                <View style={styles.dayRule} />
+                <Text style={styles.dayCount}>
+                  {`${group.items.length} ticket${group.items.length === 1 ? '' : 's'}`}
+                </Text>
+              </View>
+              <View style={styles.cards}>
+                {group.items.map((tk) => (
+                  <TicketCard
+                    key={tk.id}
+                    ticket={tk}
+                    index={runningIndex++}
+                    online={online}
+                    confirming={confirmingDelete === tk.id}
+                    onEdit={() => setSheet({ ticket: tk })}
+                    onDelete={() => handleDelete(tk.id)}
+                  />
+                ))}
+              </View>
+            </View>
           ))
         )}
       </ScrollView>
@@ -364,6 +392,25 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   // Bottom padding clears the floating glass tab bar (content scrolls under it).
   list: { padding: 16, paddingBottom: 150, gap: 12 },
+
+  // Day-grouped timeline: a header row per day, then that day's cards.
+  group: {},
+  cards: { gap: 12 },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', gap: 9, marginBottom: 12 },
+  dayHeaderFirst: { marginTop: 4 },
+  dayHeaderRest: { marginTop: 20 },
+  dayHalo: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.accentTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dayDot: { width: 9, height: 9, borderRadius: 4.5, backgroundColor: colors.accent },
+  dayLabel: { ...type.micro, color: colors.sub, textTransform: 'uppercase' },
+  dayRule: { flex: 1, height: 1, backgroundColor: colors.line },
+  dayCount: { ...type.caption, color: colors.faint },
 
   // Web EmptyState recipe: px-6 py-16 centered; mascot mb-6 h-28 w-28 opacity-90;
   // subtext mt-2 max-w-xs; CTA mt-6.
