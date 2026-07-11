@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BurgerGo Tickets — concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1F1C; --sub:#5B6560; --faint:#9AA39E; --line:#E7E7E2;
+    --accent:#2F6C7E; --accent-tint:#E7F0F2; --orange:#E0502C; --orange-tint:#FBEAE3;
+    --cream:#F7F1E4; --success:#3E8E6E; --bg:#FFFFFF;
+    --d1:#C6603B; --d2:#2F6C7E; --d3:#8A6D3B; --d4:#5B7C57;
+    --sheet:26px;
+    font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased;}
+  body{ background:#EDEBE6;
+    background-image:radial-gradient(1200px 700px at 20% -5%, #F6F3EC 0%, rgba(246,243,236,0) 60%),
+                     radial-gradient(1000px 700px at 100% 110%, #EAF0F0 0%, rgba(234,240,240,0) 55%);
+    padding:56px; }
+  .stage{ display:flex; gap:64px; justify-content:center; align-items:flex-start; flex-wrap:wrap; max-width:1500px; margin:0 auto; }
+  .col{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .cap{ font-size:15px; font-weight:600; color:#6a6f6b; letter-spacing:.01em; }
+  .cap small{ display:block; font-weight:500; color:#9a9f9b; font-size:12.5px; margin-top:2px; text-align:center; }
+
+  /* phone frame */
+  .phone{ width:390px; height:844px; border-radius:56px; background:#0f1211; padding:12px;
+    box-shadow:0 40px 80px -30px rgba(20,24,22,.55), 0 8px 24px rgba(20,24,22,.18); position:relative; }
+  .screen{ width:100%; height:100%; border-radius:45px; background:var(--bg); overflow:hidden; position:relative; }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:126px; height:32px; background:#0f1211; border-radius:0 0 18px 18px; z-index:40; }
+  .status{ position:absolute; top:0; left:0; right:0; height:54px; z-index:30; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 6px; font-size:14px; font-weight:600; color:var(--ink); }
+  .status .dots{ display:flex; gap:5px; align-items:center; }
+
+  .body{ position:absolute; inset:0; overflow:hidden; }
+  .scroll{ position:absolute; inset:0; padding:62px 18px 130px; overflow:hidden; }
+
+  /* top app bar (glass) */
+  .appbar{ position:absolute; top:54px; left:0; right:0; z-index:20; padding:6px 20px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.62)); backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(27,31,28,.06); }
+  .appbar h1{ font-size:26px; font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+  .addbtn{ display:flex; align-items:center; gap:6px; background:var(--orange); color:#fff; font-weight:600; font-size:13.5px;
+    padding:9px 14px; border-radius:999px; box-shadow:0 6px 16px -6px rgba(224,80,44,.7); }
+  .addbtn .plus{ font-size:15px; line-height:1; margin-top:-1px; }
+
+  /* day group header with timeline rail */
+  .day{ display:flex; align-items:center; gap:10px; margin:18px 2px 12px; }
+  .day .dot{ width:9px; height:9px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 4px var(--accent-tint); }
+  .day .lbl{ font-size:12.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sub); }
+  .day .rule{ flex:1; height:1px; background:var(--line); }
+  .day .count{ font-size:12px; font-weight:600; color:var(--faint); }
+
+  /* boarding-pass ticket card */
+  .ticket{ position:relative; border:1px solid var(--line); border-radius:20px; background:#fff; overflow:hidden;
+    box-shadow:0 12px 26px -20px rgba(20,24,22,.35); margin-bottom:16px; }
+  .ticket .hero{ height:96px; position:relative; display:flex; align-items:flex-start; justify-content:space-between; padding:12px 14px; color:#fff; }
+  .hero.museum{ background:linear-gradient(135deg,#3a7f93,#274e5b); }
+  .hero.show{   background:linear-gradient(135deg,#c76a45,#9e3f2c); }
+  .hero.transit{background:linear-gradient(135deg,#6d8a63,#47613f); }
+  .hero.flight{ background:linear-gradient(135deg,#3f6f86,#26495c); }
+  .hero .glyph{ width:38px; height:38px; border-radius:11px; background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.35);
+    display:flex; align-items:center; justify-content:center; font-size:20px; backdrop-filter:blur(3px); }
+  .hero .when{ background:rgba(255,255,255,.92); color:var(--ink); font-weight:700; font-size:12.5px; padding:5px 10px; border-radius:999px; }
+  .hero .paper{ position:absolute; inset:0; opacity:.14;
+    background-image:linear-gradient(115deg, rgba(255,255,255,.6) 0 12%, transparent 12% 24%); background-size:34px 34px; }
+  /* perforation */
+  .perf{ position:relative; height:0; }
+  .perf::before,.perf::after{ content:""; position:absolute; top:-9px; width:18px; height:18px; border-radius:50%; background:#fff; border:1px solid var(--line); }
+  .perf::before{ left:-9px; } .perf::after{ right:-9px; }
+  .perf .dash{ position:absolute; left:14px; right:14px; top:-1px; border-top:2px dashed var(--line); }
+  .stub{ padding:14px 16px 15px; }
+  .stub .title{ font-size:17px; font-weight:700; letter-spacing:-.01em; color:var(--ink); }
+  .stub .loc{ display:flex; align-items:center; gap:6px; margin-top:5px; font-size:13.5px; color:var(--sub); font-weight:500; }
+  .stub .meta{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+  .stub .files{ display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:var(--accent); background:var(--accent-tint); padding:5px 10px; border-radius:999px; }
+  .stub .cta{ font-size:13px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:5px; }
+  .barcode{ height:34px; display:flex; gap:2px; align-items:stretch; margin-top:12px; opacity:.9; }
+  .barcode i{ background:var(--ink); border-radius:1px; }
+
+  /* thumb-hero variant (image attachment) */
+  .ticket.photo .hero{ height:132px; background-size:cover; background-position:center; }
+  .hero.bay{ background:linear-gradient(180deg, rgba(0,0,0,0) 40%, rgba(0,0,0,.35)), linear-gradient(135deg,#5b8fa6,#2b4d63 70%, #1f3a4a); }
+  .hero .pill-b{ position:absolute; left:14px; bottom:12px; background:rgba(255,255,255,.92); color:var(--ink); font-weight:700; font-size:12.5px; padding:5px 10px; border-radius:999px; }
+  .hero .cd{ position:absolute; right:14px; bottom:12px; background:rgba(27,31,28,.55); color:#fff; font-weight:600; font-size:11.5px; padding:4px 9px; border-radius:999px; backdrop-filter:blur(3px); }
+
+  /* floating glass tab bar */
+  .tabbar{ position:absolute; left:14px; right:14px; bottom:22px; height:62px; z-index:25;
+    background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.66)); backdrop-filter:blur(14px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.7); border-radius:999px; box-shadow:0 16px 34px -14px rgba(20,24,22,.4);
+    display:flex; align-items:center; justify-content:space-around; padding:0 6px; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:var(--faint); flex:1; }
+  .tab.active{ color:var(--accent); }
+  .tab .ic{ font-size:17px; line-height:1; }
+  .tab.active .pill{ position:absolute; }
+
+  /* ===== detail screen ===== */
+  .d-hero{ position:relative; height:300px; background:linear-gradient(180deg, rgba(0,0,0,.05), rgba(0,0,0,.4)), linear-gradient(140deg,#3a7f93,#233f4c); }
+  .d-hero .doc{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .d-hero .paper2{ width:150px; height:196px; background:#fff; border-radius:8px; box-shadow:0 20px 40px -14px rgba(0,0,0,.5); transform:rotate(-4deg);
+    padding:16px 14px; }
+  .paper2 .ln{ height:7px; border-radius:3px; background:#e9e9e4; margin-bottom:8px; }
+  .paper2 .ln.s{ width:55%; } .paper2 .ln.t{ width:80%; background:#dfe7e6; height:10px; }
+  .paper2 .qrm{ width:56px; height:56px; margin-top:14px; background:
+     conic-gradient(from 0deg,#1b1f1c 25%,#fff 0 50%,#1b1f1c 0 75%,#fff 0);
+     background-size:14px 14px; border:3px solid #1b1f1c; border-radius:4px; }
+  .d-back{ position:absolute; top:60px; left:16px; width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.85); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--ink); z-index:5; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+  .d-share{ position:absolute; top:60px; right:16px; width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,.85); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--ink); z-index:5; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+  .d-body{ position:absolute; top:278px; left:0; right:0; bottom:0; background:#fff; border-radius:26px 26px 0 0; padding:22px 20px 20px; }
+  .d-cat{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--accent); background:var(--accent-tint); padding:5px 11px; border-radius:999px; }
+  .d-title{ font-size:24px; font-weight:700; letter-spacing:-.02em; color:var(--ink); margin-top:12px; line-height:1.15; }
+  .d-rows{ margin-top:16px; border:1px solid var(--line); border-radius:16px; overflow:hidden; }
+  .d-row{ display:flex; align-items:center; gap:12px; padding:13px 15px; }
+  .d-row + .d-row{ border-top:1px solid var(--line); }
+  .d-row .ic{ width:30px; height:30px; border-radius:9px; background:var(--cream); display:flex; align-items:center; justify-content:center; font-size:15px; }
+  .d-row .k{ font-size:12px; color:var(--faint); font-weight:600; }
+  .d-row .v{ font-size:15px; color:var(--ink); font-weight:600; margin-top:1px; }
+  .qrcard{ margin-top:16px; border:1px solid var(--line); border-radius:18px; padding:18px; display:flex; align-items:center; gap:16px; background:linear-gradient(180deg,#fff,#fbfbf9); }
+  .qrbig{ width:96px; height:96px; border:5px solid #1b1f1c; border-radius:8px;
+    background:conic-gradient(from 0deg,#1b1f1c 25%,#fff 0 50%,#1b1f1c 0 75%,#fff 0); background-size:16px 16px; flex:none; }
+  .qrcard .qh{ font-size:15px; font-weight:700; color:var(--ink); }
+  .qrcard .qs{ font-size:13px; color:var(--sub); margin-top:4px; line-height:1.35; }
+  .attach{ display:flex; gap:10px; margin-top:16px; }
+  .att{ flex:1; border:1px solid var(--line); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:9px; }
+  .att .thumb{ height:70px; border-radius:9px; background:#f1efe9; display:flex; align-items:center; justify-content:center; font-size:22px; color:var(--sub); }
+  .att .thumb.pdf{ background:#fbe9e4; color:var(--orange); }
+  .att .thumb.img{ background:linear-gradient(135deg,#5b8fa6,#2b4d63); }
+  .att .nm{ font-size:12px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .att .sz{ font-size:11px; color:var(--faint); }
+  .foot{ position:absolute; left:0; right:0; bottom:0; padding:14px 20px 26px; background:#fff; border-top:1px solid var(--line); display:flex; gap:12px; }
+  .btn{ flex:1; text-align:center; padding:14px; border-radius:14px; font-weight:700; font-size:15px; }
+  .btn.sec{ border:1px solid var(--line); color:var(--ink); }
+  .btn.pri{ background:var(--orange); color:#fff; box-shadow:0 10px 22px -10px rgba(224,80,44,.7); }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ============ SCREEN 1 : LIST ============ -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span class="dots">● ▂▄▆ ▮</span></div>
+
+      <div class="appbar">
+        <h1>Tickets</h1>
+        <div class="addbtn"><span class="plus">＋</span> Add</div>
+      </div>
+
+      <div class="scroll">
+        <!-- day 1 -->
+        <div class="day"><span class="dot"></span><span class="lbl">Sat · Jun 6</span><span class="rule"></span><span class="count">2 tickets</span></div>
+
+        <div class="ticket photo">
+          <div class="hero bay">
+            <div class="glyph">🎫</div>
+            <span class="pill-b">Manta Snorkel · 6:30 PM</span>
+            <span class="cd">in 2 days</span>
+          </div>
+          <div class="perf"><span class="dash"></span></div>
+          <div class="stub">
+            <div class="title">Night Manta Snorkeling</div>
+            <div class="loc">📍 Keauhou Bay Pier</div>
+            <div class="meta">
+              <span class="files">📎 2 files</span>
+              <span class="cta">View ticket ›</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticket">
+          <div class="hero museum">
+            <div class="glyph">🏛️</div>
+            <span class="when">10:00 AM</span>
+            <div class="paper"></div>
+          </div>
+          <div class="perf"><span class="dash"></span></div>
+          <div class="stub">
+            <div class="title">Volcanoes NP — Entry</div>
+            <div class="loc">📍 Hawaiʻi Volcanoes NP</div>
+            <div class="barcode" id="bc1"></div>
+            <div class="meta" style="margin-top:12px">
+              <span class="files">📎 1 file</span>
+              <span class="cta">View ticket ›</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- day 2 -->
+        <div class="day"><span class="dot" style="background:var(--d3);box-shadow:0 0 0 4px #efe7d6"></span><span class="lbl">Sun · Jun 7</span><span class="rule"></span><span class="count">1 ticket</span></div>
+
+        <div class="ticket">
+          <div class="hero show">
+            <div class="glyph">🎭</div>
+            <span class="when">7:30 PM</span>
+            <div class="paper"></div>
+          </div>
+          <div class="perf"><span class="dash"></span></div>
+          <div class="stub">
+            <div class="title">Merrie Monarch — Hula Night</div>
+            <div class="loc">📍 Edith Kanakaʻole Stadium · Seat G-14</div>
+            <div class="meta">
+              <span class="files">📎 1 file</span>
+              <span class="cta">View ticket ›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- glass tab bar -->
+      <div class="tabbar">
+        <div class="tab"><span class="ic">📍</span>Plan</div>
+        <div class="tab"><span class="ic">🍴</span>Eats</div>
+        <div class="tab active"><span class="ic">🎟️</span>Tickets</div>
+        <div class="tab"><span class="ic">💳</span>Budget</div>
+        <div class="tab"><span class="ic">✅</span>To do</div>
+        <div class="tab"><span class="ic">📖</span>Journal</div>
+      </div>
+    </div></div>
+    <div class="cap">1 · Tickets list<small>Boarding-pass cards · grouped by day · timeline rail</small></div>
+  </div>
+
+  <!-- ============ SCREEN 2 : DETAIL ============ -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status" style="color:#fff"><span>9:41</span><span class="dots">● ▂▄▆ ▮</span></div>
+      <div class="d-back">‹</div>
+      <div class="d-share">↗</div>
+
+      <div class="d-hero">
+        <div class="doc"><div class="paper2">
+          <div class="ln t"></div><div class="ln"></div><div class="ln s"></div>
+          <div class="qrm"></div>
+        </div></div>
+      </div>
+
+      <div class="d-body">
+        <span class="d-cat">🎫 Activity</span>
+        <div class="d-title">Night Manta Snorkeling</div>
+
+        <div class="d-rows">
+          <div class="d-row"><span class="ic">📅</span><div><div class="k">WHEN</div><div class="v">Sat, Jun 6 · 6:30 PM</div></div></div>
+          <div class="d-row"><span class="ic">📍</span><div><div class="k">WHERE</div><div class="v">Keauhou Bay Pier, Kailua-Kona</div></div></div>
+        </div>
+
+        <div class="qrcard">
+          <div class="qrbig"></div>
+          <div><div class="qh">Show at check-in</div><div class="qs">Confirmation #MK-4821·A. Arrive 20 min early; wetsuit included.</div></div>
+        </div>
+
+        <div class="attach">
+          <div class="att"><div class="thumb pdf">📄</div><div class="nm">e-ticket.pdf</div><div class="sz">248 KB</div></div>
+          <div class="att"><div class="thumb img">🖼️</div><div class="nm">voucher.jpg</div><div class="sz">1.1 MB</div></div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="btn sec">Edit</div>
+        <div class="btn pri">Open ticket</div>
+      </div>
+    </div></div>
+    <div class="cap">2 · Ticket detail<small>Attachment hero · QR to show at entry · file thumbnails</small></div>
+  </div>
+
+</div>
+<script>
+  // faux barcode
+  const bc = document.getElementById('bc1');
+  let w=''; for(let i=0;i<48;i++){ const x=[1,1,2,3][Math.floor((i*7)%4)]; w+=`<i style="width:${x}px"></i>`; }
+  bc.innerHTML=w;
+</script>
+</body>
+</html>

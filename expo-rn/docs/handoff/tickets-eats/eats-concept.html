@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BurgerGo Eats — concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B1F1C; --sub:#5B6560; --faint:#9AA39E; --line:#E7E7E2;
+    --accent:#2F6C7E; --accent-tint:#E7F0F2; --orange:#E0502C; --orange-tint:#FBEAE3;
+    --cream:#F7F1E4; --success:#3E8E6E; --gold:#E0A82E; --bg:#FFFFFF;
+    font-family:'Instrument Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased;}
+  body{ background:#EDEBE6;
+    background-image:radial-gradient(1200px 700px at 20% -5%, #F6F3EC 0%, rgba(246,243,236,0) 60%),
+                     radial-gradient(1000px 700px at 100% 110%, #EAF0F0 0%, rgba(234,240,240,0) 55%);
+    padding:56px; }
+  .stage{ display:flex; gap:64px; justify-content:center; align-items:flex-start; flex-wrap:wrap; max-width:1500px; margin:0 auto; }
+  .col{ display:flex; flex-direction:column; align-items:center; gap:18px; }
+  .cap{ font-size:15px; font-weight:600; color:#6a6f6b; }
+  .cap small{ display:block; font-weight:500; color:#9a9f9b; font-size:12.5px; margin-top:2px; text-align:center; }
+
+  .phone{ width:390px; height:844px; border-radius:56px; background:#0f1211; padding:12px;
+    box-shadow:0 40px 80px -30px rgba(20,24,22,.55), 0 8px 24px rgba(20,24,22,.18); position:relative; }
+  .screen{ width:100%; height:100%; border-radius:45px; background:var(--bg); overflow:hidden; position:relative; }
+  .notch{ position:absolute; top:0; left:50%; transform:translateX(-50%); width:126px; height:32px; background:#0f1211; border-radius:0 0 18px 18px; z-index:40; }
+  .status{ position:absolute; top:0; left:0; right:0; height:54px; z-index:30; display:flex; align-items:flex-end; justify-content:space-between; padding:0 26px 6px; font-size:14px; font-weight:600; }
+  .status .dots{ display:flex; gap:5px; }
+
+  .appbar{ position:absolute; top:54px; left:0; right:0; z-index:20; padding:6px 20px 10px;
+    background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.62)); backdrop-filter:blur(10px); }
+  .appbar .row1{ display:flex; align-items:center; justify-content:space-between; }
+  .appbar h1{ font-size:26px; font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+  .addbtn{ display:flex; align-items:center; gap:6px; background:var(--orange); color:#fff; font-weight:600; font-size:13.5px;
+    padding:9px 14px; border-radius:999px; box-shadow:0 6px 16px -6px rgba(224,80,44,.7); }
+  .addbtn .plus{ font-size:15px; margin-top:-1px; }
+  /* segmented */
+  .seg{ display:flex; gap:4px; margin-top:12px; background:#f1efe9; border-radius:12px; padding:4px; }
+  .seg div{ flex:1; text-align:center; font-size:13px; font-weight:600; color:var(--sub); padding:8px 0; border-radius:9px; }
+  .seg div.on{ background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,24,22,.12); }
+
+  .scroll{ position:absolute; inset:0; padding:150px 16px 130px; }
+
+  /* photo-led restaurant card */
+  .rc{ border-radius:20px; overflow:hidden; border:1px solid var(--line); background:#fff; margin-bottom:16px;
+    box-shadow:0 14px 30px -22px rgba(20,24,22,.4); }
+  .rc .ph{ position:relative; height:176px; }
+  .food1{ background:linear-gradient(180deg, rgba(0,0,0,0) 42%, rgba(0,0,0,.6)), radial-gradient(120% 120% at 30% 20%, #e8a15c, #b5542f 60%, #7d2f22); }
+  .food2{ background:linear-gradient(180deg, rgba(0,0,0,0) 42%, rgba(0,0,0,.6)), radial-gradient(120% 120% at 70% 20%, #7fa07a, #3f6b52 60%, #274b3c); }
+  .food3{ background:linear-gradient(180deg, rgba(0,0,0,0) 42%, rgba(0,0,0,.62)), radial-gradient(120% 120% at 40% 20%, #d6b78c, #9a6b45 60%, #5f3d2b); }
+  .ph .wm{ position:absolute; top:50%; left:50%; transform:translate(-50%,-58%); font-size:64px; opacity:.28; filter:saturate(0); }
+  .ph .st{ position:absolute; top:12px; left:12px; display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700;
+    background:rgba(255,255,255,.92); color:var(--ink); padding:5px 10px; border-radius:999px; }
+  .ph .st.been{ color:var(--success); }
+  .ph .rt{ position:absolute; top:12px; right:12px; display:flex; align-items:center; gap:4px; font-size:12.5px; font-weight:700;
+    background:rgba(27,31,28,.55); color:#fff; padding:5px 10px; border-radius:999px; backdrop-filter:blur(4px); }
+  .ph .rt .g{ color:var(--gold); }
+  .ph .cap2{ position:absolute; left:14px; right:14px; bottom:12px; color:#fff; }
+  .ph .nm{ font-size:21px; font-weight:700; letter-spacing:-.01em; text-shadow:0 1px 8px rgba(0,0,0,.35); }
+  .ph .sub{ font-size:13px; font-weight:600; opacity:.92; margin-top:2px; text-shadow:0 1px 6px rgba(0,0,0,.4); }
+  .ph .sub .dollar{ opacity:.7; }
+  .rc .ft{ display:flex; align-items:center; justify-content:space-between; padding:11px 14px; }
+  .open{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--success); }
+  .open .d{ width:7px; height:7px; border-radius:50%; background:var(--success); }
+  .open.closed{ color:var(--sub); } .open.closed .d{ background:#c1483a; }
+  .open small{ color:var(--faint); font-weight:500; }
+  .day{ display:flex; align-items:center; gap:5px; font-size:12px; font-weight:700; color:var(--accent); background:var(--accent-tint); padding:5px 10px; border-radius:999px; }
+  .bk{ font-size:17px; color:var(--faint); }
+  .stars{ letter-spacing:1px; }
+
+  .tabbar{ position:absolute; left:14px; right:14px; bottom:22px; height:62px; z-index:25;
+    background:linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,.66)); backdrop-filter:blur(14px) saturate(1.4);
+    border:1px solid rgba(255,255,255,.7); border-radius:999px; box-shadow:0 16px 34px -14px rgba(20,24,22,.4);
+    display:flex; align-items:center; justify-content:space-around; padding:0 6px; }
+  .tab{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:9.5px; font-weight:600; color:var(--faint); flex:1; }
+  .tab.active{ color:var(--accent); }
+  .tab .ic{ font-size:17px; }
+
+  /* detail */
+  .d-hero{ position:relative; height:288px; background:linear-gradient(180deg, rgba(0,0,0,.05) 40%, rgba(0,0,0,.5)), radial-gradient(120% 110% at 35% 15%, #e8a15c, #b5542f 55%, #7d2f22); }
+  .d-hero .wm{ position:absolute; top:44%; left:50%; transform:translate(-50%,-50%); font-size:96px; opacity:.22; filter:saturate(0); }
+  .d-back,.d-share{ position:absolute; top:60px; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.88); backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--ink); z-index:5; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+  .d-back{ left:16px; } .d-share{ right:16px; font-size:16px; }
+  .dots3{ position:absolute; bottom:120px; left:0; right:0; display:flex; gap:6px; justify-content:center; z-index:4; }
+  .dots3 i{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.5); }
+  .dots3 i.on{ background:#fff; width:18px; border-radius:3px; }
+  .d-body{ position:absolute; top:266px; left:0; right:0; bottom:0; background:#fff; border-radius:26px 26px 0 0; padding:20px 20px 0; overflow:hidden; }
+  .d-name{ font-size:24px; font-weight:700; letter-spacing:-.02em; color:var(--ink); }
+  .d-meta{ font-size:14px; font-weight:600; color:var(--sub); margin-top:4px; }
+  .d-meta .dollar{ color:var(--faint); }
+  .d-rate{ display:flex; gap:10px; margin-top:14px; }
+  .chip{ display:flex; align-items:center; gap:7px; border:1px solid var(--line); border-radius:14px; padding:10px 13px; }
+  .chip .lab{ font-size:11px; color:var(--faint); font-weight:600; }
+  .chip .val{ font-size:15px; font-weight:700; color:var(--ink); margin-top:1px; }
+  .chip .g{ color:var(--gold); }
+  .chip.you .val{ color:var(--gold); letter-spacing:1px; }
+  .openrow{ margin-top:16px; border:1px solid var(--line); border-radius:16px; padding:14px 15px; display:flex; align-items:center; justify-content:space-between; }
+  .openrow .l{ display:flex; align-items:center; gap:9px; }
+  .openrow .d{ width:8px; height:8px; border-radius:50%; background:var(--success); }
+  .openrow .t{ font-size:15px; font-weight:700; color:var(--success); }
+  .openrow .t small{ display:block; color:var(--sub); font-weight:500; font-size:12.5px; margin-top:1px; }
+  .openrow .chev{ color:var(--faint); font-size:18px; }
+  .maprow{ margin-top:12px; border:1px solid var(--line); border-radius:16px; overflow:hidden; display:flex; align-items:stretch; }
+  .maprow .mini{ width:84px; background:linear-gradient(135deg,#cfe0d6,#9fc0ad); position:relative; }
+  .maprow .mini::after{ content:"📍"; position:absolute; top:50%; left:50%; transform:translate(-50%,-60%); font-size:20px; }
+  .maprow .addr{ flex:1; padding:12px 14px; display:flex; flex-direction:column; justify-content:center; }
+  .maprow .addr .k{ font-size:11px; color:var(--faint); font-weight:600; }
+  .maprow .addr .v{ font-size:14px; font-weight:600; color:var(--ink); margin-top:2px; line-height:1.3; }
+  .foot{ position:absolute; left:0; right:0; bottom:0; padding:13px 20px 26px; background:#fff; border-top:1px solid var(--line); display:flex; gap:12px; }
+  .btn{ text-align:center; padding:14px; border-radius:14px; font-weight:700; font-size:15px; }
+  .btn.sec{ flex:1; border:1px solid var(--line); color:var(--ink); }
+  .btn.pri{ flex:1.4; background:var(--orange); color:#fff; box-shadow:0 10px 22px -10px rgba(224,80,44,.7); }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ===== LIST ===== -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span class="dots">● ▂▄▆ ▮</span></div>
+
+      <div class="appbar">
+        <div class="row1"><h1>Eats</h1><div class="addbtn"><span class="plus">＋</span> Add</div></div>
+        <div class="seg"><div class="on">All</div><div>Want to try</div><div>Been</div></div>
+      </div>
+
+      <div class="scroll">
+        <!-- want to try, google rating, open -->
+        <div class="rc">
+          <div class="ph food1"><div class="wm">🍜</div>
+            <span class="st">Want to try</span>
+            <span class="rt"><span class="g">★</span> 4.6 · 1.2k</span>
+            <div class="cap2"><div class="nm">Da Poke Shack</div><div class="sub">Hawaiian · Poke <span class="dollar">·&nbsp;$$</span></div></div>
+          </div>
+          <div class="ft">
+            <span class="open"><span class="d"></span>Open <small>· closes 6 PM</small></span>
+            <span class="bk">🔖</span>
+          </div>
+        </div>
+
+        <!-- been, personal stars, scheduled -->
+        <div class="rc">
+          <div class="ph food2"><div class="wm">🦞</div>
+            <span class="st been">✓ Been</span>
+            <span class="rt"><span class="stars g">★★★★</span><span class="stars" style="opacity:.4">★</span></span>
+            <div class="cap2"><div class="nm">Merriman’s</div><div class="sub">Farm-to-table <span class="dollar">·&nbsp;$$$$</span></div></div>
+          </div>
+          <div class="ft">
+            <span class="open"><span class="d"></span>Open <small>· closes 9 PM</small></span>
+            <span class="day">📅 Day 2</span>
+          </div>
+        </div>
+
+        <!-- want to try, closed -->
+        <div class="rc">
+          <div class="ph food3"><div class="wm">🍩</div>
+            <span class="st">Want to try</span>
+            <span class="rt"><span class="g">★</span> 4.8 · 940</span>
+            <div class="cap2"><div class="nm">Punaluʻu Bake Shop</div><div class="sub">Bakery <span class="dollar">·&nbsp;$</span></div></div>
+          </div>
+          <div class="ft">
+            <span class="open closed"><span class="d"></span>Closed <small>· opens 7 AM</small></span>
+            <span class="bk">🔖</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab"><span class="ic">📍</span>Plan</div>
+        <div class="tab active"><span class="ic">🍴</span>Eats</div>
+        <div class="tab"><span class="ic">🎟️</span>Tickets</div>
+        <div class="tab"><span class="ic">💳</span>Budget</div>
+        <div class="tab"><span class="ic">✅</span>To do</div>
+        <div class="tab"><span class="ic">📖</span>Journal</div>
+      </div>
+    </div></div>
+    <div class="cap">1 · Eats list<small>Photo-led cards · want-to-try vs been · open-now · rating</small></div>
+  </div>
+
+  <!-- ===== DETAIL ===== -->
+  <div class="col">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status" style="color:#fff"><span>9:41</span><span class="dots">● ▂▄▆ ▮</span></div>
+      <div class="d-back">‹</div><div class="d-share">↗</div>
+      <div class="d-hero"><div class="wm">🍜</div></div>
+      <div class="dots3"><i class="on"></i><i></i><i></i></div>
+
+      <div class="d-body">
+        <div class="d-name">Da Poke Shack</div>
+        <div class="d-meta">Hawaiian · Poke <span class="dollar">· $$</span> · Want to try</div>
+
+        <div class="d-rate">
+          <div class="chip you"><div><div class="lab">YOUR RATING</div><div class="val">★★★★☆</div></div></div>
+          <div class="chip"><div><div class="lab">GOOGLE</div><div class="val"><span class="g">★</span> 4.6 · 1,240</div></div></div>
+        </div>
+
+        <div class="openrow">
+          <div class="l"><span class="d"></span><div class="t">Open now<small>Closes 6:00 PM · Mon–Sat</small></div></div>
+          <span class="chev">⌄</span>
+        </div>
+
+        <div class="maprow">
+          <div class="mini"></div>
+          <div class="addr"><div class="k">ADDRESS</div><div class="v">76-6246 Aliʻi Dr, Kailua-Kona, HI</div></div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <div class="btn sec">✓ Mark been</div>
+        <div class="btn pri">Add to day</div>
+      </div>
+    </div></div>
+    <div class="cap">2 · Restaurant detail<small>Photo gallery · your ★ vs Google · open-now hours · map</small></div>
+  </div>
+
+</div>
+</body>
+</html>
