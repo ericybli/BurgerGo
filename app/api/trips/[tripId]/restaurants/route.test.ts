@@ -137,6 +137,27 @@ describe('POST /api/trips/[tripId]/restaurants', () => {
     expect(listRestaurants(testHandle.db, 't1').some((r) => r.id === body.restaurant.id)).toBe(true);
   });
 
+  it('accepts explicit null for rating/priceLevel/notes (RN client sends null, not omitted, for unset fields)', async () => {
+    const res = await POST(
+      postReq('t1', {
+        name: 'Kona Seafood Market',
+        cuisine: 'Poke',
+        address: '75-5699 Kopiko St, Kailua-Kona, HI 96740, USA',
+        status: 'want-to-try',
+        rating: null,
+        priceLevel: null,
+        notes: null,
+      }),
+      ctx('t1'),
+    );
+    expect(res.status).toBe(201);
+    const body = await res.json() as { restaurant: { name: string; rating: number | null; priceLevel: number | null; notes: string | null } };
+    expect(body.restaurant.name).toBe('Kona Seafood Market');
+    expect(body.restaurant.rating).toBeNull();
+    expect(body.restaurant.priceLevel).toBeNull();
+    expect(body.restaurant.notes).toBeNull();
+  });
+
   it('rejects an unknown trip and invalid input', async () => {
     expect((await POST(postReq('nope', { name: 'X' }), ctx('nope'))).status).toBe(404);
     expect((await POST(postReq('t1', { rating: 9 }), ctx('t1'))).status).toBe(400);

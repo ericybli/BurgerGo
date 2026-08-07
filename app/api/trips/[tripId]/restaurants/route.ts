@@ -108,13 +108,13 @@ export async function GET(
 
 const createRestaurantSchema = z.object({
   name: z.string().trim().min(1).max(200),
-  address: z.string().trim().max(500).optional(),
-  about: z.string().max(2000).optional(), // folded into notes (restaurants have no separate field)
-  notes: z.string().max(2000).optional(),
-  cuisine: z.string().trim().max(100).optional(),
-  status: z.enum(['want-to-try', 'been']).optional(),
-  rating: z.number().int().min(1).max(5).optional(),
-  priceLevel: z.number().int().min(1).max(4).optional(),
+  address: z.string().trim().max(500).nullish(),
+  about: z.string().max(2000).nullish(), // folded into notes (restaurants have no separate field)
+  notes: z.string().max(2000).nullish(),
+  cuisine: z.string().trim().max(100).nullish(),
+  status: z.enum(['want-to-try', 'been']).nullish(),
+  rating: z.number().int().min(1).max(5).nullish(),
+  priceLevel: z.number().int().min(1).max(4).nullish(),
 });
 
 /**
